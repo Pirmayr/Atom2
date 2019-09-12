@@ -22,30 +22,29 @@
 (over get swap get add swap set) (increment-word-by-word) set
 ((for-body for-key for-from for-to for-step) set (for-body (for-from) (for-step) increment-word-by-word) ((for-from) get (for-to) get less-or-equal) while) (for) set
 
+('System.Windows.Forms') (system-windows-forms-assembly) set
+
+('System.Windows.Forms') (system-windows-forms-namespace) set
 
 'Object'
 ('mscorlib' 'System.Object') (object-info) set
 (0 object-info 'ToString' default instance invoke-method invoke) (to-string) set
 
 'MessageBox'
-('System.Windows.Forms' 'System.Windows.Forms.MessageBox') (message-box-info) set
+(system-windows-forms-assembly 'System.Windows.Forms.MessageBox') (message-box-info) set
 (0 swap 1 message-box-info 'Show' static default invoke-method invoke) (message-box) set
 
 'FormBorderStyle'
-('System.Windows.Forms' 'System.Windows.Forms.FormBorderStyle') (form-border-style-info) set
+(system-windows-forms-assembly 'System.Windows.Forms.FormBorderStyle') (form-border-style-info) set
 (0 0 form-border-style-info 'FixedSingle' static default get-field invoke) (form-border-style-fixed-single) set
 
-'Form'
-('System.Windows.Forms' 'System.Windows.Forms.Form') (form-info) set
+('System.Windows.Forms.Form') (system-windows-forms-form-class) set
+(system-windows-forms-assembly system-windows-forms-form-class) (form-info) set
 (0 0 form-info '' default instance create-instance invoke) (form-create) set
 (0 form-info 'Show' default instance invoke-method invoke) (form-show) set
 (1 form-info 'set_FormBorderStyle' default instance invoke-method invoke) (form-border-style-set) set
 
-
-
-
-
-"hi" message-box
+'Hello' ' World!1' add message-box
 
 form-border-style-fixed-single to-string message-box
 
@@ -53,8 +52,10 @@ form-create (form) set
 form form-border-style-fixed-single form-border-style-set
 form form-show
 
-47 (hugo) set (hugo) increment-word (hugo) get show
-7 (a) set 5 (b) set (a) (b) increment-word-by-word (a) get  show (b) get show
-0 (counter) set ((counter) get to-string message-box (counter) increment-word)((counter) get 5 not-equal) while
-("hi" show) (a) 1 7 1 for      
-form border-style-fixed-single form-border-style-set
+(
+    11 (hugo) set (hugo) increment-word (hugo) get show
+    7 (a) set 5 (b) set (a) (b) increment-word-by-word (a) get  show (b) get show
+    0 (counter) set ((counter) get to-string message-box (counter) increment-word)((counter) get 5 not-equal) while
+    ("hi" show) (a) 1 7 1 for  
+) 
+(simple-tests) set
