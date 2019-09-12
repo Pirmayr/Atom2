@@ -1,0 +1,60 @@
+﻿'flags for "InvokeMember"'
+(512) (create-instance) set
+(256) (invoke-method) set
+(0) (default) set
+(8) (static) set
+(4) (instance) set
+(1024) (get-field) set
+
+'stack-manipulation'
+((drop-1) set) (drop) set
+((swap-1 swap-2) set (swap-2 swap-1) get) (swap) set
+((duplicate-1) set (duplicate-1 duplicate-1) get) (duplicate) set
+((over-1 over-2) set (over-1 over-2 over-1) get) (over) set
+((rotate-1 rotate-2 rotate-3) set (rotate-2 rotate-3 rotate-1) get) (rotate) set 
+(over swap) (duplicate-second) set
+
+'miscellaneous words'
+(duplicate-second set) (set-sticky) set
+(duplicate show) (show-sticky) set
+(1 add) (increment) set
+(duplicate get increment swap set) (increment-word) set
+(over get swap get add swap set) (increment-word-by-word) set
+((for-body for-key for-from for-to for-step) set (for-body (for-from) (for-step) increment-word-by-word) ((for-from) get (for-to) get less-or-equal) while) (for) set
+
+
+'Object'
+('mscorlib' 'System.Object') (object-info) set
+(0 object-info 'ToString' default instance invoke-method invoke) (to-string) set
+
+'MessageBox'
+('System.Windows.Forms' 'System.Windows.Forms.MessageBox') (message-box-info) set
+(0 swap 1 message-box-info 'Show' static default invoke-method invoke) (message-box) set
+
+'FormBorderStyle'
+('System.Windows.Forms' 'System.Windows.Forms.FormBorderStyle') (form-border-style-info) set
+(0 0 form-border-style-info 'FixedSingle' static default get-field invoke) (form-border-style-fixed-single) set
+
+'Form'
+('System.Windows.Forms' 'System.Windows.Forms.Form') (form-info) set
+(0 0 form-info '' default instance create-instance invoke) (form-create) set
+(0 form-info 'Show' default instance invoke-method invoke) (form-show) set
+(1 form-info 'set_FormBorderStyle' default instance invoke-method invoke) (form-border-style-set) set
+
+
+
+
+
+"hi" message-box
+
+form-border-style-fixed-single to-string message-box
+
+form-create (form) set
+form form-border-style-fixed-single form-border-style-set
+form form-show
+
+47 (hugo) set (hugo) increment-word (hugo) get show
+7 (a) set 5 (b) set (a) (b) increment-word-by-word (a) get  show (b) get show
+0 (counter) set ((counter) get to-string message-box (counter) increment-word)((counter) get 5 not-equal) while
+("hi" show) (a) 1 7 1 for      
+form border-style-fixed-single form-border-style-set
