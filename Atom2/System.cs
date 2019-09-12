@@ -42,11 +42,14 @@ namespace Atom2
             Evaluate(GetItems(GetTokens(code)));
         }
 
-        private static object Invoke(string assemblyName, string typeName, string memberName, BindingFlags memberKind, BindingFlags allowStatic, BindingFlags allowInstance, object target, params object[] arguments)
+        private object Invoke(string assemblyName, string typeName, string memberName, BindingFlags memberKind, BindingFlags memberType, params object[] arguments)
         {
             Assembly assembly = Assembly.LoadWithPartialName(assemblyName);
             Type type = assembly.GetType(typeName);
-            BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | memberKind | allowStatic | allowInstance;
+            BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | memberKind | memberType;
+            bool isInstance = memberType.HasFlag(BindingFlags.Instance);
+            bool isConstructor = memberKind.HasFlag(BindingFlags.CreateInstance);
+            object target = isInstance && !isConstructor ? stack.Pop() : null;
             object result = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
             return result;
         }
@@ -176,8 +179,7 @@ namespace Atom2
         private void Invoke()
         {
             BindingFlags memberKind = (BindingFlags) stack.Pop();
-            BindingFlags allowInstance = (BindingFlags) stack.Pop();
-            BindingFlags allowStatic = (BindingFlags) stack.Pop();
+            BindingFlags memberType = (BindingFlags) stack.Pop();
             string memberName = (string) stack.Pop();
             string typeName = (string) stack.Pop();
             string assemblyName = (string) stack.Pop();
@@ -187,8 +189,7 @@ namespace Atom2
             {
                 arguments[i] = stack.Pop();
             }
-            object target = stack.Pop();
-            stack.Push(Invoke(assemblyName, typeName, memberName, memberKind, allowStatic, allowInstance, target, arguments));
+            stack.Push(Invoke(assemblyName, typeName, memberName, memberKind, memberType, arguments));
         }
 
         private void LessOrEqual()

@@ -11,8 +11,8 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{57834D24-842F-4660-8475-C7C681DB5315}.Debug|x86.ActiveCfg = Debug|x86
 		{57834D24-842F-4660-8475-C7C681DB5315}.Debug|x86.Build.0 = Debug|x86
-		{57834D24-842F-4660-8475-C7C681DB5315}.Release|x86.ActiveCfg = Release|x86
-		{57834D24-842F-4660-8475-C7C681DB5315}.Release|x86.Build.0 = Release|x86
+		{57834D24-842F-4660-8475-C7C681DB5315}.Release|x86.ActiveCfg = Debug|x86
+		{57834D24-842F-4660-8475-C7C681DB5315}.Release|x86.Build.0 = Debug|x86
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
@@ -30,5 +30,6 @@ Global
 		$4.scope = text/plain
 		$0.StandardHeader = $5
 		$0.VersionControlPolicy = $6
+		version = 0.2
 	EndGlobalSection
 EndGlobal
