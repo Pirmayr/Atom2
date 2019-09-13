@@ -30,6 +30,8 @@ Global
 		$4.scope = text/plain
 		$0.StandardHeader = $5
 		$0.VersionControlPolicy = $6
+		$6.CommitMessageStyle = $7
+		$7.Header = @Changes:\n\n
 		version = 0.2
 	EndGlobalSection
 EndGlobal
