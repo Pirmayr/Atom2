@@ -20,7 +20,7 @@
 (1 add) (increment) set
 (duplicate get increment swap set) (increment-word) set
 (over get swap get add swap set) (increment-word-by-word) set
-((for-body for-key for-from for-to for-step) set (for-body (for-from) (for-step) increment-word-by-word) ((for-from) get (for-to) get less-or-equal) while) (for) set
+((for-body for-key for-from for-to for-step) set ((for-from) get (for-key) get set for-body (for-from) (for-step) increment-word-by-word) ((for-from) get (for-to) get less-or-equal) while) (for) set
 
 ('System.Windows.Forms') (system-windows-forms-assembly) set
 
@@ -43,22 +43,24 @@
 (1 form-info 'set_FormBorderStyle' instance invoke-method invoke drop) (form-set-form-border-style) set
 (duplicate-second form-set-form-border-style) (form-set-form-border-style-sticky) set
 
-'Hello World!' message-box
-
-form-create form-border-style-fixed-single form-set-form-border-style-sticky form-show
-
 (
-    form-create (form) set
-    form form-border-style-fixed-single form-set-form-border-style
-    form form-show
-)
-
-form-border-style-fixed-single to-string message-box
-
-(
+    form-create form-border-style-fixed-single form-set-form-border-style-sticky form-show
     11 (hugo) set (hugo) increment-word (hugo) get show
     7 (a) set 5 (b) set (a) (b) increment-word-by-word (a) get  show (b) get show
     0 (counter) set ((counter) get to-string message-box (counter) increment-word)((counter) get 5 not-equal) while
     ("hi" show) (a) 1 7 1 for  
 ) 
-(simple-tests) set
+(tests) set
+
+(
+  'Hello World!' message-box
+
+  form-create (form) set
+  form form-border-style-fixed-single form-set-form-border-style
+  form form-show
+
+  form-border-style-fixed-single to-string message-box
+)
+
+((a) get to-string message-box) (a) 1 7 1 for
+
