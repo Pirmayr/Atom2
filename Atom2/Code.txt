@@ -28,6 +28,10 @@
 ('mscorlib' 'System.Object') (object-info) set
 (0 object-info 'ToString' instance invoke-method invoke) (to-string) set
 
+'Console'
+('mscorlib' 'System.Console') (console-info) set
+(1 console-info 'WriteLine' static invoke-method invoke) (show) set
+
 'MessageBox'
 (system-windows-forms-assembly 'System.Windows.Forms.MessageBox') (message-box-info) set
 (1 message-box-info 'Show' static invoke-method invoke) (message-box) set
@@ -52,15 +56,15 @@
 ) 
 (tests) set
 
-(
-  'Hello World!' message-box
 
-  form-create (form) set
-  form form-border-style-fixed-single form-set-form-border-style
-  form form-show
+'Hello World!' message-box
 
-  form-border-style-fixed-single to-string message-box
-)
+form-create (form) set
+form form-border-style-fixed-single form-set-form-border-style
+form form-show
+
+form-border-style-fixed-single to-string message-box
+
 
 ((a) get to-string message-box) (a) 1 7 1 for
 
