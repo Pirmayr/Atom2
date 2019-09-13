@@ -30,18 +30,14 @@ Global
 		$0.DotNetNamingPolicy = $1
 		$1.DirectoryNamespaceAssociation = PrefixedHierarchical
 		$0.TextStylePolicy = $4
-		$2.inheritsSet = null
-		$2.scope = text/x-csharp
-		$0.CSharpFormattingPolicy = $3
-		$3.SpaceAfterCast = True
-		$3.scope = text/x-csharp
-		$4.FileWidth = 80
-		$4.TabsToSpaces = True
-		$4.scope = text/plain
-		$0.StandardHeader = $5
-		$0.VersionControlPolicy = $6
-		$6.CommitMessageStyle = $7
-		$7.Header = @Changes:\n\n
+		$0.TextStylePolicy = $5
+		$5.FileWidth = 1000
+		$5.TabWidth = 2
+		$5.TabsToSpaces = True
+		$5.IndentWidth = 2
+		$5.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $6
+		$6.scope = text/x-csharp
 		version = 0.2
 	EndGlobalSection
 EndGlobal
