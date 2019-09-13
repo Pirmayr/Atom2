@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using Microsoft.CSharp.RuntimeBinder;
+using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 
 #pragma warning disable 618
 
@@ -28,8 +31,8 @@ namespace Atom2
     private const char Eof = char.MinValue;
     private const char Whitespace = char.MaxValue;
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '\'' };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Whitespace, '(', ')', '\'' };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '\''};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Whitespace, '(', ')', '\''};
     private readonly Words words = new Words();
 
     public Runtime()
@@ -48,22 +51,6 @@ namespace Atom2
     public void Run(string code)
     {
       Evaluate(GetItems(GetTokens(code)));
-    }
-
-    private Action BinaryAction(ExpressionType expressionType)
-    {
-      var objectType = typeof(object);
-      var parameterA = Expression.Parameter(objectType);
-      var parameterB = Expression.Parameter(objectType);
-      var argumentInfoFlag = Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfoFlags.None;
-      var argumentInfo = Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo.Create(argumentInfoFlag, null);
-      var argumentInfos = new Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo[] { argumentInfo, argumentInfo };
-      var csharpBinderFlag = Microsoft.CSharp.RuntimeBinder.CSharpBinderFlags.None;
-      var binder = Microsoft.CSharp.RuntimeBinder.Binder.BinaryOperation(csharpBinderFlag, expressionType, objectType, argumentInfos);
-      var expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
-      var lambda = Expression.Lambda(expression, parameterA, parameterB);
-      var function = lambda.Compile();
-      return () => { stack.Push(function.DynamicInvoke((dynamic)stack.Pop(), (dynamic)stack.Pop())); };
     }
 
     private static Items GetItems(Tokens tokens)
@@ -117,13 +104,6 @@ namespace Atom2
       return token;
     }
 
-    private void Add()
-    {
-      dynamic b = stack.Pop();
-      dynamic a = stack.Pop();
-      stack.Push(a + b);
-    }
-
     private void AddOrSetWord(string key, object word)
     {
       if (words.ContainsKey(key))
@@ -134,6 +114,22 @@ namespace Atom2
       {
         words.Add(key, word);
       }
+    }
+
+    private Action BinaryAction(ExpressionType expressionType)
+    {
+      Type objectType = typeof(object);
+      ParameterExpression parameterA = Expression.Parameter(objectType);
+      ParameterExpression parameterB = Expression.Parameter(objectType);
+      const CSharpArgumentInfoFlags argumentInfoFlag = CSharpArgumentInfoFlags.None;
+      CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(argumentInfoFlag, null);
+      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
+      const CSharpBinderFlags csharpBinderFlag = CSharpBinderFlags.None;
+      CallSiteBinder binder = Binder.BinaryOperation(csharpBinderFlag, expressionType, objectType, argumentInfos);
+      DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
+      LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
+      Delegate function = lambda.Compile();
+      return () => { stack.Push(function.DynamicInvoke((dynamic) stack.Pop(), (dynamic) stack.Pop())); };
     }
 
     private void Evaluate(object instance)
@@ -153,7 +149,7 @@ namespace Atom2
 
     private void Get()
     {
-      foreach (object currentItem in (Items)stack.Pop())
+      foreach (object currentItem in (Items) stack.Pop())
       {
         stack.Push(words[currentItem.ToString()]);
       }
@@ -200,7 +196,7 @@ namespace Atom2
       object condition = stack.Pop();
       object body = stack.Pop();
       Evaluate(condition);
-      if ((dynamic)stack.Pop())
+      if ((dynamic) stack.Pop())
       {
         Evaluate(body);
         Evaluate(condition);
@@ -221,47 +217,18 @@ namespace Atom2
 
     private void Invoke()
     {
-      BindingFlags memberKind = (BindingFlags)stack.Pop();
-      BindingFlags memberType = (BindingFlags)stack.Pop();
-      string memberName = (string)stack.Pop();
-      string typeName = (string)stack.Pop();
-      string assemblyName = (string)stack.Pop();
-      int parametersCount = (int)stack.Pop();
+      BindingFlags memberKind = (BindingFlags) stack.Pop();
+      BindingFlags memberType = (BindingFlags) stack.Pop();
+      string memberName = (string) stack.Pop();
+      string typeName = (string) stack.Pop();
+      string assemblyName = (string) stack.Pop();
+      int parametersCount = (int) stack.Pop();
       object[] arguments = new object[parametersCount];
       for (int i = parametersCount - 1; 0 <= i; --i)
       {
         arguments[i] = stack.Pop();
       }
       stack.Push(Invoke(assemblyName, typeName, memberName, memberKind, memberType, arguments));
-    }
-
-    private void LessOrEqual()
-    {
-      dynamic b = stack.Pop();
-      dynamic a = stack.Pop();
-      stack.Push(a <= b ? 1 : 0);
-    }
-
-    private void New()
-    {
-      dynamic typeName = stack.Pop();
-      dynamic assemblyName = stack.Pop();
-      dynamic parametersCount = stack.Pop();
-      object[] parameters = new object[parametersCount];
-      for (dynamic i = parametersCount - 1; 0 <= i; --i)
-      {
-        parameters[i] = stack.Pop();
-      }
-      Assembly assembly = Assembly.LoadWithPartialName(assemblyName);
-      Type type = assembly.GetType(typeName);
-      stack.Push(Activator.CreateInstance(type, parameters));
-    }
-
-    private void NotEqual()
-    {
-      dynamic b = stack.Pop();
-      dynamic a = stack.Pop();
-      stack.Push(a != b ? 1 : 0);
     }
 
     private void Process(object instance)
@@ -285,17 +252,10 @@ namespace Atom2
 
     private void Set()
     {
-      foreach (object currentItem in Enumerable.Reverse((Items)stack.Pop()))
+      foreach (object currentItem in Enumerable.Reverse((Items) stack.Pop()))
       {
         AddOrSetWord(currentItem.ToString(), stack.Pop());
       }
-    }
-
-    private void Subtract()
-    {
-      dynamic b = stack.Pop();
-      dynamic a = stack.Pop();
-      stack.Push(a - b);
     }
 
     private void While()
@@ -303,7 +263,7 @@ namespace Atom2
       object condition = stack.Pop();
       object body = stack.Pop();
       Evaluate(condition);
-      while ((dynamic)stack.Pop())
+      while ((dynamic) stack.Pop())
       {
         Evaluate(body);
         Evaluate(condition);

@@ -56,23 +56,13 @@
 ) 
 (tests) set
 
-
-(('Hello World!' message-box))
+'Hello World!' message-box
 
 form-create (form) set
-
-(border-style-fixed-single to-string show)
-
 form form-border-style-fixed-single form-set-form-border-style
+form form-show
 
-
-    form form-show
-    form-border-style-fixed-single to-string message-box
-
-
-
+form-border-style-fixed-single to-string message-box
 
 ((a) get show) (a) 1 7 1 for
-
 47 11 subtract show
-
