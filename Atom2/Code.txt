@@ -16,11 +16,22 @@
 
 'miscellaneous words'
 (duplicate-second set) (set-sticky) set
-(duplicate show) (show-sticky) set
+(duplicate write-line) (write-line-sticky) set
 (1 add) (increment) set
 (duplicate get increment swap set) (increment-word) set
 (over get swap get add swap set) (increment-word-by-word) set
-((for-body for-key for-from for-to for-step) set ((for-from) get (for-key) get set for-body (for-from) (for-step) increment-word-by-word) ((for-from) get (for-to) get less-or-equal) while) (for) set
+
+(
+    (for-body for-key for-from for-to for-step) set 
+    (
+        (for-from) get (for-key) get set 
+        for-body 
+        (for-from) (for-step) increment-word-by-word
+    ) 
+    (
+        (for-from) get (for-to) get less-or-equal
+    ) while
+) (for) set
 
 ('System.Windows.Forms') (system-windows-forms-assembly) set
 
@@ -30,7 +41,7 @@
 
 'Console'
 ('mscorlib' 'System.Console') (console-info) set
-(1 console-info 'WriteLine' static invoke-method invoke) (show) set
+(1 console-info 'WriteLine' static invoke-method invoke) (write-line) set
 
 'MessageBox'
 (system-windows-forms-assembly 'System.Windows.Forms.MessageBox') (message-box-info) set
@@ -48,11 +59,11 @@
 (duplicate-second form-set-form-border-style) (form-set-form-border-style-sticky) set
 
 (
-    form-create form-border-style-fixed-single form-set-form-border-style-sticky form-show
-    11 (hugo) set (hugo) increment-word (hugo) get show
-    7 (a) set 5 (b) set (a) (b) increment-word-by-word (a) get  show (b) get show
+    form-create form-border-style-fixed-single form-set-form-border-style-sticky form-write-line
+    11 (hugo) set (hugo) increment-word (hugo) get write-line
+    7 (a) set 5 (b) set (a) (b) increment-word-by-word (a) get  write-line (b) get write-line
     0 (counter) set ((counter) get to-string message-box (counter) increment-word)((counter) get 5 not-equal) while
-    ("hi" show) (a) 1 7 1 for  
+    ("hi" write-line) (a) 1 7 1 for  
 ) 
 (tests) set
 
@@ -64,5 +75,7 @@ form form-show
 
 form-border-style-fixed-single to-string message-box
 
-((a) get show) (a) 1 7 1 for
-47 11 subtract show
+((a) get write-line) (a) 1 7 1 for
+47 11 subtract write-line
+
+tests

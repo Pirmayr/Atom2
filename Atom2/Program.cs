@@ -3,19 +3,19 @@ using System.IO;
 
 namespace Atom2
 {
-    internal static class MainClass
+  internal static class MainClass
+  {
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
-        {
-            try
-            {
-                new Runtime().Run(File.ReadAllText(args[0]));
-                Console.Write("done");
-            }
-            catch (Exception exception)
-            {
-                Console.Write(exception.Message);
-            }
-        }
+      try
+      {
+        new Runtime().Run(File.ReadAllText(args[0]));
+        Console.Write("done");
+      }
+      catch (Exception exception)
+      {
+        Console.Write(exception.Message);
+      }
     }
+  }
 }
