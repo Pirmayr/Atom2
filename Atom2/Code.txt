@@ -16,66 +16,63 @@
 
 'miscellaneous words'
 (duplicate-second set) (set-sticky) set
-(duplicate write-line) (write-line-sticky) set
+(duplicate show) (show-sticky) set
 (1 add) (increment) set
 (duplicate get increment swap set) (increment-word) set
 (over get swap get add swap set) (increment-word-by-word) set
-
-(
-    (for-body for-key for-from for-to for-step) set 
-    (
-        (for-from) get (for-key) get set 
-        for-body 
-        (for-from) (for-step) increment-word-by-word
-    ) 
-    (
-        (for-from) get (for-to) get less-or-equal
-    ) while
-) (for) set
+((for-body for-key for-from for-to for-step) set ((for-from) get (for-key) get set for-body (for-from) (for-step) increment-word-by-word) ((for-from) get (for-to) get less-or-equal) while) (for) set
 
 ('System.Windows.Forms') (system-windows-forms-assembly) set
 
+('mscorlib' 'System.Reflection.Assembly') (assembly-info) set
+('' instance create-instance invoke) (assembly-create) set
+(assembly-info 'LoadWithPartialName' static invoke-method invoke) (assembly-load-with-partial-name) set
+(assembly-info 'GetType' instance invoke-method invoke) (assembly-get-type) set
+
+(evaluate (get-type-assembly-name get-type-type-name) set (get-type-assembly-name) assembly-load-with-partial-name (get-type-type-name) assembly-get-type) (get-type) set
+
 'Object'
 ('mscorlib' 'System.Object') (object-info) set
-(0 object-info 'ToString' instance invoke-method invoke) (to-string) set
+(object-info 'ToString' instance invoke-method invoke) (to-string) set
 
 'Console'
 ('mscorlib' 'System.Console') (console-info) set
-(1 console-info 'WriteLine' static invoke-method invoke) (write-line) set
+(console-info 'WriteLine' static invoke-method invoke) (show) set
 
 'MessageBox'
 (system-windows-forms-assembly 'System.Windows.Forms.MessageBox') (message-box-info) set
-(1 message-box-info 'Show' static invoke-method invoke) (message-box) set
+
+(message-box-info 'Show' static invoke-method invoke) (message-box) set
 
 'FormBorderStyle'
 (system-windows-forms-assembly 'System.Windows.Forms.FormBorderStyle') (form-border-style-info) set
-(0 form-border-style-info 'FixedSingle' static get-field invoke) (form-border-style-fixed-single) set
+(() form-border-style-info 'FixedSingle' static get-field invoke) (form-border-style-fixed-single) set
 
 ('System.Windows.Forms.Form') (system-windows-forms-form-class) set
 (system-windows-forms-assembly system-windows-forms-form-class) (form-info) set
-(0 form-info '' instance create-instance invoke) (form-create) set
-(0 form-info 'Show' instance invoke-method invoke drop) (form-show) set
-(1 form-info 'set_FormBorderStyle' instance invoke-method invoke drop) (form-set-form-border-style) set
-(duplicate-second form-set-form-border-style) (form-set-form-border-style-sticky) set
+(() form-info '' instance create-instance invoke) (form-create) set
+(() form-info 'Show' instance invoke-method invoke drop) (form-show) set
+(form-info 'set_FormBorderStyle' instance invoke-method invoke drop) (form-set-form-border-style) set
 
 (
-    form-create form-border-style-fixed-single form-set-form-border-style-sticky form-write-line
-    11 (hugo) set (hugo) increment-word (hugo) get write-line
-    7 (a) set 5 (b) set (a) (b) increment-word-by-word (a) get  write-line (b) get write-line
+    ('Hello World!') message-box
+
+    form-create (form) set
+    form (form-border-style-fixed-single) form-set-form-border-style
+    form form-show
+
+    form-border-style-fixed-single to-string message-box
+
+    ((a) get show) (a) 1 7 1 for
+    47 11 subtract show
+
+    11 (hugo) set (hugo) increment-word (hugo) get show
+    7 (a) set 5 (b) set (a) (b) increment-word-by-word (a) get  show (b) get show
     0 (counter) set ((counter) get to-string message-box (counter) increment-word)((counter) get 5 not-equal) while
-    ("hi" write-line) (a) 1 7 1 for  
+    ("hi" show) (a) 1 7 1 for  
 ) 
 (tests) set
 
-'Hello World!' message-box
+(system-windows-forms-assembly system-windows-forms-form-class) get-type
 
-form-create (form) set
-form form-border-style-fixed-single form-set-form-border-style
-form form-show
-
-form-border-style-fixed-single to-string message-box
-
-((a) get write-line) (a) 1 7 1 for
-47 11 subtract write-line
-
-tests
+('done') message-box
