@@ -29,7 +29,7 @@
 (assembly-info 'LoadWithPartialName' static invoke-method invoke) (assembly-load-with-partial-name) set
 (assembly-info 'GetType' instance invoke-method invoke) (assembly-get-type) set
 
-(evaluate (get-type-assembly-name get-type-type-name) set (get-type-assembly-name) assembly-load-with-partial-name (get-type-type-name) assembly-get-type) (get-type) set
+((get-type-assembly-name get-type-type-name) set get-type-assembly-name 1 assembly-load-with-partial-name get-type-type-name 1 assembly-get-type) (get-type) set
 
 'Object'
 ('mscorlib' 'System.Object') (object-info) set
@@ -73,6 +73,6 @@
 ) 
 (tests) set
 
-(system-windows-forms-assembly system-windows-forms-form-class) get-type
+(system-windows-forms-assembly system-windows-forms-form-class) evaluate get-type 0 to-string 1 message-box
 
-('done') message-box
+('done') evaluate message-box

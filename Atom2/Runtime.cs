@@ -207,10 +207,7 @@ namespace Atom2
       string memberName = (string) stack.Pop();
       string typeName = (string) stack.Pop();
       string assemblyName = (string) stack.Pop();
-      object values = stack.Pop();
-      int stackLength = stack.Count;
-      Evaluate(values);
-      int argumentsCount = stack.Count - stackLength;
+      int argumentsCount = (int) stack.Pop();
       object[] arguments = stack.Pop(argumentsCount);
       Assembly assembly = Assembly.LoadWithPartialName(assemblyName);
       Type type = assembly.GetType(typeName);
