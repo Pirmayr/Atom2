@@ -48,8 +48,10 @@ namespace Atom2
     public Runtime()
     {
       words.Add("invoke", new Action(Invoke));
+      words.Add("equal", BinaryAction(ExpressionType.Equal));
       words.Add("not-equal", BinaryAction(ExpressionType.NotEqual));
       words.Add("less-or-equal", BinaryAction(ExpressionType.LessThanOrEqual));
+      words.Add("less", BinaryAction(ExpressionType.LessThan));
       words.Add("add", BinaryAction(ExpressionType.Add));
       words.Add("subtract", BinaryAction(ExpressionType.Subtract));
       words.Add("set", new Action(Set));
@@ -57,12 +59,10 @@ namespace Atom2
       words.Add("if", new Action(If));
       words.Add("while", new Action(While));
       words.Add("evaluate", new Action(Evaluate));
+      words.Add("length", new Action(Length));
     }
 
-    public void Run(string code)
-    {
-      Evaluate(GetItems(GetTokens(code)));
-    }
+    public void Run(string code) => Evaluate(GetItems(GetTokens(code)));
 
     private static Items GetItems(Tokens tokens)
     {
@@ -139,10 +139,7 @@ namespace Atom2
       Process(unit);
     }
 
-    private void Evaluate()
-    {
-      Evaluate(stack.Pop());
-    }
+    private void Evaluate() => Evaluate(stack.Pop());
 
     private void Get()
     {
@@ -196,7 +193,6 @@ namespace Atom2
       if ((dynamic) stack.Pop())
       {
         Evaluate(body);
-        Evaluate(condition);
       }
     }
 
@@ -218,6 +214,10 @@ namespace Atom2
       object result = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
       stack.Push(result);
     }
+
+    private void Length() => stack.Push(((Items)stack.Pop()).Count());
+
+    private void Null() => stack.Push(null);
 
     private void Process(object unit)
     {
