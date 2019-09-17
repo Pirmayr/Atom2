@@ -42,7 +42,7 @@ namespace Atom2
     private const char Whitespace = char.MaxValue;
     private readonly Stack stack = new Stack();
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '\''};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Whitespace, '(', ')', '\''};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Whitespace, '(', ')', '[', ']', '\''};
     private readonly Words words = new Words();
 
     public Runtime()
@@ -60,21 +60,44 @@ namespace Atom2
       words.Add("while", new Action(While));
       words.Add("evaluate", new Action(Evaluate));
       words.Add("length", new Action(Length));
+      words.Add("split", new Action(Split));
+      words.Add("right-parenthesis", new Action(RightParenthesis));
+      words.Add("right-bracket", new Action(RightBracket));
     }
 
-    public void Run(string code) => Evaluate(GetItems(GetTokens(code)));
+    public void Run(string code) => Evaluate(GetItems(GetTokens(code), out _));
 
-    private static Items GetItems(Tokens tokens)
+    private static Items GetItems(Tokens tokens, out string lastToken)
     {
+      lastToken = null;
       Items result = new Items();
       while (0 < tokens.Count)
       {
         string currentToken = tokens.Dequeue();
+        lastToken = currentToken;
         if (currentToken == "(")
         {
-          result.Add(GetItems(tokens));
+          var currentItems = GetItems(tokens, out string currentLastToken);
+          result.Add(currentItems);
+          if (currentLastToken == ")")
+          {
+            result.Add("right-parenthesis");
+          }
+        }
+        else if (currentToken == "[")
+        {
+          var currentItems = GetItems(tokens, out string currentLastToken);
+          result.Add(currentItems);
+          if (currentLastToken == "]")
+          {
+            result.Add("right-bracket");
+          }
         }
         else if (currentToken == ")")
+        {
+          break;
+        }
+        else if (currentToken == "]")
         {
           break;
         }
@@ -165,6 +188,14 @@ namespace Atom2
             result.Enqueue(")");
             characters.Dequeue();
             break;
+          case '[':
+            result.Enqueue("[");
+            characters.Dequeue();
+            break;
+          case ']':
+            result.Enqueue("]");
+            characters.Dequeue();
+            break;
           case '\'':
             characters.Dequeue();
             result.Enqueue(GetToken(characters, stringStopCharacters));
@@ -234,12 +265,29 @@ namespace Atom2
       stack.Push(unit);
     }
 
+    private void RightBracket()
+    {
+    }
+
+    private void RightParenthesis()
+    {
+
+    }
+
     private void Set()
     {
       foreach (object currentItem in Enumerable.Reverse((Items) stack.Pop()))
       {
         words[currentItem.ToString()] = stack.Pop();
       }
+    }
+
+    private void Split()
+    {
+      var items = stack.Pop();
+      var stackLength = stack.Count;
+      Evaluate(items);
+      stack.Push(stack.Count - stackLength);
     }
 
     private void While()
