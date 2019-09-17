@@ -1,8 +1,8 @@
-﻿(set) (right-brace) set
+﻿((comment-dummy) set) (comment) set
 (call) (right-bracket) set
-((comment-dummy) set) (comment) set
+(set) (right-brace) set
 
-'flags for "InvokeMember"' comment
+"flags for InvokeMember" comment
 (512) (create-instance) set
 (256) (invoke-method) set
 (0) (default) set
@@ -10,7 +10,7 @@
 (4) (instance) set
 (1024) (get-field) set
 
-'stack-manipulation' comment
+"stack-manipulation" comment
 ({drop-1}) {drop}
 ((swap-1 swap-2) set (swap-2 swap-1) get) (swap) set
 ((duplicate-1) set (duplicate-1 duplicate-1) get) (duplicate) set
@@ -18,13 +18,13 @@
 ((rotate-1 rotate-2 rotate-3) set (rotate-2 rotate-3 rotate-1) get) (rotate) set 
 (over swap) (duplicate-second) set
 
-'miscellaneous words' comment
+"miscellaneous words" comment
 (duplicate-second set) (set-sticky) set
 (duplicate show) (show-sticky) set
 (1 add) (increment) set
 (duplicate get increment swap set) (increment-word) set
 (over get swap get add swap set) (increment-word-by-word) set
-((for-body for-key for-from for-to for-step) set ((for-from) get (for-key) get set for-body (for-from) (for-step) increment-word-by-word) ((for-from) get (for-to) get less-or-equal) while) (for) set
+<(for-body for-key for-from for-to for-step) set ((for-from) get (for-key) get set for-body (for-from) (for-step) increment-word-by-word) ((for-from) get (for-to) get less-or-equal) while> (for) set
 
 (
     (if-else-if-block if-else-else-block if-else-condition) set
@@ -39,35 +39,35 @@
 )
 (if-else) set
 
-'Object' comment
-(mscorlib-assembly 'System.Object') (object-info) set
-(0 object-info 'ToString' instance invoke-method invoke) (to-string) set
-(0 object-info 'GetType' instance invoke-method invoke) (object-get-type) set
+"Object" comment
+(mscorlib-assembly "System.Object") (object-info) set
+(0 object-info "ToString" instance invoke-method invoke) (to-string) set
+(0 object-info "GetType" instance invoke-method invoke) (object-get-type) set
 (object-get-type type-get-name) (object-get-type-name) set
 
-'assemblies' comment
+"assemblies" comment
 (mscorlib) (mscorlib-assembly) set
-('System.Windows.Forms') (system-windows-forms-assembly) set
+("System.Windows.Forms") (system-windows-forms-assembly) set
 
-'Assembly' comment
-(mscorlib-assembly 'System.Reflection.Assembly') (assembly-info) set
-('' instance create-instance invoke) (assembly-create) set
-(1 assembly-info 'LoadWithPartialName' static invoke-method invoke) (assembly-load-with-partial-name) set
-(1 assembly-info 'GetType' instance invoke-method invoke) (assembly-get-type) set
-(0 assembly-info 'GetName' instance invoke-method invoke) (assembly-get-name) set
+"Assembly" comment
+(mscorlib-assembly "System.Reflection.Assembly") (assembly-info) set
+("" instance create-instance invoke) (assembly-create) set
+(1 assembly-info "LoadWithPartialName" static invoke-method invoke) (assembly-load-with-partial-name) set
+(1 assembly-info "GetType" instance invoke-method invoke) (assembly-get-type) set
+(0 assembly-info "GetName" instance invoke-method invoke) (assembly-get-name) set
 (swap assembly-load-with-partial-name swap assembly-get-type) (get-type) set
 
-'AssemblyName' comment
-(mscorlib-assembly 'System.Reflection.AssemblyName') (assembly-name-info) set
-(0 assembly-name-info 'get_Name' instance invoke-method invoke) (assembly-name-get-name) set
+"AssemblyName" comment
+(mscorlib-assembly "System.Reflection.AssemblyName") (assembly-name-info) set
+(0 assembly-name-info "get_Name" instance invoke-method invoke) (assembly-name-get-name) set
 
-'Type' comment
-(mscorlib-assembly 'System.Type') (type-info) set
-(0 type-info 'get_Assembly' instance invoke-method invoke) (type-get-assembly) set
-(0 type-info 'get_Name' instance invoke-method invoke) (type-get-name) set
-(0 type-info 'get_Namespace' instance invoke-method invoke) (type-get-namespace) set
+"Type" comment
+(mscorlib-assembly "System.Type") (type-info) set
+(0 type-info "get_Assembly" instance invoke-method invoke) (type-get-assembly) set
+(0 type-info "get_Name" instance invoke-method invoke) (type-get-name) set
+(0 type-info "get_Namespace" instance invoke-method invoke) (type-get-namespace) set
 (type-get-assembly assembly-get-name assembly-name-get-name) (type-get-assembly-name) set
-(duplicate type-get-namespace '.' add swap type-get-name add) (type-get-qualified-name) set
+(duplicate type-get-namespace "." add swap type-get-name add) (type-get-qualified-name) set
 
 (
     (invoke-member-type-or-instance invoke-member-name invoke-member-arguments) set
@@ -88,7 +88,7 @@
         instance
     )
     (
-        invoke-member-type-or-instance object-get-type-name 'RuntimeType' equal 
+        invoke-member-type-or-instance object-get-type-name "RuntimeType" equal 
     )
     if-else
     invoke-method
@@ -96,32 +96,32 @@
 )
 (call) set      
 
-'Console' comment
-('mscorlib' 'System.Console') (console-info) set
-(console-info 'WriteLine' static invoke-method invoke) (show) set
+"Console" comment
+("mscorlib" "System.Console") (console-info) set
+(console-info "WriteLine" static invoke-method invoke) (show) set
 
-'MessageBox' comment
-('System.Windows.Forms.MessageBox') (system-windows-forms-message-box-class) set
+"MessageBox" comment
+("System.Windows.Forms.MessageBox") (system-windows-forms-message-box-class) set
 (system-windows-forms-assembly system-windows-forms-message-box-class) (message-box-info) set
 (system-windows-forms-assembly system-windows-forms-message-box-class get-type) (system-windows-forms-message-box-type) set
 (system-windows-forms-assembly system-windows-forms-form-class get-type) (system-windows-forms-form-type) set
-(to-string 1 message-box-info 'Show' static invoke-method invoke drop) (message-box) set
+(to-string 1 message-box-info "Show" static invoke-method invoke drop) (message-box) set
 (duplicate message-box) (trace) set
 
-'FormBorderStyle' comment
-(system-windows-forms-assembly 'System.Windows.Forms.FormBorderStyle') (form-border-style-info) set
-(0 form-border-style-info 'FixedSingle' static get-field invoke) (form-border-style-fixed-single) set
+"FormBorderStyle" comment
+(system-windows-forms-assembly "System.Windows.Forms.FormBorderStyle") (form-border-style-info) set
+(0 form-border-style-info "FixedSingle" static get-field invoke) (form-border-style-fixed-single) set
 
-'Form' comment
-('System.Windows.Forms.Form') (system-windows-forms-form-class) set
+"Form" comment
+("System.Windows.Forms.Form") (system-windows-forms-form-class) set
 (system-windows-forms-assembly system-windows-forms-form-class) (form-info) set
 (system-windows-forms-assembly system-windows-forms-form-class get-type) (system-windows-forms-form-type) set
-(0 form-info '' instance create-instance invoke) (form-create) set
-(0 form-info 'Show' instance invoke-method invoke drop) (form-show) set
-(1 form-info 'set_FormBorderStyle' instance invoke-method invoke drop) (form-set-form-border-style) set
+(0 form-info "" instance create-instance invoke) (form-create) set
+(0 form-info "Show" instance invoke-method invoke drop) (form-show) set
+(1 form-info "set_FormBorderStyle" instance invoke-method invoke drop) (form-set-form-border-style) set
 
 (
-    ('Hello World!') message-box
+    ("Hello World!") message-box
 
     form-create (form) set
     form form-border-style-fixed-single form-set-form-border-style
@@ -149,9 +149,8 @@
 ) 
 (tests) set
 
-<'hugo' {a} message-box-info get-type Show [a to-string]> (a) 1 5 1 for
+<"hugo" {abc} message-box-info get-type Show [abc to-string]> (abc) 1 5 1 for
 
-a message-box
+abc message-box
 
-'done' message-box
-
+"done" message-box

@@ -34,15 +34,15 @@ namespace Atom2
       }
     }
 
-    private sealed class Words : ScopedDictionary<string, object> // Dictionary<string, object>
+    private sealed class Words : ScopedDictionary<string, object>
     {
     }
 
     private const char Eof = char.MinValue;
     private const char Whitespace = char.MaxValue;
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '\''};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Whitespace, '(', ')', '[', ']', '{', '}', '<', '>', '\''};
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '"' };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Whitespace, '(', ')', '[', ']', '{', '}', '<', '>', '"' };
     private readonly Words words = new Words();
 
     public Runtime()
@@ -69,14 +69,25 @@ namespace Atom2
       words.Add("right-brace", new Action(RightBrace));
       words.Add("right-bracket", new Action(RightBracket));
       words.Add("right-parenthesis", new Action(RightParenthesis));
+      words.Add("post-left-parenthesis", new Action(PostLeftParenthesis));
+      words.Add("pre-right-parenthesis", new Action(PreRightParenthesis));
+      words.Add("post-left-angle", new Action(PostLeftAngle));
+      words.Add("pre-right-angle", new Action(PreRightAngle));
     }
 
-    public void Run(string code) => Evaluate(GetItems(GetTokens(code), out _));
+    public void Run(string code)
+    {
+      Evaluate(GetItems(GetTokens(code), null, out _));
+    }
 
-    private static Items GetItems(Tokens tokens, out string lastToken)
+    private static Items GetItems(Tokens tokens, string firstToken, out string lastToken)
     {
       lastToken = null;
       Items result = new Items();
+      if (firstToken == "<")
+      {
+        result.Add("post-left-angle");
+      }
       while (0 < tokens.Count)
       {
         string currentToken = tokens.Dequeue();
@@ -84,7 +95,7 @@ namespace Atom2
         if (currentToken == "(")
         {
           result.Add("left-parenthesis");
-          var currentItems = GetItems(tokens, out string currentLastToken);
+          Items currentItems = GetItems(tokens, currentToken, out string currentLastToken);
           result.Add(currentItems);
           if (currentLastToken == ")")
           {
@@ -94,7 +105,7 @@ namespace Atom2
         else if (currentToken == "[")
         {
           result.Add("left-bracket");
-          var currentItems = GetItems(tokens, out string currentLastToken);
+          Items currentItems = GetItems(tokens, currentToken, out string currentLastToken);
           result.Add(currentItems);
           if (currentLastToken == "]")
           {
@@ -104,7 +115,7 @@ namespace Atom2
         else if (currentToken == "{")
         {
           result.Add("left-brace");
-          var currentItems = GetItems(tokens, out string currentLastToken);
+          Items currentItems = GetItems(tokens, currentToken, out string currentLastToken);
           result.Add(currentItems);
           if (currentLastToken == "}")
           {
@@ -114,7 +125,7 @@ namespace Atom2
         else if (currentToken == "<")
         {
           result.Add("left-angle");
-          var currentItems = GetItems(tokens, out string currentLastToken);
+          Items currentItems = GetItems(tokens, currentToken, out string currentLastToken);
           result.Add(currentItems);
           if (currentLastToken == ">")
           {
@@ -135,6 +146,7 @@ namespace Atom2
         }
         else if (currentToken == ">")
         {
+          result.Add("pre-right-angle");
           break;
         }
         else
@@ -171,6 +183,10 @@ namespace Atom2
       {
         return doubleValue;
       }
+      if (token.StartsWith("\"", StringComparison.Ordinal))
+      {
+        return token.Substring(1);
+      }
       return token;
     }
 
@@ -180,7 +196,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -198,11 +214,14 @@ namespace Atom2
       Process(unit);
     }
 
-    private void Evaluate() => Evaluate(stack.Pop());
+    private void Evaluate()
+    {
+      Evaluate(stack.Pop());
+    }
 
     private void Get()
     {
-      foreach (object currentItem in (Items) stack.Pop())
+      foreach (object currentItem in (Items)stack.Pop())
       {
         stack.Push(words[currentItem.ToString()]);
       }
@@ -227,9 +246,9 @@ namespace Atom2
             result.Enqueue(nextCharacter.ToString());
             characters.Dequeue();
             break;
-          case '\'':
+          case '"':
             characters.Dequeue();
-            result.Enqueue(GetToken(characters, stringStopCharacters));
+            result.Enqueue('"' + GetToken(characters, stringStopCharacters));
             characters.Dequeue();
             break;
           default:
@@ -252,7 +271,7 @@ namespace Atom2
       object condition = stack.Pop();
       object body = stack.Pop();
       Evaluate(condition);
-      if ((dynamic) stack.Pop())
+      if ((dynamic)stack.Pop())
       {
         Evaluate(body);
       }
@@ -260,12 +279,12 @@ namespace Atom2
 
     private void Invoke()
     {
-      BindingFlags memberKind = (BindingFlags) stack.Pop();
-      BindingFlags memberType = (BindingFlags) stack.Pop();
-      string memberName = (string) stack.Pop();
-      string typeName = (string) stack.Pop();
-      string assemblyName = (string) stack.Pop();
-      int argumentsCount = (int) stack.Pop();
+      BindingFlags memberKind = (BindingFlags)stack.Pop();
+      BindingFlags memberType = (BindingFlags)stack.Pop();
+      string memberName = (string)stack.Pop();
+      string typeName = (string)stack.Pop();
+      string assemblyName = (string)stack.Pop();
+      int argumentsCount = (int)stack.Pop();
       object[] arguments = stack.Pop(argumentsCount);
       Assembly assembly = Assembly.LoadWithPartialName(assemblyName);
       Type type = assembly.GetType(typeName);
@@ -277,9 +296,15 @@ namespace Atom2
       stack.Push(result);
     }
 
-    private void Length() => stack.Push(((Items)stack.Pop()).Count());
+    private void Length()
+    {
+      stack.Push(((Items)stack.Pop()).Count());
+    }
 
-    private void Null() => stack.Push(null);
+    private void Null()
+    {
+      stack.Push(null);
+    }
 
     private void Process(object unit)
     {
@@ -298,7 +323,6 @@ namespace Atom2
 
     private void LeftAngle()
     {
-      words.EnterScope();
     }
 
     private void LeftBrace()
@@ -313,9 +337,26 @@ namespace Atom2
     {
     }
 
-    private void RightAngle()
+    private void PostLeftAngle()
+    {
+      words.EnterScope();
+    }
+
+    private void PostLeftParenthesis()
+    {
+    }
+
+    private void PreRightAngle()
     {
       words.LeaveScope();
+    }
+
+    private void PreRightParenthesis()
+    {
+    }
+
+    private void RightAngle()
+    {
     }
 
     private void RightBrace()
@@ -332,7 +373,7 @@ namespace Atom2
 
     private void Set()
     {
-      foreach (object currentItem in Enumerable.Reverse((Items) stack.Pop()))
+      foreach (object currentItem in Enumerable.Reverse((Items)stack.Pop()))
       {
         words[currentItem.ToString()] = stack.Pop();
       }
@@ -340,8 +381,8 @@ namespace Atom2
 
     private void Split()
     {
-      var items = stack.Pop();
-      var stackLength = stack.Count;
+      object items = stack.Pop();
+      int stackLength = stack.Count;
       Evaluate(items);
       stack.Push(stack.Count - stackLength);
     }
@@ -351,7 +392,7 @@ namespace Atom2
       object condition = stack.Pop();
       object body = stack.Pop();
       Evaluate(condition);
-      while ((dynamic) stack.Pop())
+      while ((dynamic)stack.Pop())
       {
         Evaluate(body);
         Evaluate(condition);
