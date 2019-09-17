@@ -1,4 +1,6 @@
-﻿((comment-dummy) set) (comment) set
+﻿(set) (right-brace) set
+(call) (right-bracket) set
+((comment-dummy) set) (comment) set
 
 'flags for "InvokeMember"' comment
 (512) (create-instance) set
@@ -9,7 +11,7 @@
 (1024) (get-field) set
 
 'stack-manipulation' comment
-((drop-1) set) (drop) set
+({drop-1}) {drop}
 ((swap-1 swap-2) set (swap-2 swap-1) get) (swap) set
 ((duplicate-1) set (duplicate-1 duplicate-1) get) (duplicate) set
 ((over-1 over-2) set (over-1 over-2 over-1) get) (over) set
@@ -147,9 +149,9 @@
 ) 
 (tests) set
 
-(call) (right-bracket) set
+<'hugo' {a} message-box-info get-type Show [a to-string]> (a) 1 5 1 for
 
-(message-box-info get-type Show [a to-string]) (a) 1 5 1 for
+a message-box
 
 'done' message-box
 

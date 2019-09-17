@@ -34,7 +34,7 @@ namespace Atom2
       }
     }
 
-    private sealed class Words : Dictionary<string, object>
+    private sealed class Words : ScopedDictionary<string, object> // Dictionary<string, object>
     {
     }
 
@@ -42,7 +42,7 @@ namespace Atom2
     private const char Whitespace = char.MaxValue;
     private readonly Stack stack = new Stack();
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '\''};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Whitespace, '(', ')', '[', ']', '\''};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Whitespace, '(', ')', '[', ']', '{', '}', '<', '>', '\''};
     private readonly Words words = new Words();
 
     public Runtime()
@@ -61,8 +61,14 @@ namespace Atom2
       words.Add("evaluate", new Action(Evaluate));
       words.Add("length", new Action(Length));
       words.Add("split", new Action(Split));
-      words.Add("right-parenthesis", new Action(RightParenthesis));
+      words.Add("left-angle", new Action(LeftAngle));
+      words.Add("left-brace", new Action(LeftBrace));
+      words.Add("left-bracket", new Action(LeftBracket));
+      words.Add("left-parenthesis", new Action(LeftParenthesis));
+      words.Add("right-angle", new Action(RightAngle));
+      words.Add("right-brace", new Action(RightBrace));
       words.Add("right-bracket", new Action(RightBracket));
+      words.Add("right-parenthesis", new Action(RightParenthesis));
     }
 
     public void Run(string code) => Evaluate(GetItems(GetTokens(code), out _));
@@ -77,6 +83,7 @@ namespace Atom2
         lastToken = currentToken;
         if (currentToken == "(")
         {
+          result.Add("left-parenthesis");
           var currentItems = GetItems(tokens, out string currentLastToken);
           result.Add(currentItems);
           if (currentLastToken == ")")
@@ -86,6 +93,7 @@ namespace Atom2
         }
         else if (currentToken == "[")
         {
+          result.Add("left-bracket");
           var currentItems = GetItems(tokens, out string currentLastToken);
           result.Add(currentItems);
           if (currentLastToken == "]")
@@ -93,11 +101,39 @@ namespace Atom2
             result.Add("right-bracket");
           }
         }
+        else if (currentToken == "{")
+        {
+          result.Add("left-brace");
+          var currentItems = GetItems(tokens, out string currentLastToken);
+          result.Add(currentItems);
+          if (currentLastToken == "}")
+          {
+            result.Add("right-brace");
+          }
+        }
+        else if (currentToken == "<")
+        {
+          result.Add("left-angle");
+          var currentItems = GetItems(tokens, out string currentLastToken);
+          result.Add(currentItems);
+          if (currentLastToken == ">")
+          {
+            result.Add("right-angle");
+          }
+        }
         else if (currentToken == ")")
         {
           break;
         }
         else if (currentToken == "]")
+        {
+          break;
+        }
+        else if (currentToken == "}")
+        {
+          break;
+        }
+        else if (currentToken == ">")
         {
           break;
         }
@@ -181,19 +217,14 @@ namespace Atom2
         switch (nextCharacter)
         {
           case '(':
-            result.Enqueue("(");
-            characters.Dequeue();
-            break;
           case ')':
-            result.Enqueue(")");
-            characters.Dequeue();
-            break;
           case '[':
-            result.Enqueue("[");
-            characters.Dequeue();
-            break;
           case ']':
-            result.Enqueue("]");
+          case '{':
+          case '}':
+          case '<':
+          case '>':
+            result.Enqueue(nextCharacter.ToString());
             characters.Dequeue();
             break;
           case '\'':
@@ -265,13 +296,38 @@ namespace Atom2
       stack.Push(unit);
     }
 
+    private void LeftAngle()
+    {
+      words.EnterScope();
+    }
+
+    private void LeftBrace()
+    {
+    }
+
+    private void LeftBracket()
+    {
+    }
+
+    private void LeftParenthesis()
+    {
+    }
+
+    private void RightAngle()
+    {
+      words.LeaveScope();
+    }
+
+    private void RightBrace()
+    {
+    }
+
     private void RightBracket()
     {
     }
 
     private void RightParenthesis()
     {
-
     }
 
     private void Set()
