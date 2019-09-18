@@ -32,13 +32,6 @@ namespace Atom2
 
     public bool TryGetValue(TK key, out TV value)
     {
-      if (0 < scopes.Count && key.Equals("abc"))
-      {
-#pragma warning disable CS0219 // Variable is assigned but its value is never used
-        int a = 0;
-#pragma warning restore CS0219 // Variable is assigned but its value is never used
-      }
-
       foreach (Dictionary<TK, TV> currentScope in scopes)
       {
         if (currentScope.TryGetValue(key, out value))

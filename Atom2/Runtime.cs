@@ -34,19 +34,87 @@ namespace Atom2
       }
     }
 
+    private sealed class WordDescription
+    {
+      public readonly ActionKind actionKind;
+      public readonly string name;
+      private readonly Action[] actions;
+      public bool IsDelimiter => IsLeftDelimiter || IsRightDelimiter;
+      public bool IsLeftDelimiter => actionKind == ActionKind.LeftItemsDelimiter;
+      public bool IsRightDelimiter => actionKind == ActionKind.RightItemsDelimiter;
+      public bool IsValidPostLeftDelimiter => IsLeftDelimiter && PostAction != null;
+      public bool IsValidPostRightDelimiter => IsRightDelimiter && PostAction != null;
+      public bool IsValidPreLeftDelimiter => IsLeftDelimiter && PreAction != null;
+      public bool IsValidPreRightDelimiter => IsRightDelimiter && PreAction != null;
+      public Action NormalAction => actions[0];
+      public Action PostAction => actions[1];
+      public string PostName => "post-" + name;
+      public Action PreAction => actions[0];
+      public string PreName => "pre-" + name;
+
+      public WordDescription(string name, ActionKind actionKind, params Action[] actions)
+      {
+        this.name = name;
+        this.actionKind = actionKind;
+        this.actions = actions;
+      }
+    }
+
+    private sealed class WordDescriptions : Dictionary<string, WordDescription>
+    {
+    }
+
     private sealed class Words : ScopedDictionary<string, object>
     {
+    }
+
+    private enum ActionKind
+    {
+      Normal,
+      LeftItemsDelimiter,
+      RightItemsDelimiter
     }
 
     private const char Eof = char.MinValue;
     private const char Whitespace = char.MaxValue;
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '"' };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Whitespace, '(', ')', '[', ']', '{', '}', '<', '>', '"' };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"'};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Whitespace, '(', ')', '[', ']', '{', '}', '<', '>', '"'};
+    private readonly WordDescriptions wordDescriptions = new WordDescriptions();
     private readonly Words words = new Words();
 
     public Runtime()
     {
+      wordDescriptions.Add("<", new WordDescription("left-angle", ActionKind.LeftItemsDelimiter, NoAction, NoAction));
+      wordDescriptions.Add(">", new WordDescription("right-angle", ActionKind.RightItemsDelimiter, NoAction, NoAction));
+      wordDescriptions.Add("{", new WordDescription("left-brace", ActionKind.LeftItemsDelimiter, NoAction, null));
+      wordDescriptions.Add("}", new WordDescription("right-brace", ActionKind.RightItemsDelimiter, null, NoAction));
+      wordDescriptions.Add("[", new WordDescription("left-bracket", ActionKind.LeftItemsDelimiter, NoAction, null));
+      wordDescriptions.Add("]", new WordDescription("right-bracket", ActionKind.RightItemsDelimiter, null, NoAction));
+      wordDescriptions.Add("(", new WordDescription("left-parenthesis", ActionKind.LeftItemsDelimiter, NoAction, null));
+      wordDescriptions.Add(")", new WordDescription("right-parenthesis", ActionKind.RightItemsDelimiter, null, NoAction));
+      foreach (WordDescription currentValue in wordDescriptions.Values)
+      {
+        switch (currentValue.actionKind)
+        {
+          case ActionKind.Normal:
+            words.Add(currentValue.name, currentValue.NormalAction);
+            break;
+          case ActionKind.LeftItemsDelimiter:
+          case ActionKind.RightItemsDelimiter:
+            Action preAction = currentValue.PreAction;
+            if (preAction != null)
+            {
+              words.Add(currentValue.PreName, preAction);
+            }
+            Action postAction = currentValue.PostAction;
+            if (postAction != null)
+            {
+              words.Add(currentValue.PostName, postAction);
+            }
+            break;
+        }
+      }
       words.Add("invoke", new Action(Invoke));
       words.Add("equal", BinaryAction(ExpressionType.Equal));
       words.Add("not-equal", BinaryAction(ExpressionType.NotEqual));
@@ -61,101 +129,13 @@ namespace Atom2
       words.Add("evaluate", new Action(Evaluate));
       words.Add("length", new Action(Length));
       words.Add("split", new Action(Split));
-      words.Add("left-angle", new Action(LeftAngle));
-      words.Add("left-brace", new Action(LeftBrace));
-      words.Add("left-bracket", new Action(LeftBracket));
-      words.Add("left-parenthesis", new Action(LeftParenthesis));
-      words.Add("right-angle", new Action(RightAngle));
-      words.Add("right-brace", new Action(RightBrace));
-      words.Add("right-bracket", new Action(RightBracket));
-      words.Add("right-parenthesis", new Action(RightParenthesis));
-      words.Add("post-left-parenthesis", new Action(PostLeftParenthesis));
-      words.Add("pre-right-parenthesis", new Action(PreRightParenthesis));
-      words.Add("post-left-angle", new Action(PostLeftAngle));
-      words.Add("pre-right-angle", new Action(PreRightAngle));
+      words.Add("enter-scope", new Action(EnterScope));
+      words.Add("leave-scope", new Action(LeaveScope));
     }
 
     public void Run(string code)
     {
       Evaluate(GetItems(GetTokens(code), null, out _));
-    }
-
-    private static Items GetItems(Tokens tokens, string firstToken, out string lastToken)
-    {
-      lastToken = null;
-      Items result = new Items();
-      if (firstToken == "<")
-      {
-        result.Add("post-left-angle");
-      }
-      while (0 < tokens.Count)
-      {
-        object currentTokenObject = tokens.Dequeue();
-        string currentToken = currentTokenObject.ToString();
-        lastToken = currentToken;
-        if (currentToken == "(")
-        {
-          result.Add("left-parenthesis");
-          Items currentItems = GetItems(tokens, currentToken, out string currentLastToken);
-          result.Add(currentItems);
-          if (currentLastToken == ")")
-          {
-            result.Add("right-parenthesis");
-          }
-        }
-        else if (currentToken == "[")
-        {
-          result.Add("left-bracket");
-          Items currentItems = GetItems(tokens, currentToken, out string currentLastToken);
-          result.Add(currentItems);
-          if (currentLastToken == "]")
-          {
-            result.Add("right-bracket");
-          }
-        }
-        else if (currentToken == "{")
-        {
-          result.Add("left-brace");
-          Items currentItems = GetItems(tokens, currentToken, out string currentLastToken);
-          result.Add(currentItems);
-          if (currentLastToken == "}")
-          {
-            result.Add("right-brace");
-          }
-        }
-        else if (currentToken == "<")
-        {
-          result.Add("left-angle");
-          Items currentItems = GetItems(tokens, currentToken, out string currentLastToken);
-          result.Add(currentItems);
-          if (currentLastToken == ">")
-          {
-            result.Add("right-angle");
-          }
-        }
-        else if (currentToken == ")")
-        {
-          break;
-        }
-        else if (currentToken == "]")
-        {
-          break;
-        }
-        else if (currentToken == "}")
-        {
-          break;
-        }
-        else if (currentToken == ">")
-        {
-          result.Add("pre-right-angle");
-          break;
-        }
-        else
-        {
-          result.Add(ToObject(currentToken));
-        }
-      }
-      return result;
     }
 
     private static string GetToken(Queue<char> characters, HashSet<char> stopCharacters)
@@ -172,6 +152,10 @@ namespace Atom2
     {
       char result = (0 < characters.Count) ? characters.Peek() : char.MinValue;
       return result == Eof ? result : char.IsWhiteSpace(result) ? Whitespace : result;
+    }
+
+    private static void NoAction()
+    {
     }
 
     private static object ToObject(string token)
@@ -193,12 +177,17 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
+      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
       Delegate function = lambda.Compile();
       return () => { stack.Push(function.DynamicInvoke(stack.Pop(), stack.Pop())); };
+    }
+
+    private void EnterScope()
+    {
+      words.EnterScope();
     }
 
     private void Evaluate(object unit)
@@ -218,10 +207,51 @@ namespace Atom2
 
     private void Get()
     {
-      foreach (object currentItem in (Items)stack.Pop())
+      foreach (object currentItem in (Items) stack.Pop())
       {
         stack.Push(words[currentItem.ToString()]);
       }
+    }
+
+    private Items GetItems(Tokens tokens, string firstToken, out string lastToken)
+    {
+      lastToken = null;
+      Items result = new Items();
+      if (firstToken != null && wordDescriptions.TryGetValue(firstToken, out WordDescription wordDescription) && wordDescription.IsValidPostLeftDelimiter)
+      {
+        result.Add(wordDescription.PostName);
+      }
+      while (0 < tokens.Count)
+      {
+        object currentTokenObject = tokens.Dequeue();
+        string currentToken = currentTokenObject.ToString();
+        lastToken = currentToken;
+        if (wordDescriptions.TryGetValue(currentToken, out WordDescription currentLeftDescription) && currentLeftDescription.IsLeftDelimiter)
+        {
+          if (currentLeftDescription.IsValidPreLeftDelimiter)
+          {
+            result.Add(currentLeftDescription.PreName);
+          }
+          result.Add(GetItems(tokens, currentToken, out string currentLastToken));
+          if (wordDescriptions.TryGetValue(currentLastToken, out WordDescription currentRightDescription) && currentRightDescription.IsValidPostRightDelimiter)
+          {
+            result.Add(currentRightDescription.PostName);
+          }
+        }
+        else if (wordDescriptions.TryGetValue(currentToken, out WordDescription currentRightDescription) && currentRightDescription.IsRightDelimiter)
+        {
+          if (currentRightDescription.IsValidPreRightDelimiter)
+          {
+            result.Add(currentRightDescription.PreName);
+          }
+          break;
+        }
+        else
+        {
+          result.Add(ToObject(currentToken));
+        }
+      }
+      return result;
     }
 
     private Tokens GetTokens(string code)
@@ -230,34 +260,24 @@ namespace Atom2
       Queue<char> characters = new Queue<char>(code.ToCharArray());
       for (char nextCharacter = NextCharacter(characters); nextCharacter != Eof; nextCharacter = NextCharacter(characters))
       {
-        switch (nextCharacter)
+        if (nextCharacter == Whitespace)
         {
-          case '(':
-          case ')':
-          case '[':
-          case ']':
-          case '{':
-          case '}':
-          case '<':
-          case '>':
-            result.Enqueue(nextCharacter.ToString());
-            characters.Dequeue();
-            break;
-          case '"':
-            characters.Dequeue();
-            result.Enqueue(GetToken(characters, stringStopCharacters));
-            characters.Dequeue();
-            break;
-          default:
-            if (nextCharacter == Whitespace)
-            {
-              characters.Dequeue();
-            }
-            else
-            {
-              result.Enqueue(ToObject(GetToken(characters, tokenStopCharacters)));
-            }
-            break;
+          characters.Dequeue();
+        }
+        else if (nextCharacter == '"')
+        {
+          characters.Dequeue();
+          result.Enqueue(GetToken(characters, stringStopCharacters));
+          characters.Dequeue();
+        }
+        else if (wordDescriptions.TryGetValue(nextCharacter.ToString(), out WordDescription wordDescription) && wordDescription.IsDelimiter)
+        {
+          result.Enqueue(nextCharacter.ToString());
+          characters.Dequeue();
+        }
+        else
+        {
+          result.Enqueue(ToObject(GetToken(characters, tokenStopCharacters)));
         }
       }
       return result;
@@ -268,7 +288,7 @@ namespace Atom2
       object condition = stack.Pop();
       object body = stack.Pop();
       Evaluate(condition);
-      if ((dynamic)stack.Pop())
+      if ((dynamic) stack.Pop())
       {
         Evaluate(body);
       }
@@ -276,12 +296,12 @@ namespace Atom2
 
     private void Invoke()
     {
-      BindingFlags memberKind = (BindingFlags)stack.Pop();
-      BindingFlags memberType = (BindingFlags)stack.Pop();
-      string memberName = (string)stack.Pop();
-      string typeName = (string)stack.Pop();
-      string assemblyName = (string)stack.Pop();
-      int argumentsCount = (int)stack.Pop();
+      BindingFlags memberKind = (BindingFlags) stack.Pop();
+      BindingFlags memberType = (BindingFlags) stack.Pop();
+      string memberName = (string) stack.Pop();
+      string typeName = (string) stack.Pop();
+      string assemblyName = (string) stack.Pop();
+      int argumentsCount = (int) stack.Pop();
       object[] arguments = stack.Pop(argumentsCount);
       Assembly assembly = Assembly.LoadWithPartialName(assemblyName);
       Type type = assembly.GetType(typeName);
@@ -293,14 +313,14 @@ namespace Atom2
       stack.Push(result);
     }
 
-    private void Length()
+    private void LeaveScope()
     {
-      stack.Push(((Items)stack.Pop()).Count());
+      words.LeaveScope();
     }
 
-    private void Null()
+    private void Length()
     {
-      stack.Push(null);
+      stack.Push(((Items) stack.Pop()).Count);
     }
 
     private void Process(object unit)
@@ -318,59 +338,9 @@ namespace Atom2
       stack.Push(unit);
     }
 
-    private void LeftAngle()
-    {
-    }
-
-    private void LeftBrace()
-    {
-    }
-
-    private void LeftBracket()
-    {
-    }
-
-    private void LeftParenthesis()
-    {
-    }
-
-    private void PostLeftAngle()
-    {
-      words.EnterScope();
-    }
-
-    private void PostLeftParenthesis()
-    {
-    }
-
-    private void PreRightAngle()
-    {
-      words.LeaveScope();
-    }
-
-    private void PreRightParenthesis()
-    {
-    }
-
-    private void RightAngle()
-    {
-    }
-
-    private void RightBrace()
-    {
-    }
-
-    private void RightBracket()
-    {
-    }
-
-    private void RightParenthesis()
-    {
-    }
-
     private void Set()
     {
-      foreach (object currentItem in Enumerable.Reverse((Items)stack.Pop()))
+      foreach (object currentItem in Enumerable.Reverse((Items) stack.Pop()))
       {
         words[currentItem.ToString()] = stack.Pop();
       }
@@ -389,7 +359,7 @@ namespace Atom2
       object condition = stack.Pop();
       object body = stack.Pop();
       Evaluate(condition);
-      while ((dynamic)stack.Pop())
+      while ((dynamic) stack.Pop())
       {
         Evaluate(body);
         Evaluate(condition);

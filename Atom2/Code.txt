@@ -1,6 +1,10 @@
 ﻿((comment-dummy) set) (comment) set
-(call) (right-bracket) set
-(set) (right-brace) set
+
+"Fundamentals" comment
+(call) (post-right-bracket) set
+(set) (post-right-brace) set
+(enter-scope) (post-left-angle) set
+(leave-scope) (pre-right-angle) set
 
 "flags for InvokeMember" comment
 (512) (create-instance) set
@@ -11,7 +15,7 @@
 (1024) (get-field) set
 
 "stack-manipulation" comment
-({drop-1}) {drop}
+({dummy}) {drop}
 ((swap-1 swap-2) set (swap-2 swap-1) get) (swap) set
 ((duplicate-1) set (duplicate-1 duplicate-1) get) (duplicate) set
 ((over-1 over-2) set (over-1 over-2 over-1) get) (over) set
@@ -90,7 +94,7 @@
 "Tests" comment
 4711 {abc}
 abc message
-<abc trace message> (abc) 1 5 1 for
+<abc message> (abc) 1 5 1 for
 abc message
 
 form-create Show []
