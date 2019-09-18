@@ -12,7 +12,7 @@ using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 
 namespace Atom2
 {
-  using Tokens = Queue<string>;
+  using Tokens = Queue<object>;
   using CharHashSet = HashSet<char>;
 
   public sealed class Runtime
@@ -90,7 +90,8 @@ namespace Atom2
       }
       while (0 < tokens.Count)
       {
-        string currentToken = tokens.Dequeue();
+        object currentTokenObject = tokens.Dequeue();
+        string currentToken = currentTokenObject.ToString();
         lastToken = currentToken;
         if (currentToken == "(")
         {
@@ -183,10 +184,6 @@ namespace Atom2
       {
         return doubleValue;
       }
-      if (token.StartsWith("\"", StringComparison.Ordinal))
-      {
-        return token.Substring(1);
-      }
       return token;
     }
 
@@ -248,7 +245,7 @@ namespace Atom2
             break;
           case '"':
             characters.Dequeue();
-            result.Enqueue('"' + GetToken(characters, stringStopCharacters));
+            result.Enqueue(GetToken(characters, stringStopCharacters));
             characters.Dequeue();
             break;
           default:
@@ -258,7 +255,7 @@ namespace Atom2
             }
             else
             {
-              result.Enqueue(GetToken(characters, tokenStopCharacters));
+              result.Enqueue(ToObject(GetToken(characters, tokenStopCharacters)));
             }
             break;
         }
