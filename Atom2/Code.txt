@@ -26,6 +26,7 @@
 (duplicate-second set) (set-sticky) set
 (duplicate show) (show-sticky) set
 (1 add) (increment) set
+(get set) {set-by-word}
 (duplicate get increment swap set) (increment-word) set
 (over get swap get add swap set) (increment-word-by-word) set
 <{body key from to step} (from (key) get set body (from) (step) increment-word-by-word) (from to less-or-equal) while> {for}
@@ -92,10 +93,12 @@
 (1 form-info "set_FormBorderStyle" instance invoke-method invoke drop) (form-set-form-border-style) set
 
 "Tests" comment
-4711 {abc}
-abc message
-<abc message> (abc) 1 5 1 for
-abc message
+4711 {a}
+
+<a message <b message> (b) 1 2 1 for> (a) 1 2 1 for
+a message
+
+
 
 form-create Show []
 
