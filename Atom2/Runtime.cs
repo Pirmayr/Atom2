@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -77,44 +78,53 @@ namespace Atom2
 
     private const char Eof = char.MinValue;
     private const char Whitespace = char.MaxValue;
+    private const string LeftDelimiter = "left-delimiter";
+    private const string RightDelimiter = "right-delimiter";
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"'};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Whitespace, '(', ')', '[', ']', '{', '}', '<', '>', '"'};
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '"' };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Whitespace, Eof, '"' };
     private readonly WordDescriptions wordDescriptions = new WordDescriptions();
     private readonly Words words = new Words();
 
+    private static string AssemblyDirectory => Environment.CurrentDirectory;
+
+    private void AddWordDescription(string token, string name, ActionKind actionKind, params Action[] actions)
+    {
+      WordDescription wordDescription = new WordDescription(name, actionKind, actions);
+      wordDescriptions.Add(token, wordDescription);
+      switch (wordDescription.actionKind)
+      {
+        case ActionKind.Normal:
+          words.Add(wordDescription.name, wordDescription.NormalAction);
+          break;
+        case ActionKind.LeftItemsDelimiter:
+        case ActionKind.RightItemsDelimiter:
+          Action preAction = wordDescription.PreAction;
+          if (preAction != null)
+          {
+            words.Add(wordDescription.PreName, preAction);
+          }
+          Action postAction = wordDescription.PostAction;
+          if (postAction != null)
+          {
+            words.Add(wordDescription.PostName, postAction);
+          }
+          break;
+      }
+      tokenStopCharacters.Add(token.First());
+    }
+
     public Runtime()
     {
-      wordDescriptions.Add("<", new WordDescription("left-angle", ActionKind.LeftItemsDelimiter, NoAction, NoAction));
-      wordDescriptions.Add(">", new WordDescription("right-angle", ActionKind.RightItemsDelimiter, NoAction, NoAction));
-      wordDescriptions.Add("{", new WordDescription("left-brace", ActionKind.LeftItemsDelimiter, NoAction, null));
-      wordDescriptions.Add("}", new WordDescription("right-brace", ActionKind.RightItemsDelimiter, null, NoAction));
-      wordDescriptions.Add("[", new WordDescription("left-bracket", ActionKind.LeftItemsDelimiter, NoAction, null));
-      wordDescriptions.Add("]", new WordDescription("right-bracket", ActionKind.RightItemsDelimiter, null, NoAction));
-      wordDescriptions.Add("(", new WordDescription("left-parenthesis", ActionKind.LeftItemsDelimiter, NoAction, null));
-      wordDescriptions.Add(")", new WordDescription("right-parenthesis", ActionKind.RightItemsDelimiter, null, NoAction));
-      foreach (WordDescription currentValue in wordDescriptions.Values)
-      {
-        switch (currentValue.actionKind)
-        {
-          case ActionKind.Normal:
-            words.Add(currentValue.name, currentValue.NormalAction);
-            break;
-          case ActionKind.LeftItemsDelimiter:
-          case ActionKind.RightItemsDelimiter:
-            Action preAction = currentValue.PreAction;
-            if (preAction != null)
-            {
-              words.Add(currentValue.PreName, preAction);
-            }
-            Action postAction = currentValue.PostAction;
-            if (postAction != null)
-            {
-              words.Add(currentValue.PostName, postAction);
-            }
-            break;
-        }
-      }
+      AddWordDescription("<", "left-angle", ActionKind.LeftItemsDelimiter, NoAction, NoAction);
+      AddWordDescription(">", "right-angle", ActionKind.RightItemsDelimiter, NoAction, NoAction);
+      AddWordDescription("{", "left-brace", ActionKind.LeftItemsDelimiter, NoAction, null);
+      AddWordDescription("}", "right-brace", ActionKind.RightItemsDelimiter, null, NoAction);
+      AddWordDescription("[", "left-bracket", ActionKind.LeftItemsDelimiter, NoAction, null);
+      AddWordDescription("]", "right-bracket", ActionKind.RightItemsDelimiter, null, NoAction);
+      AddWordDescription("(", "left-parenthesis", ActionKind.LeftItemsDelimiter, NoAction, null);
+      AddWordDescription(")", "right-parenthesis", ActionKind.RightItemsDelimiter, null, NoAction);
+
       words.Add("invoke", new Action(Invoke));
       words.Add("equal", BinaryAction(ExpressionType.Equal));
       words.Add("not-equal", BinaryAction(ExpressionType.NotEqual));
@@ -131,11 +141,12 @@ namespace Atom2
       words.Add("split", new Action(Split));
       words.Add("enter-scope", new Action(EnterScope));
       words.Add("leave-scope", new Action(LeaveScope));
+      words.Add("include", new Action(Include));
     }
 
-    public void Run(string code)
+    public void Run(string filename)
     {
-      Evaluate(GetItems(GetTokens(code), null, out _));
+      Evaluate(GetItems(GetTokens(Code(filename)), null, out _));
     }
 
     private static string GetToken(Queue<char> characters, HashSet<char> stopCharacters)
@@ -146,6 +157,11 @@ namespace Atom2
         result += characters.Dequeue();
       }
       return result;
+    }
+
+    private static string Code(string filename)
+    {
+      return File.ReadAllText(AssemblyDirectory + "/" + filename);
     }
 
     private static char NextCharacter(Queue<char> characters)
@@ -177,7 +193,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -223,8 +239,7 @@ namespace Atom2
       }
       while (0 < tokens.Count)
       {
-        object currentTokenObject = tokens.Dequeue();
-        string currentToken = currentTokenObject.ToString();
+        string currentToken = tokens.Dequeue().ToString();
         lastToken = currentToken;
         if (wordDescriptions.TryGetValue(currentToken, out WordDescription currentLeftDescription) && currentLeftDescription.IsLeftDelimiter)
         {
@@ -254,6 +269,45 @@ namespace Atom2
       return result;
     }
 
+    private void HandlePragma(Tokens tokens)
+    {
+      string pragma = tokens.Dequeue().ToString();
+      switch (pragma)
+      {
+        case LeftDelimiter:
+        case RightDelimiter:
+          ActionKind actionKind = ActionKind.Normal;
+          switch (pragma)
+          {
+            case LeftDelimiter:
+              actionKind = ActionKind.LeftItemsDelimiter;
+              break;
+            case RightDelimiter:
+              actionKind = ActionKind.RightItemsDelimiter;
+              break;
+          }
+          string token = tokens.Dequeue().ToString();
+          string name = tokens.Dequeue().ToString();
+          int actionsCount = (int) tokens.Dequeue();
+          Action[] actions = new Action[actionsCount];
+          for (int i = 0; i < actionsCount; ++i)
+          {
+            switch (tokens.Dequeue().ToString())
+            {
+              case "null-action":
+                actions[i] = null;
+                break;
+              case "no-action":
+                actions[i] = NoAction;
+                break;
+            }
+          }
+          AddWordDescription(token, name, actionKind, actions);
+          break;
+      }
+    }
+
+
     private Tokens GetTokens(string code)
     {
       Tokens result = new Tokens();
@@ -277,7 +331,15 @@ namespace Atom2
         }
         else
         {
-          result.Enqueue(ToObject(GetToken(characters, tokenStopCharacters)));
+          string currentToken = GetToken(characters, tokenStopCharacters);
+          if (currentToken == "pragma")
+          {
+            HandlePragma(result);
+          }
+          else
+          {
+            result.Enqueue(ToObject(currentToken));
+          }
         }
       }
       return result;
@@ -321,6 +383,11 @@ namespace Atom2
     private void Length()
     {
       stack.Push(((Items) stack.Pop()).Count);
+    }
+
+    private void Include()
+    {
+      Run(stack.Pop().ToString());
     }
 
     private void Process(object unit)

@@ -10,7 +10,7 @@ namespace Atom2
     {
       try
       {
-        new Runtime().Run(File.ReadAllText(args[0]));
+        new Runtime().Run(args[0]);
         Console.Write("done");
       }
       catch (Exception exception)

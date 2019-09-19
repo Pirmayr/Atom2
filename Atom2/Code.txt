@@ -1,8 +1,14 @@
-﻿((comment-dummy) set) (comment) set
+﻿left-delimiter : colon 2 no-action null-action pragma  
+right-delimiter ; semicolon 2 null-action no-action pragma
+right-delimiter + plus 2 null-action no-action pragma
+
+((comment-dummy) set) (comment) set
 
 "Fundamentals" comment
 (call) (post-right-bracket) set
 (set) (post-right-brace) set
+(set) (post-semicolon) set
+(set) (post-plus) set
 (enter-scope) (post-left-angle) set
 (leave-scope) (pre-right-angle) set
 
@@ -93,13 +99,12 @@
 (1 form-info "set_FormBorderStyle" instance invoke-method invoke drop) (form-set-form-border-style) set
 
 "Tests" comment
-4711 {a}
+
+"Playground.txt" include
+
+4711 :a+
 
 <a message <b message> (b) 1 2 1 for> (a) 1 2 1 for
 a message
-
-
-
 form-create Show []
-
 "done" message
