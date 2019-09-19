@@ -1,32 +1,17 @@
-﻿left-delimiter : colon 2 no-action null-action pragma  
-right-delimiter ; semicolon 2 null-action no-action pragma
-right-delimiter + plus 2 null-action no-action pragma
+﻿load-file System.txt pragma
 
 ((comment-dummy) set) (comment) set
 
-"Fundamentals" comment
-(call) (post-right-bracket) set
-(set) (post-right-brace) set
-(set) (post-semicolon) set
-(set) (post-plus) set
-(enter-scope) (post-left-angle) set
-(leave-scope) (pre-right-angle) set
-
 "flags for InvokeMember" comment
+(0) (default) set
+(4) (instance) set
+(8) (static) set
 (512) (create-instance) set
 (256) (invoke-method) set
-(0) (default) set
-(8) (static) set
-(4) (instance) set
 (1024) (get-field) set
 
 "stack-manipulation" comment
-({dummy}) {drop}
-((swap-1 swap-2) set (swap-2 swap-1) get) (swap) set
-((duplicate-1) set (duplicate-1 duplicate-1) get) (duplicate) set
-((over-1 over-2) set (over-1 over-2 over-1) get) (over) set
-((rotate-1 rotate-2 rotate-3) set (rotate-2 rotate-3 rotate-1) get) (rotate) set 
-(over swap) (duplicate-second) set
+
 
 "miscellaneous words" comment
 (duplicate-second set) (set-sticky) set
@@ -100,11 +85,14 @@ right-delimiter + plus 2 null-action no-action pragma
 
 "Tests" comment
 
-"Playground.txt" include
+1234 :a;
 
-4711 :a+
+a message
 
 <a message <b message> (b) 1 2 1 for> (a) 1 2 1 for
+
 a message
+
 form-create Show []
+
 "done" message

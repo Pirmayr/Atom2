@@ -33,13 +33,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp">
-      <Private>True</Private>
     </Reference>
     <Reference Include="System">
-      <Private>True</Private>
     </Reference>
     <Reference Include="System.Windows.Forms">
-      <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -49,8 +46,13 @@
     <Compile Include="ScopedDictionary.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Code.txt" />
-    <None Include="Playground.txt" />
+    <None Include="System\System.txt" />
+    <None Include="System\Delimiters.txt" />
+    <None Include="System\Program.txt" />
+    <None Include="System\Stack.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="System\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

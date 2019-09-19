@@ -1,16 +1,14 @@
 ﻿using System;
-using System.IO;
-using System.Windows.Forms;
 
 namespace Atom2
 {
   internal static class MainClass
   {
-    public static void Main(string[] args)
+    public static void Main()
     {
       try
       {
-        new Runtime().Run(args[0]);
+        new Runtime().Run("Program.txt");
         Console.Write("done");
       }
       catch (Exception exception)

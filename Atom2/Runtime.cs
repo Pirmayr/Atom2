@@ -8,9 +8,6 @@ using System.Runtime.CompilerServices;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 
-// ReSharper disable ParameterOnlyUsedForPreconditionCheck.Local
-#pragma warning disable 618
-
 namespace Atom2
 {
   using Tokens = Queue<object>;
@@ -86,7 +83,7 @@ namespace Atom2
     private readonly WordDescriptions wordDescriptions = new WordDescriptions();
     private readonly Words words = new Words();
 
-    private static string AssemblyDirectory => Environment.CurrentDirectory;
+    private static string SystemDirectory => Environment.CurrentDirectory + "/System";
 
     private void AddWordDescription(string token, string name, ActionKind actionKind, params Action[] actions)
     {
@@ -116,6 +113,7 @@ namespace Atom2
 
     public Runtime()
     {
+      /*
       AddWordDescription("<", "left-angle", ActionKind.LeftItemsDelimiter, NoAction, NoAction);
       AddWordDescription(">", "right-angle", ActionKind.RightItemsDelimiter, NoAction, NoAction);
       AddWordDescription("{", "left-brace", ActionKind.LeftItemsDelimiter, NoAction, null);
@@ -124,6 +122,7 @@ namespace Atom2
       AddWordDescription("]", "right-bracket", ActionKind.RightItemsDelimiter, null, NoAction);
       AddWordDescription("(", "left-parenthesis", ActionKind.LeftItemsDelimiter, NoAction, null);
       AddWordDescription(")", "right-parenthesis", ActionKind.RightItemsDelimiter, null, NoAction);
+      */
 
       words.Add("invoke", new Action(Invoke));
       words.Add("equal", BinaryAction(ExpressionType.Equal));
@@ -141,7 +140,6 @@ namespace Atom2
       words.Add("split", new Action(Split));
       words.Add("enter-scope", new Action(EnterScope));
       words.Add("leave-scope", new Action(LeaveScope));
-      words.Add("include", new Action(Include));
     }
 
     public void Run(string filename)
@@ -161,7 +159,7 @@ namespace Atom2
 
     private static string Code(string filename)
     {
-      return File.ReadAllText(AssemblyDirectory + "/" + filename);
+      return File.ReadAllText(SystemDirectory + "/" + filename);
     }
 
     private static char NextCharacter(Queue<char> characters)
@@ -304,9 +302,11 @@ namespace Atom2
           }
           AddWordDescription(token, name, actionKind, actions);
           break;
+        case "load-file":
+          Run(tokens.Dequeue().ToString());
+          break;
       }
     }
-
 
     private Tokens GetTokens(string code)
     {
@@ -383,11 +383,6 @@ namespace Atom2
     private void Length()
     {
       stack.Push(((Items) stack.Pop()).Count);
-    }
-
-    private void Include()
-    {
-      Run(stack.Pop().ToString());
     }
 
     private void Process(object unit)

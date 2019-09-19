@@ -1,0 +1,18 @@
+﻿left-delimiter < left-angle 2 no-action, no-action pragma
+right-delimiter > right-angle 2 no-action no-action pragma
+left-delimiter { left-brace 2 no-action null-action pragma
+right-delimiter } right-brace 2 null-action no-action pragma
+left-delimiter [ left-bracket 2 no-action null-action pragma
+right-delimiter ] right-bracket 2 null-action no-action pragma
+left-delimiter ( left-parenthesis 2 no-action null-action pragma
+right-delimiter ) right-parenthesis 2 null-action no-action pragma
+left-delimiter : colon 2 no-action null-action pragma  
+right-delimiter ; semicolon 2 null-action no-action pragma
+right-delimiter + plus 2 null-action no-action pragma
+
+(call) (post-right-bracket) get
+(set) (post-right-brace) set
+(set) (post-semicolon) set
+(set) (post-plus) set
+(enter-scope) (post-left-angle) set
+(leave-scope) (pre-right-angle) set
