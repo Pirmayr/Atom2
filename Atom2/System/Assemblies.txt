@@ -1,2 +1,3 @@
 ﻿("mscorlib") {mscorlib-assembly}
 ("System.Windows.Forms") {forms-assembly}
+("System.Numerics") {numerics-assembly}

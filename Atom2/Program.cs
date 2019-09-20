@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Windows.Forms;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 
@@ -100,6 +101,7 @@ namespace Atom2
       words.Add("evaluate-and-split", new Action(EvaluateAndSplit));
       words.Add("enter-scope", new Action(EnterScope));
       words.Add("leave-scope", new Action(LeaveScope));
+      words.Add("make-list", new Action(MakeList));
     }
 
     public static void Main(params string[] arguments)
@@ -375,6 +377,11 @@ namespace Atom2
     private void Length()
     {
       Push(((Items) stack.Pop()).Count);
+    }
+
+    private void MakeList()
+    {
+      stack.Push(new Items(Pop((int) stack.Pop())));
     }
 
     private object[] Pop(int count)

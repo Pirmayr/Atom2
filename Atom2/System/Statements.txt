@@ -1,2 +1,5 @@
 ﻿<{if-block else-block condition} (else-block) (drop (if-block)) (condition) if evaluate> {if-else}
 <{body key from to step} (from (key) get set body (from) (step) increment-word-by-word) (from to less-or-equal) while> {for}
+<{array code} (array GetValue [i] code) (i) 0 array GetUpperBound [0] 1 for> {map-array}
+({_body _key _from _to _step} (_from (_key) get set _body (_from) (_step) increment-word-by-word) (_from _to less-or-equal) while) {global-for}
+({_array _code} (_array GetValue [_i] _code) (_i) 0 _array GetUpperBound [0] 1 global-for) {global-map-array}

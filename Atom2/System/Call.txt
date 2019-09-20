@@ -11,4 +11,14 @@
 (target (arguments) get evaluate-and-split target object-get-type get-type-info name instance) {instance-call-arguments}
 ((arguments) get evaluate-and-split target get-type-info name static) {static-call-arguments}
 (target object-get-type-name "RuntimeType" equal) {target-is-runtime-type}
-<{target name arguments} (static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke-method invoke> {call}  
+<{target name arguments} (static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke-method invoke> {call}
+
+(0 type-info "GetMembers" instance invoke-method invoke) {type-get-members}
+
+(mscorlib-assembly "System.Reflection.Assembly") (assembly-info) set
+(1 assembly-info "GetType" instance invoke-method invoke) (assembly-get-type) set
+(0 assembly-info "GetName" instance invoke-method invoke) (assembly-get-name) set
+(swap assembly-load-with-partial-name swap assembly-get-type) (get-type) set
+(mscorlib-assembly "System.Reflection.AssemblyName") (assembly-name-info) set
+(0 assembly-name-info "get_Name" instance invoke-method invoke) (assembly-name-get-name) set
+(1 assembly-info "LoadWithPartialName" static invoke-method invoke) (assembly-load-with-partial-name) set

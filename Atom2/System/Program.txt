@@ -22,26 +22,17 @@
 
 
 "Assembly" comment
-(mscorlib-assembly "System.Reflection.Assembly") (assembly-info) set
-("" instance create-instance invoke) (assembly-create) set
-(1 assembly-info "LoadWithPartialName" static invoke-method invoke) (assembly-load-with-partial-name) set
-(1 assembly-info "GetType" instance invoke-method invoke) (assembly-get-type) set
-(0 assembly-info "GetName" instance invoke-method invoke) (assembly-get-name) set
-(swap assembly-load-with-partial-name swap assembly-get-type) (get-type) set
 
-"AssemblyName" comment
-(mscorlib-assembly "System.Reflection.AssemblyName") (assembly-name-info) set
-(0 assembly-name-info "get_Name" instance invoke-method invoke) (assembly-name-get-name) set
 
 
     
 
 "Console" comment
 ("mscorlib" "System.Console") (console-info) set
-(console-info "WriteLine" static invoke-method invoke) (show) set
+(to-string 1 console-info "WriteLine" static invoke-method invoke) (show) set
 
 "MessageBox" comment
-(forms-assembly System.Windows.Forms.MessageBox get-type) {message-box-type}
+(forms-assembly "System.Windows.Forms.MessageBox" get-type) {message-box-type}
 <{value} message-box-type Show [value to-string] drop> {message}
 (duplicate message) (trace) set
 
@@ -57,7 +48,7 @@
 (0 form-info "Show" instance invoke-method invoke drop) (form-show) set
 (1 form-info "set_FormBorderStyle" instance invoke-method invoke drop) (form-set-form-border-style) set
 
-() {using}
+
 
 "Tests" comment
 (
@@ -66,9 +57,16 @@
   <a message <b message> (b) 0 2 1 for> (a) 0 2 1 for
   a message
   form-create Show []
+  "hugo" get_Chars [2] message
+  message-box-type type-get-members (show) map-array
+  numerics-assembly assembly-load-with-partial-name GetTypes [] (show) map-array
 ) 
 {tests}
 
-"hugo" get_Chars [2] message
 
-"done" message
+(duplicate duplicate "-assembly" add 1 make-list set assembly-load-with-partial-name GetTypes [] (duplicate type-get-qualified-name "-type" add 1 make-list set) global-map-array) {import}
+
+"System.Numerics" import
+
+System.Numerics-assembly show
+System.Numerics.BigInteger-type type-get-members (show) map-array
