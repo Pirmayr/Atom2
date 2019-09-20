@@ -89,7 +89,7 @@
 
 a message
 
-<a message <b message> (b) 0 10 2 for> (a) 0 2 1 for
+<a message <b message> (b) 0 2 1 for> (a) 0 2 1 for
 
 a message
 
