@@ -10,7 +10,7 @@ left-delimiter : colon 2 no-action null-action pragma
 right-delimiter ; semicolon 2 null-action no-action pragma
 right-delimiter + plus 2 null-action no-action pragma
 
-(call) (post-right-bracket) get
+(call) (post-right-bracket) set
 (set) (post-right-brace) set
 (set) (post-semicolon) set
 (set) (post-plus) set

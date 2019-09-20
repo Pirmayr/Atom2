@@ -85,14 +85,15 @@
 
 "Tests" comment
 
-1234 :a;
+4321 :a;
 
 a message
 
-<a message <b message> (b) 1 2 1 for> (a) 1 2 1 for
+<a message <b message> (b) 0 10 2 for> (a) 0 2 1 for
 
 a message
 
 form-create Show []
 
 "done" message
+
