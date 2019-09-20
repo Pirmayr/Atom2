@@ -1,0 +1,4 @@
+﻿(duplicate-second set) (set-sticky) set
+(get set) {set-by-word}
+(duplicate get increment swap set) (increment-word) set
+(over get swap get add swap set) (increment-word-by-word) set

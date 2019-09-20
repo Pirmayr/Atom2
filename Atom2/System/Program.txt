@@ -10,17 +10,13 @@
 
 "miscellaneous words" comment
 (duplicate show) (show-sticky) set
-(1 add) (increment) set
-(get set) {set-by-word}
-(duplicate get increment swap set) (increment-word) set
-(over get swap get add swap set) (increment-word-by-word) set
+
 <{body key from to step} (from (key) get set body (from) (step) increment-word-by-word) (from to less-or-equal) while> {for}
 
 "Object" comment
 (mscorlib-assembly "System.Object") (object-info) set
 (0 object-info "ToString" instance invoke-method invoke) (to-string) set
-(0 object-info "GetType" instance invoke-method invoke) (object-get-type) set
-(object-get-type type-get-name) (object-get-type-name) set
+
 
 "assemblies" comment
 (mscorlib) (mscorlib-assembly) set
@@ -43,17 +39,24 @@
 (0 type-info "get_Assembly" instance invoke-method invoke) (type-get-assembly) set
 (0 type-info "get_Name" instance invoke-method invoke) (type-get-name) set
 (0 type-info "get_Namespace" instance invoke-method invoke) (type-get-namespace) set
-(type-get-assembly assembly-get-name assembly-name-get-name) (type-get-assembly-name) set
-(duplicate type-get-namespace "." add swap type-get-name add) (type-get-qualified-name) set
-({type} type type-get-assembly-name type type-get-qualified-name) (get-type-info) set
 
-"if-else action" comment
-<{if-block else-block condition} (else-block) (drop (if-block)) (condition) if evaluate> {if-else}
+
+
+
 
 "call action" comment
+
+(0 object-info "GetType" instance invoke-method invoke) (object-get-type) set
+(object-get-type type-get-name) (object-get-type-name) set
+
+(type-get-assembly assembly-get-name assembly-name-get-name) (type-get-assembly-name) set
+(duplicate type-get-namespace "." add swap type-get-name add) (type-get-qualified-name) set
+
+<{type} type type-get-assembly-name type type-get-qualified-name> {get-type-info}
+
 ((arguments) get split target get-type-info name static) (static-call-arguments) set
 (target (arguments) get split target object-get-type {instance-type} instance-type get-type-info name instance) (instance-call-arguments) set
-(target object-get-type-name RuntimeType equal) (target-is-runtime-type) set
+(target object-get-type-name "RuntimeType" equal) (target-is-runtime-type) set
 <{target name arguments} (static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke-method invoke> {call}      
 
 "Console" comment
@@ -87,7 +90,7 @@
 ) 
 {tests}
 
-"hugo" get_Item [2] message
+"hugo" get_Chars [2] message
 
 "done" message
 

@@ -1,7 +1,6 @@
 ﻿<{a}> {drop}
 <{a b} (b a) get> {swap}
 <{a} (a a) get> {duplicate}
-((over-1 over-2) set (over-1 over-2 over-1) get) (over) set
-((rotate-1 rotate-2 rotate-3) set (rotate-2 rotate-3 rotate-1) get) (rotate) set 
-(over swap) (duplicate-second) set
-(duplicate-second set) (set-sticky) set
+<{a b} (a b a) get> {over}
+<(rotate-1 rotate-2 rotate-3) set (rotate-2 rotate-3 rotate-1) get> {rotate}
+(over swap) {duplicate-second}

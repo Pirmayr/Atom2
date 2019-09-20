@@ -48,6 +48,10 @@
     <None Include="System\Delimiters.txt" />
     <None Include="System\Program.txt" />
     <None Include="System\Stack.txt" />
+    <None Include="System\Words.txt" />
+    <None Include="System\Statements.txt" />
+    <None Include="System\Math.txt" />
+    <None Include="System\Call.txt" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="System\Comment.txt" />
