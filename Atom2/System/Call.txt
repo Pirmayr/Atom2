@@ -1,1 +1,14 @@
-﻿
+﻿(mscorlib-assembly "System.Object") (object-info) set
+(mscorlib-assembly "System.Type") {type-info}
+(0 type-info "get_Assembly" instance invoke-method invoke) {type-get-assembly}
+(0 type-info "get_Namespace" instance invoke-method invoke) {type-get-namespace}
+(0 type-info "get_Name" instance invoke-method invoke) {type-get-name}
+(0 object-info "GetType" instance invoke-method invoke) {object-get-type}
+(object-get-type type-get-name) {object-get-type-name}
+(type-get-assembly assembly-get-name assembly-name-get-name) {type-get-assembly-name}
+(duplicate type-get-namespace "." add swap type-get-name add) {type-get-qualified-name}
+(duplicate type-get-assembly-name swap type-get-qualified-name) {get-type-info}
+(target (arguments) get evaluate-and-split target object-get-type get-type-info name instance) {instance-call-arguments}
+((arguments) get evaluate-and-split target get-type-info name static) {static-call-arguments}
+(target object-get-type-name "RuntimeType" equal) {target-is-runtime-type}
+<{target name arguments} (static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke-method invoke> {call}  

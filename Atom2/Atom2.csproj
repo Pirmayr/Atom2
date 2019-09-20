@@ -52,6 +52,7 @@
     <None Include="System\Statements.txt" />
     <None Include="System\Math.txt" />
     <None Include="System\Call.txt" />
+    <None Include="System\Assemblies.txt" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="System\Comment.txt" />

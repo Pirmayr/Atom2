@@ -4,4 +4,5 @@ load-file Stack.txt pragma
 load-file Words.txt pragma
 load-file Statements.txt pragma
 load-file Math.txt pragma
+load-file Assemblies.txt pragma
 load-file Call.txt pragma

@@ -38,6 +38,12 @@ Global
 		$0.CSharpFormattingPolicy = $6
 		$6.scope = text/x-csharp
 		$6.SpaceAfterCast = True
+		$0.VersionControlPolicy = $7
+		$7.CommitMessageStyle = $8
+		$8.InterMessageLines = 0
+		$8.IncludeDirectoryPaths = True
+		$8.Wrap = False
+		$0.StandardHeader = $9
 		version = 0.2
 	EndGlobalSection
 EndGlobal

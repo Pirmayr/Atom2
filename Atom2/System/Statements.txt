@@ -1,1 +1,2 @@
 ﻿<{if-block else-block condition} (else-block) (drop (if-block)) (condition) if evaluate> {if-else}
+<{body key from to step} (from (key) get set body (from) (step) increment-word-by-word) (from to less-or-equal) while> {for}

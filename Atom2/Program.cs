@@ -97,7 +97,7 @@ namespace Atom2
       words.Add("while", new Action(While));
       words.Add("evaluate", new Action(Evaluate));
       words.Add("length", new Action(Length));
-      words.Add("split", new Action(Split));
+      words.Add("evaluate-and-split", new Action(EvaluateAndSplit));
       words.Add("enter-scope", new Action(EnterScope));
       words.Add("leave-scope", new Action(LeaveScope));
     }
@@ -420,7 +420,7 @@ namespace Atom2
       }
     }
 
-    private void Split()
+    private void EvaluateAndSplit()
     {
       object items = stack.Pop();
       int stackLength = stack.Count;

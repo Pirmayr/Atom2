@@ -11,16 +11,15 @@
 "miscellaneous words" comment
 (duplicate show) (show-sticky) set
 
-<{body key from to step} (from (key) get set body (from) (step) increment-word-by-word) (from to less-or-equal) while> {for}
+
 
 "Object" comment
-(mscorlib-assembly "System.Object") (object-info) set
+
 (0 object-info "ToString" instance invoke-method invoke) (to-string) set
 
 
 "assemblies" comment
-(mscorlib) (mscorlib-assembly) set
-("System.Windows.Forms") (forms-assembly) set
+
 
 "Assembly" comment
 (mscorlib-assembly "System.Reflection.Assembly") (assembly-info) set
@@ -34,30 +33,8 @@
 (mscorlib-assembly "System.Reflection.AssemblyName") (assembly-name-info) set
 (0 assembly-name-info "get_Name" instance invoke-method invoke) (assembly-name-get-name) set
 
-"Type" comment
-(mscorlib-assembly "System.Type") (type-info) set
-(0 type-info "get_Assembly" instance invoke-method invoke) (type-get-assembly) set
-(0 type-info "get_Name" instance invoke-method invoke) (type-get-name) set
-(0 type-info "get_Namespace" instance invoke-method invoke) (type-get-namespace) set
 
-
-
-
-
-"call action" comment
-
-(0 object-info "GetType" instance invoke-method invoke) (object-get-type) set
-(object-get-type type-get-name) (object-get-type-name) set
-
-(type-get-assembly assembly-get-name assembly-name-get-name) (type-get-assembly-name) set
-(duplicate type-get-namespace "." add swap type-get-name add) (type-get-qualified-name) set
-
-<{type} type type-get-assembly-name type type-get-qualified-name> {get-type-info}
-
-((arguments) get split target get-type-info name static) (static-call-arguments) set
-(target (arguments) get split target object-get-type {instance-type} instance-type get-type-info name instance) (instance-call-arguments) set
-(target object-get-type-name "RuntimeType" equal) (target-is-runtime-type) set
-<{target name arguments} (static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke-method invoke> {call}      
+    
 
 "Console" comment
 ("mscorlib" "System.Console") (console-info) set
@@ -80,6 +57,8 @@
 (0 form-info "Show" instance invoke-method invoke drop) (form-show) set
 (1 form-info "set_FormBorderStyle" instance invoke-method invoke drop) (form-set-form-border-style) set
 
+() {using}
+
 "Tests" comment
 (
   4321 :a;
@@ -93,4 +72,3 @@
 "hugo" get_Chars [2] message
 
 "done" message
-
