@@ -1,7 +1,5 @@
 ﻿load-file System.txt pragma
 
-((comment-dummy) set) (comment) set
-
 "flags for InvokeMember" comment
 (0) (default) set
 (4) (instance) set
@@ -10,11 +8,7 @@
 (256) (invoke-method) set
 (1024) (get-field) set
 
-"stack-manipulation" comment
-
-
 "miscellaneous words" comment
-(duplicate-second set) (set-sticky) set
 (duplicate show) (show-sticky) set
 (1 add) (increment) set
 (get set) {set-by-word}
@@ -84,16 +78,16 @@
 (1 form-info "set_FormBorderStyle" instance invoke-method invoke drop) (form-set-form-border-style) set
 
 "Tests" comment
+(
+  4321 :a;
+  a message
+  <a message <b message> (b) 0 2 1 for> (a) 0 2 1 for
+  a message
+  form-create Show []
+) 
+{tests}
 
-4321 :a;
-
-a message
-
-<a message <b message> (b) 0 2 1 for> (a) 0 2 1 for
-
-a message
-
-form-create Show []
+"hugo" get_Item [2] message
 
 "done" message
 

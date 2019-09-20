@@ -49,6 +49,8 @@
     <None Include="System\Program.txt" />
     <None Include="System\Stack.txt" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="System\Comment.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

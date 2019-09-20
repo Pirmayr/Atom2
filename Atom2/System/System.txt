@@ -1,2 +1,3 @@
 ﻿load-file Delimiters.txt pragma
+load-file Comment.txt pragma
 load-file Stack.txt pragma
