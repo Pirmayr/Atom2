@@ -1,5 +1,4 @@
-﻿(0 object-info "ToString" instance invoke-method invoke) (to-string) set
-<to-string {message} System.Console.Type WriteLine [message] drop> {show}
+﻿<to-string {message} System.Console.Type WriteLine [message] drop> {show}
+<to-string {message} System.Windows.Forms.MessageBox.Type Show [message] drop> {message}
 (duplicate show) {trace}
 ("hi!"  show) (hi) set
-<to-string {message} System.Windows.Forms.MessageBox.Type Show [message] drop> {message}

@@ -1,26 +1,5 @@
 ﻿load-file System.txt pragma
 
-
-
-"FormBorderStyle" comment
-(forms-assembly "System.Windows.Forms.FormBorderStyle") (form-border-style-info) set
-(0 form-border-style-info "FixedSingle" static get-field invoke) (form-border-style-fixed-single) set
-
-"Form" comment
-("System.Windows.Forms.Form") (system-windows-forms-form-class) set
-(forms-assembly system-windows-forms-form-class) (form-info) set
-(forms-assembly system-windows-forms-form-class get-type) (system-windows-forms-form-type) set
-(0 form-info "" instance create-instance invoke) (form-create) set
-(0 form-info "Show" instance invoke-method invoke drop) (form-show) set
-(1 form-info "set_FormBorderStyle" instance invoke-method invoke drop) (form-set-form-border-style) set
-
-
-(
-  numerics-assembly assembly-load-with-partial-name GetTypes [] (show) new-map-array
-  System.Windows.Forms.FormBorderStyle.Type 0 FixedSingle invoke2 message
-  System.Windows.Forms.Form.Type 0 ".ctor" invoke2 message
-)
-
 begin message
 
 System.Numerics.BigInteger.Type type-get-members (show) map-array

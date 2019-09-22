@@ -15,10 +15,10 @@
 (
   (array body) put
   0
-  (array) get 0 1 GetUpperBound invoke2
+  (array) get 0 1 array-info GetUpperBound instance invoke-method invoke
   (from to) put
   (
-    (array) get (from) get 1 GetValue invoke2
+    (array) get (from) get 1 array-info GetValue instance invoke-method invoke
     (body) get evaluate
     (from) get 1 add (from) put
   )

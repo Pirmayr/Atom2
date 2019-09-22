@@ -1,14 +1,1 @@
-﻿(
-  4321 :a;
-  a message
-  <a message <b message> (b) 0 2 1 for> (a) 0 2 1 for
-  a message
-  form-create Show []
-  "hugo" get_Chars [2] message
-  numerics-assembly assembly-load-with-partial-name GetTypes [] (show) map-array
-  System.NumericsAssembly show
-  System.Numerics.BigInteger.Type type-get-members (show) map-array
-  System.Windows.Forms.FormBorderStyle.Type message
-  System.Windows.Forms.Form.Type new[] Show[]
-) 
-{tests}
+﻿
