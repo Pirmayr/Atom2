@@ -1,23 +1,6 @@
 ﻿<{if-block else-block condition} (else-block) (drop (if-block)) (condition) if evaluate> {if-else}
 
 (
-  body key from to step
-  4    3   2    1  0
-)
-comment
-
-(
-  (
-    get-2 get-4 set
-    get-4 evaluate
-    get-2 1 add set-2
-  )
-  (get-2 get-2 less-or-equal)
-  while
-)
-(new-for) set
-
-(
   (body key from to step) put
   (
     (from) get (key) get set
@@ -28,19 +11,6 @@ comment
   while  
 )
 (for) set
-
-(
-  get-1 0 1 GetUpperBound invoke2
-  0
-  (
-    get-3 get-1 1 GetValue invoke2
-    get-3 evaluate
-    1 add
-  )
-  (get-0 get-2 less-or-equal)
-  while
-)
-{old-map-array}
 
 (
   (array body) put

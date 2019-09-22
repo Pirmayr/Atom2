@@ -23,6 +23,6 @@
 
 begin message
 
-() (a) 1 100000 1 for
+System.Numerics.BigInteger.Type type-get-members (show) map-array
 
 end message

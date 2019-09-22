@@ -1,8 +1,14 @@
-﻿("mscorlib") {mscorlib-assembly}
-("System.Windows.Forms") {forms-assembly}
-("System.Numerics") {numerics-assembly}
-
-(duplicate duplicate ".Assembly" add 1 make-list set assembly-load-with-partial-name GetTypes [] (duplicate type-get-qualified-name ".Type" add 1 make-list set) map-array) {import}
+﻿(
+  triplicate
+  ".Assembly" add 1 make-list set
+  assembly-load-with-partial-name GetTypes []
+  (
+    duplicate
+    type-get-qualified-name ".Type" add 1 make-list set
+  )
+  map-array
+)
+{import}
 
 "mscorlib" import
 "System.Windows.Forms" import
