@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
@@ -86,6 +88,7 @@ namespace Atom2
     {
       BaseDirectory = baseDirectory;
       words.Add("invoke", new Action(Invoke));
+      words.Add("invoke2", new Action(Invoke2));
       words.Add("equal", BinaryAction(ExpressionType.Equal));
       words.Add("not-equal", BinaryAction(ExpressionType.NotEqual));
       words.Add("less-or-equal", BinaryAction(ExpressionType.LessThanOrEqual));
@@ -102,6 +105,7 @@ namespace Atom2
       words.Add("enter-scope", new Action(EnterScope));
       words.Add("leave-scope", new Action(LeaveScope));
       words.Add("make-list", new Action(MakeList));
+      words.Add("break", new Action(Break));
     }
 
     public static void Main(params string[] arguments)
@@ -191,6 +195,11 @@ namespace Atom2
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
       Delegate function = lambda.Compile();
       return delegate { Push(function.DynamicInvoke(stack.Pop(), stack.Pop())); };
+    }
+
+    private void Break()
+    {
+      Debugger.Break();
     }
 
     private void EnterScope()
@@ -367,6 +376,46 @@ namespace Atom2
       object target = isInstance && !isConstructor ? stack.Pop() : null;
       object result = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
       Push(result);
+    }
+
+    private void Invoke2()
+    {
+      string memberName;
+      object[] arguments;
+      object memberNameOrArgumentsCount = stack.Pop();
+      if (memberNameOrArgumentsCount is string)
+      {
+        memberName = (string) memberNameOrArgumentsCount;
+        arguments = Pop((int) stack.Pop());
+      }
+      else
+      {
+        arguments = Pop((int) memberNameOrArgumentsCount);
+        memberName = (string) stack.Pop();
+      }
+      object typeOrTarget = stack.Pop();
+      bool isType = typeOrTarget is Type;
+      Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
+      object target = isType ? null : typeOrTarget;
+      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+      MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
+      switch (member)
+      {
+        case ConstructorInfo _:
+          bindingFlags |= BindingFlags.CreateInstance;
+          break;
+        case MethodInfo _:
+          bindingFlags |= BindingFlags.Static | BindingFlags.InvokeMethod ;
+          break;
+        case FieldInfo _:
+          bindingFlags |= BindingFlags.Static | (arguments.Length == 0 ? BindingFlags.GetField : BindingFlags.SetField);
+          break;
+        case PropertyInfo _:
+          bindingFlags |= BindingFlags.Static | (arguments.Length == 0 ? BindingFlags.GetProperty : BindingFlags.SetProperty);
+          break;
+      }
+      object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
+      stack.Push(invokeResult);
     }
 
     private void LeaveScope()

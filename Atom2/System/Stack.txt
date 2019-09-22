@@ -4,3 +4,17 @@
 <{a b} (a b a) get> {over}
 <(rotate-1 rotate-2 rotate-3) set (rotate-2 rotate-3 rotate-1) get> {rotate}
 (over swap) {duplicate-second}
+
+<(a) set (a a) get> {get-0}
+<(a b) set (a b a) get> {get-1}
+<(a b c) set (a b c a) get> {get-2}
+<(a b c d) set (a b c d a) get> {get-3}
+<(a b) set (b) get> {set-0} 
+<(a b c) set (c b) get> {set-1} 
+<(a b c d) set (d b c) get> {set-2}
+<(a b) set (b a) get> {insert-after-0}
+<(a b c) set (c a b) get> {insert-after-1}
+<(a b c d) set (d a b c) get> {insert-after-2}
+<(a) set> {delete-0}
+<(a b) set (b) get> {delete-1}
+<(a b c) set (b c) get> {delete-2}

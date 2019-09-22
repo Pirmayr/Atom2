@@ -1,40 +1,6 @@
 ﻿load-file System.txt pragma
 
-"flags for InvokeMember" comment
-(0) (default) set
-(4) (instance) set
-(8) (static) set
-(512) (create-instance) set
-(256) (invoke-method) set
-(1024) (get-field) set
 
-"miscellaneous words" comment
-(duplicate show) (show-sticky) set
-
-
-
-"Object" comment
-
-(0 object-info "ToString" instance invoke-method invoke) (to-string) set
-
-
-"assemblies" comment
-
-
-"Assembly" comment
-
-
-
-    
-
-"Console" comment
-("mscorlib" "System.Console") (console-info) set
-(to-string 1 console-info "WriteLine" static invoke-method invoke) (show) set
-
-"MessageBox" comment
-(forms-assembly "System.Windows.Forms.MessageBox" get-type) {message-box-type}
-<{value} message-box-type Show [value to-string] drop> {message}
-(duplicate message) (trace) set
 
 "FormBorderStyle" comment
 (forms-assembly "System.Windows.Forms.FormBorderStyle") (form-border-style-info) set
@@ -48,25 +14,23 @@
 (0 form-info "Show" instance invoke-method invoke drop) (form-show) set
 (1 form-info "set_FormBorderStyle" instance invoke-method invoke drop) (form-set-form-border-style) set
 
-
-
-"Tests" comment
 (
-  4321 :a;
-  a message
-  <a message <b message> (b) 0 2 1 for> (a) 0 2 1 for
-  a message
-  form-create Show []
-  "hugo" get_Chars [2] message
-  message-box-type type-get-members (show) map-array
-  numerics-assembly assembly-load-with-partial-name GetTypes [] (show) map-array
-) 
-{tests}
+  numerics-assembly assembly-load-with-partial-name GetTypes [] (show) new-map-array
+  System.Windows.Forms.FormBorderStyle.Type 0 FixedSingle invoke2 message
+  System.Windows.Forms.Form.Type 0 ".ctor" invoke2 message
+)
+
+"begin" message
 
 
-(duplicate duplicate "-assembly" add 1 make-list set assembly-load-with-partial-name GetTypes [] (duplicate type-get-qualified-name "-type" add 1 make-list set) global-map-array) {import}
+(duplicate duplicate ".Assembly" add 1 make-list set assembly-load-with-partial-name GetTypes [] (duplicate type-get-name hugo add 1 make-list set) new-map-array) {import1}
 
-"System.Numerics" import
 
-System.Numerics-assembly show
-System.Numerics.BigInteger-type type-get-members (show) map-array
+System.Windows.Forms.Form.Type 0 type-info "get_FullName" instance invoke-method invoke message
+
+"mscorlib" import1
+"System.Windows.Forms" import1
+"System.Numerics" import1
+
+
+"end" message
