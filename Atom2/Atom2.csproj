@@ -51,7 +51,7 @@
     <None Include="System\Words.txt" />
     <None Include="System\Statements.txt" />
     <None Include="System\Math.txt" />
-    <None Include="System\Call.txt" />
+    <None Include="System\Reflection.txt" />
     <None Include="System\Assemblies.txt" />
     <None Include="System\Tests.txt" />
     <None Include="System\IO.txt" />
