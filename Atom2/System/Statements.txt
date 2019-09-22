@@ -1,8 +1,33 @@
 ﻿<{if-block else-block condition} (else-block) (drop (if-block)) (condition) if evaluate> {if-else}
-<{body key from to step} (from (key) get set body (from) (step) increment-word-by-word) (from to less-or-equal) while> {for}
-<{array code} (array GetValue [i] code) (i) 0 array GetUpperBound [0] 1 for> {map-array}
-({_body _key _from _to _step} (_from (_key) get set _body (_from) (_step) increment-word-by-word) (_from _to less-or-equal) while) {global-for}
-({_array _code} (_array GetValue [_i] _code) (_i) 0 _array GetUpperBound [0] 1 global-for) {global-map-array}
+
+(
+  body key from to step
+  4    3   2    1  0
+)
+comment
+
+(
+  (
+    get-2 get-4 set
+    get-4 evaluate
+    get-2 1 add set-2
+  )
+  (get-2 get-2 less-or-equal)
+  while
+)
+(new-for) set
+
+(
+  (body key from to step) put
+  (
+    (from) get (key) get set
+    (body) get evaluate
+    (from) get 1 add (from) put
+  )
+  ((from) get (to) get less-or-equal)
+  while  
+)
+(for) set
 
 (
   get-1 0 1 GetUpperBound invoke2
@@ -15,4 +40,19 @@
   (get-0 get-2 less-or-equal)
   while
 )
-{new-map-array}
+{old-map-array}
+
+(
+  (array body) put
+  0
+  (array) get 0 1 GetUpperBound invoke2
+  (from to) put
+  (
+    (array) get (from) get 1 GetValue invoke2
+    (body) get evaluate
+    (from) get 1 add (from) put
+  )
+  ((from) get (to) get less-or-equal)
+  while
+)
+{map-array}

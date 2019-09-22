@@ -21,6 +21,7 @@ namespace Atom2
   using Stack = Stack<object>;
   using Items = List<object>;
   using Words = ScopedDictionary<string, object>;
+  using Parameters = ScopedDictionary<string, object>;
   using WordDescriptions = Dictionary<string, WordDescription>;
 
   public sealed class ScopedDictionary<TK, TV>
@@ -37,6 +38,18 @@ namespace Atom2
     public void Add(TK key, TV value)
     {
       scopes.Peek().Add(key, value);
+    }
+
+    public bool ContainsKey(TK key)
+    {
+      foreach (Dictionary<TK, TV> currentScope in scopes)
+      {
+        if (currentScope.ContainsKey(key))
+        {
+          return true;
+        }
+      }
+      return false;
     }
 
     public void EnterScope()
@@ -78,10 +91,11 @@ namespace Atom2
     private const string RightDelimiter = "right-delimiter";
     private const char Whitespace = char.MaxValue;
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"'};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Whitespace, Eof, '"'};
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '"' };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Whitespace, Eof, '"' };
     private readonly WordDescriptions wordDescriptions = new WordDescriptions();
     private readonly Words words = new Words();
+    private readonly Parameters parameters = new Parameters();
     private static string BaseDirectory { get; set; }
 
     private Runtime(string baseDirectory)
@@ -93,8 +107,13 @@ namespace Atom2
       words.Add("not-equal", BinaryAction(ExpressionType.NotEqual));
       words.Add("less-or-equal", BinaryAction(ExpressionType.LessThanOrEqual));
       words.Add("less", BinaryAction(ExpressionType.LessThan));
+      words.Add("greater-or-equal", BinaryAction(ExpressionType.GreaterThanOrEqual));
+      words.Add("greater", BinaryAction(ExpressionType.GreaterThan));
       words.Add("add", BinaryAction(ExpressionType.Add));
       words.Add("subtract", BinaryAction(ExpressionType.Subtract));
+      words.Add("multiply", BinaryAction(ExpressionType.Multiply));
+      words.Add("divide", BinaryAction(ExpressionType.Divide));
+      words.Add("put", new Action(Put));
       words.Add("set", new Action(Set));
       words.Add("get", new Action(Get));
       words.Add("if", new Action(If));
@@ -189,7 +208,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -226,7 +245,15 @@ namespace Atom2
     {
       foreach (object currentItem in (Items) stack.Pop())
       {
-        Push(words[currentItem.ToString()]);
+        string currentKey = currentItem.ToString();
+        if (parameters.ContainsKey(currentKey))
+        {
+          Push(parameters[currentKey]);
+        }
+        else
+        {
+          Push(words[currentKey]);
+        }
       }
     }
 
@@ -405,7 +432,7 @@ namespace Atom2
           bindingFlags |= BindingFlags.CreateInstance;
           break;
         case MethodInfo _:
-          bindingFlags |= BindingFlags.Static | BindingFlags.InvokeMethod ;
+          bindingFlags |= BindingFlags.Static | BindingFlags.InvokeMethod;
           break;
         case FieldInfo _:
           bindingFlags |= BindingFlags.Static | (arguments.Length == 0 ? BindingFlags.GetField : BindingFlags.SetField);
@@ -452,7 +479,9 @@ namespace Atom2
           action.Invoke();
           return;
         }
+        parameters.EnterScope();
         Evaluate(word);
+        parameters.LeaveScope();
         return;
       }
       Push(unit);
@@ -461,6 +490,14 @@ namespace Atom2
     private void Push(object item)
     {
       stack.Push(item);
+    }
+
+    private void Put()
+    {
+      foreach (object currentItem in Enumerable.Reverse((Items) stack.Pop()))
+      {
+        parameters[currentItem.ToString()] = stack.Pop();
+      }
     }
 
     private void Run(string filename)

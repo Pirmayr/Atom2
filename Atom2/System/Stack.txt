@@ -9,9 +9,11 @@
 <(a b) set (a b a) get> {get-1}
 <(a b c) set (a b c a) get> {get-2}
 <(a b c d) set (a b c d a) get> {get-3}
+<(a b c d e) set (a b c d e a) get> {get-4}
 <(a b) set (b) get> {set-0} 
 <(a b c) set (c b) get> {set-1} 
 <(a b c d) set (d b c) get> {set-2}
+<(a b c d e) set (e b c d) get> {set-3}
 <(a b) set (b a) get> {insert-after-0}
 <(a b c) set (c a b) get> {insert-after-1}
 <(a b c d) set (d a b c) get> {insert-after-2}

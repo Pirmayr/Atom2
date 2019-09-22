@@ -14,23 +14,15 @@
 (0 form-info "Show" instance invoke-method invoke drop) (form-show) set
 (1 form-info "set_FormBorderStyle" instance invoke-method invoke drop) (form-set-form-border-style) set
 
+
 (
   numerics-assembly assembly-load-with-partial-name GetTypes [] (show) new-map-array
   System.Windows.Forms.FormBorderStyle.Type 0 FixedSingle invoke2 message
   System.Windows.Forms.Form.Type 0 ".ctor" invoke2 message
 )
 
-"begin" message
+begin message
 
+() (a) 1 100000 1 for
 
-(duplicate duplicate ".Assembly" add 1 make-list set assembly-load-with-partial-name GetTypes [] (duplicate type-get-name hugo add 1 make-list set) new-map-array) {import1}
-
-
-System.Windows.Forms.Form.Type 0 type-info "get_FullName" instance invoke-method invoke message
-
-"mscorlib" import1
-"System.Windows.Forms" import1
-"System.Numerics" import1
-
-
-"end" message
+end message

@@ -43,6 +43,8 @@ Global
 		$8.InterMessageLines = 0
 		$8.IncludeDirectoryPaths = True
 		$8.Wrap = False
+		$8.Header = @Änderungen:\n\n
+		$8.LineAlign = 0
 		$0.StandardHeader = $9
 		version = 0.2
 	EndGlobalSection
