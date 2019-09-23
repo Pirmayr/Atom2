@@ -2,6 +2,6 @@
 
 begin message
 
-System.Numerics.BigInteger.Type type-get-members (show) map-array
+System.Numerics.BigInteger.Type type-get-members (show) map
 
 end message

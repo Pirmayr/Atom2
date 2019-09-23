@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -125,6 +126,7 @@ namespace Atom2
       words.Add("leave-scope", new Action(LeaveScope));
       words.Add("make-list", new Action(MakeList));
       words.Add("break", new Action(Break));
+      words.Add("cast", new Action(Cast));
     }
 
     public static void Main(params string[] arguments)
@@ -138,6 +140,14 @@ namespace Atom2
       {
         Console.Write(exception.Message);
       }
+    }
+
+    public void Cast()
+    {
+      Type type = (Type) stack.Pop();
+      object instance = stack.Pop();
+      ParameterExpression parameter = Expression.Parameter(instance.GetType());
+      stack.Push(Expression.Lambda(Expression.Convert(parameter, type), parameter).Compile().DynamicInvoke(instance));
     }
 
     private static string Code(string filename)

@@ -26,3 +26,16 @@
   while
 )
 {map-array}
+
+(
+  (array body) put
+  (array) get 0 GetEnumerator invoke2
+  (enumerator) put
+  (
+    (enumerator) get 0 get_Current invoke2
+    (body) get evaluate
+  )
+  ((enumerator) get 0 MoveNext invoke2)
+  while
+)
+{map}

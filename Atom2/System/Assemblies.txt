@@ -6,7 +6,7 @@
     duplicate
     type-get-qualified-name ".Type" add 1 make-list set
   )
-  map-array
+  map
 )
 (import) set
 

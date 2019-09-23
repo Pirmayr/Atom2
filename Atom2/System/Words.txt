@@ -2,5 +2,3 @@
 (get set) {set-by-word}
 (duplicate get increment swap set) (increment-word) set
 (over get swap get add swap set) (increment-word-by-word) set
-(instance invoke-method) (invoke-instance-method) set
-(static invoke-method) (invoke-static-method) set

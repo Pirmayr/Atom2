@@ -13,24 +13,28 @@
 (mscorlib-assembly "System.Type") {type-info}
 (mscorlib-assembly "System.Reflection.Assembly") (assembly-info) set
 (mscorlib-assembly "System.Array") (array-info) set
+(mscorlib-assembly "System.Collections") (collections-info) set
 
-(0 object-info "GetType" instance invoke-method invoke) {object-get-type}
+(instance invoke-method invoke) (invoke-instance-method) set
+(static invoke-method invoke) (invoke-static-method) set
+
+(0 object-info "GetType" invoke-instance-method) {object-get-type}
 (object-get-type type-get-name) {object-get-type-name}
-(0 object-info "ToString" instance invoke-method invoke) (to-string) set
+(0 object-info "ToString" invoke-instance-method) (to-string) set
 
-(0 type-info "get_Assembly" instance invoke-method invoke) {type-get-assembly}
-(0 type-info "get_FullName" instance invoke-method invoke) {type-get-qualified-name}
-(0 type-info "get_Name" instance invoke-method invoke) {type-get-name}
-(0 type-info "get_Namespace" instance invoke-method invoke) {type-get-namespace}
-(0 type-info "GetMembers" instance invoke-method invoke) {type-get-members}
+(0 type-info "get_Assembly" invoke-instance-method) {type-get-assembly}
+(0 type-info "get_FullName" invoke-instance-method) {type-get-qualified-name}
+(0 type-info "get_Name" invoke-instance-method) {type-get-name}
+(0 type-info "get_Namespace" invoke-instance-method) {type-get-namespace}
+(0 type-info "GetMembers" invoke-instance-method) {type-get-members}
 (type-get-assembly assembly-get-name assembly-name-get-name) {type-get-assembly-name}
 (duplicate type-get-namespace "." add swap type-get-name add) {type-get-qualified-name-old}
 (duplicate type-get-assembly-name swap type-get-qualified-name) {get-type-info}
 
-(1 assembly-info "GetType" instance invoke-method invoke) (assembly-get-type) set
-(0 assembly-info "GetName" instance invoke-method invoke) (assembly-get-name) set
-(0 assembly-name-info "get_Name" instance invoke-method invoke) (assembly-name-get-name) set
-(1 assembly-info "LoadWithPartialName" static invoke-method invoke) (assembly-load-with-partial-name) set
+(1 assembly-info "GetType" invoke-instance-method) (assembly-get-type) set
+(0 assembly-info "GetName" invoke-instance-method) (assembly-get-name) set
+(0 assembly-name-info "get_Name" invoke-instance-method) (assembly-name-get-name) set
+(1 assembly-info "LoadWithPartialName" invoke-static-method) (assembly-load-with-partial-name) set
 (swap assembly-load-with-partial-name swap assembly-get-type) (get-type) set
 (mscorlib-assembly "System.Reflection.AssemblyName") (assembly-name-info) set
 
