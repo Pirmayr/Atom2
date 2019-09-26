@@ -103,7 +103,7 @@ namespace Atom2
     {
       BaseDirectory = baseDirectory;
       words.Add("invoke", new Action(Invoke));
-      words.Add("invoke2", new Action(Invoke2));
+      words.Add("execute", new Action(Execute));
       words.Add("equal", BinaryAction(ExpressionType.Equal));
       words.Add("not-equal", BinaryAction(ExpressionType.NotEqual));
       words.Add("less-or-equal", BinaryAction(ExpressionType.LessThanOrEqual));
@@ -299,6 +299,10 @@ namespace Atom2
           }
           break;
         }
+        else if (wordDescriptions.TryGetValue(currentToken, out WordDescription currentNormalTokenDescription) && currentNormalTokenDescription.IsValidNormalToken)
+        {
+          result.Add(currentNormalTokenDescription.NormalTokenName);
+        }
         else
         {
           result.Add(ToObject(currentToken));
@@ -323,7 +327,7 @@ namespace Atom2
           result.Enqueue(GetToken(characters, stringStopCharacters));
           characters.Dequeue();
         }
-        else if (wordDescriptions.TryGetValue(nextCharacter.ToString(), out WordDescription wordDescription) && wordDescription.IsDelimiter)
+        else if (wordDescriptions.TryGetValue(nextCharacter.ToString(), out WordDescription wordDescription) /*&& wordDescription.IsDelimiter*/)
         {
           result.Enqueue(nextCharacter.ToString());
           characters.Dequeue();
@@ -349,6 +353,7 @@ namespace Atom2
       string pragma = tokens.Dequeue().ToString();
       switch (pragma)
       {
+        case "single-character-token":
         case LeftDelimiter:
         case RightDelimiter:
           ActionKind actionKind = ActionKind.Normal;
@@ -415,7 +420,7 @@ namespace Atom2
       Push(result);
     }
 
-    private void Invoke2()
+    private void Execute()
     {
       string memberName;
       object[] arguments;
@@ -434,21 +439,35 @@ namespace Atom2
       bool isType = typeOrTarget is Type;
       Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
       object target = isType ? null : typeOrTarget;
-      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-      MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
-      switch (member)
+      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
+      switch (memberName)
       {
-        case ConstructorInfo _:
+        case "static-new":
+          memberName = ".ctor";
+          bindingFlags |= BindingFlags.Static;
+          break;
+        case "instance-new":
+          memberName = ".ctor";
+          bindingFlags |= BindingFlags.Instance;
+          break;
+        default:
+          bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
+          break;
+      }
+      MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
+      switch (member.MemberType)
+      {
+        case MemberTypes.Constructor:
           bindingFlags |= BindingFlags.CreateInstance;
           break;
-        case MethodInfo _:
-          bindingFlags |= BindingFlags.Static | BindingFlags.InvokeMethod;
+        case MemberTypes.Method:
+          bindingFlags |=  BindingFlags.InvokeMethod;
           break;
-        case FieldInfo _:
-          bindingFlags |= BindingFlags.Static | (arguments.Length == 0 ? BindingFlags.GetField : BindingFlags.SetField);
+        case MemberTypes.Field:
+          bindingFlags |= (arguments.Length == 0 ? BindingFlags.GetField : BindingFlags.SetField);
           break;
-        case PropertyInfo _:
-          bindingFlags |= BindingFlags.Static | (arguments.Length == 0 ? BindingFlags.GetProperty : BindingFlags.SetProperty);
+        case MemberTypes.Property:
+          bindingFlags |= (arguments.Length == 0 ? BindingFlags.GetProperty : BindingFlags.SetProperty);
           break;
       }
       object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
@@ -556,9 +575,11 @@ namespace Atom2
     public readonly ActionKind actionKind;
     public readonly string name;
     private readonly Action[] actions;
+    public bool IsNormalToken => actionKind == ActionKind.Normal;
     public bool IsDelimiter => IsLeftDelimiter || IsRightDelimiter;
     public bool IsLeftDelimiter => actionKind == ActionKind.LeftItemsDelimiter;
     public bool IsRightDelimiter => actionKind == ActionKind.RightItemsDelimiter;
+    public bool IsValidNormalToken => IsNormalToken && NormalAction != null;
     public bool IsValidPostLeftDelimiter => IsLeftDelimiter && PostAction != null;
     public bool IsValidPostRightDelimiter => IsRightDelimiter && PostAction != null;
     public bool IsValidPreLeftDelimiter => IsLeftDelimiter && PreAction != null;
@@ -568,6 +589,7 @@ namespace Atom2
     public string PostName => "post-" + name;
     public Action PreAction => actions[0];
     public string PreName => "pre-" + name;
+    public string NormalTokenName => name;
 
     public WordDescription(string name, ActionKind actionKind, params Action[] actions)
     {

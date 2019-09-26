@@ -1,4 +1,4 @@
-﻿<{if-block else-block condition} (else-block) (drop (if-block)) (condition) if evaluate> {if-else}
+﻿((if-block else-block condition) put (else-block) (drop (if-block)) (condition) if evaluate) (if-else) set
 
 (
   (body key from to step) put
@@ -14,28 +14,13 @@
 
 (
   (array body) put
-  0
-  (array) get 0 1 array-info GetUpperBound instance invoke-method invoke
-  (from to) put
-  (
-    (array) get (from) get 1 array-info GetValue instance invoke-method invoke
-    (body) get evaluate
-    (from) get 1 add (from) put
-  )
-  ((from) get (to) get less-or-equal)
-  while
-)
-{map-array}
-
-(
-  (array body) put
-  (array) get 0 GetEnumerator invoke2
+  (array) get GetEnumerator:
   (enumerator) put
   (
-    (enumerator) get 0 get_Current invoke2
+    (enumerator) get Current:
     (body) get evaluate
   )
-  ((enumerator) get 0 MoveNext invoke2)
+  ((enumerator) get MoveNext:)
   while
 )
 {map}

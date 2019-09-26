@@ -46,4 +46,16 @@
 ((create-instance-arguments) (static-call-arguments) (name-is-create-instance-name) if-else) {create-instance-or-static-call-arguments}
 <{target name arguments} (create-instance-or-static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke> {call}
 
+(
+  triplicate
+  ".Assembly" add 1 make-list set
+  assembly-load-with-partial-name GetTypes []
+  (
+    duplicate
+    type-get-qualified-name ".Type" add 1 make-list set
+  )
+  map
+)
+(import) set
+
 
