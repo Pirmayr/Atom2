@@ -122,7 +122,6 @@ namespace Atom2
       words.Add("enter-scope", new Action(EnterScope));
       words.Add("leave-scope", new Action(LeaveScope));
       words.Add("make-list", new Action(MakeList));
-      words.Add("break", new Action(Break));
       words.Add("cast", new Action(Cast));
     }
 
@@ -213,11 +212,6 @@ namespace Atom2
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
       Delegate function = lambda.Compile();
       return delegate { Push(function.DynamicInvoke(stack.Pop(), stack.Pop())); };
-    }
-
-    private void Break()
-    {
-      Debugger.Break();
     }
 
     private void Cast()

@@ -1,7 +1,3 @@
 ﻿load-file System.txt pragma
 
-begin message
-
 System.Environment.Type [GetEnvironmentVariables] (duplicate [Key] show [Value] show) map
-
-end message
