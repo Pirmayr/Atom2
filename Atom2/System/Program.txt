@@ -2,6 +2,6 @@
 
 begin message
 
-System.Environment.Type GetEnvironmentVariables: (+ Key: show Value: show) map
+System.Environment.Type [GetEnvironmentVariables] (duplicate [Key] show [Value] show) map
 
 end message

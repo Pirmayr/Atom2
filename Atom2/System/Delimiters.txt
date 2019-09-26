@@ -6,12 +6,8 @@ left-delimiter [ left-bracket 2 empty-action no-action pragma
 right-delimiter ] right-bracket 2 no-action empty-action pragma
 left-delimiter ( left-parenthesis 2 empty-action no-action pragma
 right-delimiter ) right-parenthesis 2 no-action empty-action pragma
-single-character-token : colon 1 empty-action pragma
-single-character-token + plus 1 empty-action pragma
 
 (evaluate-and-split execute) (post-right-bracket) set
-(duplicate) (plus) set
-(0 execute) (colon) set
 (set) (post-right-brace) set
 (enter-scope) (post-left-angle) set
 (leave-scope) (pre-right-angle) set

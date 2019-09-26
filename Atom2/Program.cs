@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -7,8 +6,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
-using System.Windows.Forms;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 
@@ -91,12 +88,12 @@ namespace Atom2
     private const string LeftDelimiter = "left-delimiter";
     private const string RightDelimiter = "right-delimiter";
     private const char Whitespace = char.MaxValue;
+    private readonly Parameters parameters = new Parameters();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '"' };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Whitespace, Eof, '"' };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"'};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Whitespace, Eof, '"'};
     private readonly WordDescriptions wordDescriptions = new WordDescriptions();
     private readonly Words words = new Words();
-    private readonly Parameters parameters = new Parameters();
     private static string BaseDirectory { get; set; }
 
     private Runtime(string baseDirectory)
@@ -140,14 +137,6 @@ namespace Atom2
       {
         Console.Write(exception.Message);
       }
-    }
-
-    public void Cast()
-    {
-      Type type = (Type) stack.Pop();
-      object instance = stack.Pop();
-      ParameterExpression parameter = Expression.Parameter(instance.GetType());
-      stack.Push(Expression.Lambda(Expression.Convert(parameter, type), parameter).Compile().DynamicInvoke(instance));
     }
 
     private static string Code(string filename)
@@ -218,7 +207,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
+      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -229,6 +218,14 @@ namespace Atom2
     private void Break()
     {
       Debugger.Break();
+    }
+
+    private void Cast()
+    {
+      Type type = (Type) stack.Pop();
+      object instance = stack.Pop();
+      ParameterExpression parameter = Expression.Parameter(instance.GetType());
+      stack.Push(Expression.Lambda(Expression.Convert(parameter, type), parameter).Compile().DynamicInvoke(instance));
     }
 
     private void EnterScope()
@@ -251,19 +248,66 @@ namespace Atom2
       Evaluate(stack.Pop());
     }
 
+    private void EvaluateAndSplit()
+    {
+      object items = stack.Pop();
+      int stackLength = stack.Count;
+      Evaluate(items);
+      Push(stack.Count - stackLength);
+    }
+
+    private void Execute()
+    {
+      int argumentsCount = (int) stack.Pop();
+      string memberName = (string) stack.Pop();
+      object[] arguments = Pop(argumentsCount - 1);
+      object typeOrTarget = stack.Pop();
+      bool isType = typeOrTarget is Type;
+      Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
+      object target = isType ? null : typeOrTarget;
+      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
+      switch (memberName)
+      {
+        case "static-new":
+          memberName = ".ctor";
+          bindingFlags |= BindingFlags.Static;
+          break;
+        case "instance-new":
+          memberName = ".ctor";
+          bindingFlags |= BindingFlags.Instance;
+          break;
+        default:
+          bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
+          break;
+      }
+      MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
+      if (member != null)
+      {
+        switch (member.MemberType)
+        {
+          case MemberTypes.Constructor:
+            bindingFlags |= BindingFlags.CreateInstance;
+            break;
+          case MemberTypes.Method:
+            bindingFlags |= BindingFlags.InvokeMethod;
+            break;
+          case MemberTypes.Field:
+            bindingFlags |= (arguments.Length == 0 ? BindingFlags.GetField : BindingFlags.SetField);
+            break;
+          case MemberTypes.Property:
+            bindingFlags |= (arguments.Length == 0 ? BindingFlags.GetProperty : BindingFlags.SetProperty);
+            break;
+        }
+      }
+      object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
+      stack.Push(invokeResult);
+    }
+
     private void Get()
     {
-      foreach (object currentItem in (Items) stack.Pop())
+      foreach (string currentKey in from currentItem in (Items) stack.Pop() select currentItem.ToString())
       {
-        string currentKey = currentItem.ToString();
-        if (parameters.ContainsKey(currentKey))
-        {
-          Push(parameters[currentKey]);
-        }
-        else
-        {
-          Push(words[currentKey]);
-        }
+        Push(parameters.ContainsKey(currentKey) ? parameters[currentKey] : words[currentKey]);
       }
     }
 
@@ -327,7 +371,7 @@ namespace Atom2
           result.Enqueue(GetToken(characters, stringStopCharacters));
           characters.Dequeue();
         }
-        else if (wordDescriptions.TryGetValue(nextCharacter.ToString(), out WordDescription wordDescription) /*&& wordDescription.IsDelimiter*/)
+        else if (wordDescriptions.TryGetValue(nextCharacter.ToString(), out WordDescription _))
         {
           result.Enqueue(nextCharacter.ToString());
           characters.Dequeue();
@@ -420,60 +464,6 @@ namespace Atom2
       Push(result);
     }
 
-    private void Execute()
-    {
-      string memberName;
-      object[] arguments;
-      object memberNameOrArgumentsCount = stack.Pop();
-      if (memberNameOrArgumentsCount is string)
-      {
-        memberName = (string) memberNameOrArgumentsCount;
-        arguments = Pop((int) stack.Pop());
-      }
-      else
-      {
-        arguments = Pop((int) memberNameOrArgumentsCount);
-        memberName = (string) stack.Pop();
-      }
-      object typeOrTarget = stack.Pop();
-      bool isType = typeOrTarget is Type;
-      Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
-      object target = isType ? null : typeOrTarget;
-      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
-      switch (memberName)
-      {
-        case "static-new":
-          memberName = ".ctor";
-          bindingFlags |= BindingFlags.Static;
-          break;
-        case "instance-new":
-          memberName = ".ctor";
-          bindingFlags |= BindingFlags.Instance;
-          break;
-        default:
-          bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
-          break;
-      }
-      MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
-      switch (member.MemberType)
-      {
-        case MemberTypes.Constructor:
-          bindingFlags |= BindingFlags.CreateInstance;
-          break;
-        case MemberTypes.Method:
-          bindingFlags |=  BindingFlags.InvokeMethod;
-          break;
-        case MemberTypes.Field:
-          bindingFlags |= (arguments.Length == 0 ? BindingFlags.GetField : BindingFlags.SetField);
-          break;
-        case MemberTypes.Property:
-          bindingFlags |= (arguments.Length == 0 ? BindingFlags.GetProperty : BindingFlags.SetProperty);
-          break;
-      }
-      object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
-      stack.Push(invokeResult);
-    }
-
     private void LeaveScope()
     {
       words.LeaveScope();
@@ -542,14 +532,6 @@ namespace Atom2
       }
     }
 
-    private void EvaluateAndSplit()
-    {
-      object items = stack.Pop();
-      int stackLength = stack.Count;
-      Evaluate(items);
-      Push(stack.Count - stackLength);
-    }
-
     private void While()
     {
       object condition = stack.Pop();
@@ -575,8 +557,6 @@ namespace Atom2
     public readonly ActionKind actionKind;
     public readonly string name;
     private readonly Action[] actions;
-    public bool IsNormalToken => actionKind == ActionKind.Normal;
-    public bool IsDelimiter => IsLeftDelimiter || IsRightDelimiter;
     public bool IsLeftDelimiter => actionKind == ActionKind.LeftItemsDelimiter;
     public bool IsRightDelimiter => actionKind == ActionKind.RightItemsDelimiter;
     public bool IsValidNormalToken => IsNormalToken && NormalAction != null;
@@ -585,11 +565,12 @@ namespace Atom2
     public bool IsValidPreLeftDelimiter => IsLeftDelimiter && PreAction != null;
     public bool IsValidPreRightDelimiter => IsRightDelimiter && PreAction != null;
     public Action NormalAction => actions[0];
+    public string NormalTokenName => name;
     public Action PostAction => actions[1];
     public string PostName => "post-" + name;
     public Action PreAction => actions[0];
     public string PreName => "pre-" + name;
-    public string NormalTokenName => name;
+    private bool IsNormalToken => actionKind == ActionKind.Normal;
 
     public WordDescription(string name, ActionKind actionKind, params Action[] actions)
     {

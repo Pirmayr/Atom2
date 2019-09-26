@@ -49,7 +49,7 @@
 (
   triplicate
   ".Assembly" add 1 make-list set
-  assembly-load-with-partial-name GetTypes []
+  assembly-load-with-partial-name [GetTypes]
   (
     duplicate
     type-get-qualified-name ".Type" add 1 make-list set
