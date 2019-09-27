@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -73,6 +72,11 @@ namespace Atom2
       return false;
     }
 
+    public List<KeyValuePair<TK, TV>> ToList()
+    {
+      return scopes.Peek().ToList();
+    }
+
     public TV this[TK key]
     {
       get => TryGetValue(key, out TV result) ? result : default(TV);
@@ -90,8 +94,8 @@ namespace Atom2
     private const char Whitespace = char.MaxValue;
     private readonly Parameters parameters = new Parameters();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '"' };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Whitespace, Eof, '"' };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"'};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Whitespace, Eof, '"'};
     private readonly WordDescriptions wordDescriptions = new WordDescriptions();
     private readonly Words words = new Words();
     private static string BaseDirectory { get; set; }
@@ -123,6 +127,7 @@ namespace Atom2
       words.Add("leave-scope", new Action(LeaveScope));
       words.Add("make-list", new Action(MakeList));
       words.Add("cast", new Action(Cast));
+      words.Add("get-runtime", new Action(GetRuntime));
     }
 
     public static void Main(params string[] arguments)
@@ -206,7 +211,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
+      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -264,47 +269,42 @@ namespace Atom2
       switch (memberName)
       {
         case "initialize":
-          memberName = ".ctor";
-          hasReturnValue = false;
-          bindingFlags |= BindingFlags.Static;
+          memberName = "";
+          bindingFlags |= BindingFlags.Static | BindingFlags.CreateInstance;
           break;
         case "new":
-          memberName = ".ctor";
+          memberName = "";
           hasReturnValue = true;
-          bindingFlags |= BindingFlags.Instance;
+          bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;
           break;
         default:
           bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
+          MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
+          if (member != null)
+          {
+            switch (member)
+            {
+              case MethodInfo methodInfo:
+                hasReturnValue = methodInfo.ReturnType != typeof(void);
+                bindingFlags |= BindingFlags.InvokeMethod;
+                break;
+              case FieldInfo _:
+                hasReturnValue = arguments.Length == 0;
+                bindingFlags |= (hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField);
+                break;
+              case PropertyInfo _:
+                hasReturnValue = arguments.Length == 0;
+                bindingFlags |= (hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty);
+                break;
+            }
+          }
           break;
-      }
-      MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
-      if (member != null)
-      {
-        switch (member)
-        {
-          case ConstructorInfo _:
-            bindingFlags |= BindingFlags.CreateInstance;
-            break;
-          case MethodInfo methodInfo:
-            hasReturnValue = methodInfo.ReturnType != typeof(void);
-            bindingFlags |= BindingFlags.InvokeMethod;
-            break;
-          case FieldInfo _:
-            hasReturnValue = arguments.Length == 0;
-            bindingFlags |= (hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField);
-            break;
-          case PropertyInfo _:
-            hasReturnValue = arguments.Length == 0;
-            bindingFlags |= (hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty);
-            break;
-        }
       }
       object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
       if (hasReturnValue)
       {
         stack.Push(invokeResult);
       }
-
     }
 
     private void Get()
@@ -357,6 +357,11 @@ namespace Atom2
         }
       }
       return result;
+    }
+
+    private void GetRuntime()
+    {
+      stack.Push(this);
     }
 
     private Tokens GetTokens(string code)

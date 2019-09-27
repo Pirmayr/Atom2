@@ -49,7 +49,7 @@
 (
   assembly-load-with-partial-name [GetTypes]
   (
-    duplicate type-get-name "Type" add 1 make-list set
+    duplicate type-get-qualified-name ".Type" add 1 make-list set
   )
   map
 )

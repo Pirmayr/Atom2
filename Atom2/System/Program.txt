@@ -1,7 +1,15 @@
 ﻿load-file System.txt pragma
 
-begin message
+1 message
 
-FormType [new] duplicate [FormBorderStyleType [FixedSingle] FormBorderStyle] [Show]
+get-runtime [words] [ToList] ([Key] show) map
 
-end message
+(
+  System.Windows.Forms.Form.Type [new] (theForm) set
+  System.Windows.Forms.TextBox.Type [new] (theTextBox) set
+  theForm [Controls] [theTextBox Add]
+  (theForm) get
+)
+(new-main-form) set
+
+System.Windows.Forms.Application.Type [new-main-form Run]
