@@ -1,4 +1,4 @@
-﻿<to-string {message} System.Console.Type [message WriteLine] drop> {show}
-<to-string {message} System.Windows.Forms.MessageBox.Type [message Show] drop> {message}
+﻿<to-string {message} ConsoleType [message WriteLine]> {show}
+<to-string {message} MessageBoxType [message Show]> {message}
 (duplicate show) {trace}
 ("hi!"  show) (hi) set

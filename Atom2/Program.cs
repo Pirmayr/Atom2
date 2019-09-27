@@ -90,8 +90,8 @@ namespace Atom2
     private const char Whitespace = char.MaxValue;
     private readonly Parameters parameters = new Parameters();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"'};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Whitespace, Eof, '"'};
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '"' };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Whitespace, Eof, '"' };
     private readonly WordDescriptions wordDescriptions = new WordDescriptions();
     private readonly Words words = new Words();
     private static string BaseDirectory { get; set; }
@@ -206,7 +206,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -260,14 +260,17 @@ namespace Atom2
       Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
       object target = isType ? null : typeOrTarget;
       BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
+      bool hasReturnValue = false;
       switch (memberName)
       {
-        case "static-new":
+        case "initialize":
           memberName = ".ctor";
+          hasReturnValue = false;
           bindingFlags |= BindingFlags.Static;
           break;
-        case "instance-new":
+        case "new":
           memberName = ".ctor";
+          hasReturnValue = true;
           bindingFlags |= BindingFlags.Instance;
           break;
         default:
@@ -277,24 +280,31 @@ namespace Atom2
       MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
       if (member != null)
       {
-        switch (member.MemberType)
+        switch (member)
         {
-          case MemberTypes.Constructor:
+          case ConstructorInfo _:
             bindingFlags |= BindingFlags.CreateInstance;
             break;
-          case MemberTypes.Method:
+          case MethodInfo methodInfo:
+            hasReturnValue = methodInfo.ReturnType != typeof(void);
             bindingFlags |= BindingFlags.InvokeMethod;
             break;
-          case MemberTypes.Field:
-            bindingFlags |= (arguments.Length == 0 ? BindingFlags.GetField : BindingFlags.SetField);
+          case FieldInfo _:
+            hasReturnValue = arguments.Length == 0;
+            bindingFlags |= (hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField);
             break;
-          case MemberTypes.Property:
-            bindingFlags |= (arguments.Length == 0 ? BindingFlags.GetProperty : BindingFlags.SetProperty);
+          case PropertyInfo _:
+            hasReturnValue = arguments.Length == 0;
+            bindingFlags |= (hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty);
             break;
         }
       }
       object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
-      stack.Push(invokeResult);
+      if (hasReturnValue)
+      {
+        stack.Push(invokeResult);
+      }
+
     }
 
     private void Get()

@@ -1,3 +1,7 @@
 ﻿load-file System.txt pragma
 
-System.Environment.Type [GetEnvironmentVariables] (duplicate [Key] show [Value] show) map
+begin message
+
+FormType [new] duplicate [FormBorderStyleType [FixedSingle] FormBorderStyle] [Show]
+
+end message
