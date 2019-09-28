@@ -7,20 +7,21 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
+using Tokens = System.Collections.Generic.Queue<object>;
+using CharHashSet = System.Collections.Generic.HashSet<char>;
+using Characters = System.Collections.Generic.Queue<char>;
+using Stack = System.Collections.Generic.Stack<object>;
+using Items = System.Collections.Generic.List<object>;
+using Words = Atom2.ScopedDictionary<string, object>;
+using Parameters = Atom2.ScopedDictionary<string, object>;
+using WordDescriptions = System.Collections.Generic.Dictionary<string, Atom2.WordDescription>;
+using System.Windows.Forms;
+using System.Diagnostics;
 
 #pragma warning disable 618
 
 namespace Atom2
 {
-  using Tokens = Queue<object>;
-  using CharHashSet = HashSet<char>;
-  using Characters = Queue<char>;
-  using Stack = Stack<object>;
-  using Items = List<object>;
-  using Words = ScopedDictionary<string, object>;
-  using Parameters = ScopedDictionary<string, object>;
-  using WordDescriptions = Dictionary<string, WordDescription>;
-
   public sealed class ScopedDictionary<TK, TV>
   {
     private sealed class Scopes : Stack<Dictionary<TK, TV>> { }
@@ -94,8 +95,8 @@ namespace Atom2
     private const char Whitespace = char.MaxValue;
     private readonly Parameters parameters = new Parameters();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"'};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Whitespace, Eof, '"'};
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '"' };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Whitespace, Eof, '"' };
     private readonly WordDescriptions wordDescriptions = new WordDescriptions();
     private readonly Words words = new Words();
     private static string BaseDirectory { get; set; }
@@ -125,15 +126,48 @@ namespace Atom2
       words.Add("evaluate-and-split", new Action(EvaluateAndSplit));
       words.Add("enter-scope", new Action(EnterScope));
       words.Add("leave-scope", new Action(LeaveScope));
-      words.Add("make-list", new Action(MakeList));
+      words.Add("join", new Action(Join));
+      words.Add("ones-complement", UnaryAction(ExpressionType.OnesComplement));
       words.Add("cast", new Action(Cast));
       words.Add("get-runtime", new Action(GetRuntime));
+      words.Add("trace", new Action(Trace));
+      words.Add("split", new Action(Split));
+      words.Add("create-event-handler", new Action(CreateEventHandler));
+      words.Add("break", new Action(Break));
+    }
+
+    private void Break()
+    {
+      Debugger.Break();
+    }
+
+    private void Split()
+    {
+      Items items = (Items) stack.Pop();
+      foreach (object currentItem in items)
+      {
+        stack.Push(currentItem);
+      }
+      Push(items.Count);
+    }
+
+    private void Trace()
+    {
+      MessageBox.Show(stack.Peek()?.ToString());
     }
 
     public static void Main(params string[] arguments)
     {
       try
       {
+        var strip = new MenuStrip();
+        var item = new ToolStripMenuItem();
+
+
+
+
+        strip.Items.Add(item);
+
         new Runtime(arguments[0]).Run(arguments[1]);
         Console.Write("done");
       }
@@ -211,7 +245,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -223,8 +257,20 @@ namespace Atom2
     {
       Type type = (Type) stack.Pop();
       object instance = stack.Pop();
-      ParameterExpression parameter = Expression.Parameter(instance.GetType());
-      stack.Push(Expression.Lambda(Expression.Convert(parameter, type), parameter).Compile().DynamicInvoke(instance));
+      stack.Push(Expression.Lambda(Expression.Convert(Expression.Constant(instance), type)).Compile().DynamicInvoke());
+    }
+
+    private Action UnaryAction(ExpressionType expressionType)
+    {
+      Type objectType = typeof(object);
+      ParameterExpression parameter = Expression.Parameter(objectType);
+      CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo };
+      CallSiteBinder binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
+      DynamicExpression expression = Expression.Dynamic(binder, objectType, parameter);
+      LambdaExpression lambda = Expression.Lambda(expression, parameter);
+      Delegate function = lambda.Compile();
+      return delegate { Push(function.DynamicInvoke(stack.Pop())); };
     }
 
     private void EnterScope()
@@ -253,6 +299,20 @@ namespace Atom2
       int stackLength = stack.Count;
       Evaluate(items);
       Push(stack.Count - stackLength);
+    }
+
+    private void EventHandler(Items items, object sender, EventArgs eventArguments)
+    {
+      stack.Push(sender);
+      stack.Push(eventArguments);
+      Evaluate(items);
+    }
+
+    private void CreateEventHandler()
+    {
+      Items items = (Items) stack.Pop();
+      System.EventHandler action = (object sender, EventArgs eventArguments) => EventHandler(items, sender, eventArguments);
+      stack.Push(action);
     }
 
     private void Execute()
@@ -295,6 +355,11 @@ namespace Atom2
               case PropertyInfo _:
                 hasReturnValue = arguments.Length == 0;
                 bindingFlags |= (hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty);
+                break;
+              case EventInfo eventInfo:
+                hasReturnValue = false;
+                memberName = eventInfo.AddMethod.Name;
+                bindingFlags |= BindingFlags.InvokeMethod;
                 break;
             }
           }
@@ -483,7 +548,7 @@ namespace Atom2
       Push(((Items) stack.Pop()).Count);
     }
 
-    private void MakeList()
+    private void Join()
     {
       stack.Push(new Items(Pop((int) stack.Pop())));
     }

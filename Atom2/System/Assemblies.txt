@@ -1,3 +1,1 @@
-﻿mscorlib import
-System.Windows.Forms import
-System.Numerics import
+﻿

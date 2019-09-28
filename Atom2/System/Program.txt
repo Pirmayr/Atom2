@@ -1,15 +1,34 @@
 ﻿load-file System.txt pragma
 
-1 message
+(mscorlib) import
+(System.Windows.Forms) import
+(System.Numerics) import
+(System.Drawing) import
 
-get-runtime [words] [ToList] ([Key] show) map
+(System.Windows.Forms) use
 
 (
-  System.Windows.Forms.Form.Type [new] (theForm) set
-  System.Windows.Forms.TextBox.Type [new] (theTextBox) set
-  theForm [Controls] [theTextBox Add]
-  (theForm) get
+  TextBox [new] (textBox) set
+  textBox [true Multiline]
+  textBox [DockStyle [Fill] Dock]
+
+  Button [new] (button) set
+  button [DockStyle [Top] Dock]
+  button ["Press" Text]
+  button [(drop drop textBox ["Hello World!" Text]) create-event-handler Click]
+
+  MenuStrip [new] (mainMenuStrip) set
+  mainMenuStrip [Items] ["File" Add] (fileMenuItem) set
+  fileMenuItem [DropDownItems] ["Open" Add] (openMenuItem) set
+  openMenuItem [(drop drop "Hello" message) create-event-handler Click]   
+
+  Form [new] (form) set
+  form [Controls] [textBox Add]
+  form [Controls] [button Add]
+  form [Controls] [mainMenuStrip Add]
+  (form) get
 )
 (new-main-form) set
 
-System.Windows.Forms.Application.Type [new-main-form Run]
+Application [new-main-form Run]
+

@@ -38,6 +38,7 @@
     </Reference>
     <Reference Include="System.Windows.Forms">
     </Reference>
+    <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
