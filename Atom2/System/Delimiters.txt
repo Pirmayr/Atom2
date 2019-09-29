@@ -7,7 +7,7 @@ right-delimiter ] right-bracket 2 no-action empty-action pragma
 left-delimiter ( left-parenthesis 2 empty-action no-action pragma
 right-delimiter ) right-parenthesis 2 no-action empty-action pragma
 
-(evaluate-and-split execute) (post-right-bracket) set
+(call) (post-right-bracket) set
 (set) (post-right-brace) set
 (enter-scope) (post-left-angle) set
 (leave-scope) (pre-right-angle) set

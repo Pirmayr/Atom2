@@ -8,6 +8,12 @@
 (System.Windows.Forms) use
 
 (
+  (menu-item menu-text click-handler) put
+  (menu-item) get [DropDownItems] [(menu-text) get Add] [(click-handler) get create-event-handler Click]   
+)
+(add-menu-item) set
+
+(
   TextBox [new] (textBox) set
   textBox [true Multiline]
   textBox [DockStyle [Fill] Dock]
@@ -19,8 +25,9 @@
 
   MenuStrip [new] (mainMenuStrip) set
   mainMenuStrip [Items] ["File" Add] (fileMenuItem) set
-  fileMenuItem [DropDownItems] ["Open" Add] (openMenuItem) set
-  openMenuItem [(drop drop "Hello" message) create-event-handler Click]   
+  [fileMenuItem "New" (drop-2 "New" message) add-menu-item]
+  [fileMenuItem "Open" (drop-2 "Open" message) add-menu-item]
+  [fileMenuItem "Save" (drop-2 "Save" message) add-menu-item]
 
   Form [new] (form) set
   form [Controls] [textBox Add]
@@ -31,4 +38,10 @@
 (new-main-form) set
 
 Application [new-main-form Run]
+
+  fileMenuItem [DropDownItems] ["Open" Add] (openMenuItem) set
+  openMenuItem [(drop drop "Open" message) create-event-handler Click]   
+  fileMenuItem [DropDownItems] ["Save" Add] (saveMenuItem) set
+  saveMenuItem [(drop drop "Save" message) create-event-handler Click]   
+
 

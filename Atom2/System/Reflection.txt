@@ -47,7 +47,7 @@
 ((arguments) get evaluate-and-split target get-type-info name static invoke-method) {static-call-arguments}
 ((arguments) get evaluate-and-split target get-type-info name instance create-instance) {create-instance-arguments}
 ((create-instance-arguments) (static-call-arguments) (name-is-create-instance-name) if-else) {create-instance-or-static-call-arguments}
-<{target name arguments} (create-instance-or-static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke> {call}
+<{target name arguments} (create-instance-or-static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke> {call_}
 
 (
   verbatim

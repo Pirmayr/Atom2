@@ -1,4 +1,5 @@
 ﻿<{a}> {drop}
+((a b) put) (drop-2) set
 <{a b} (b a) get> {swap}
 <{a} (a a) get> {duplicate}
 <{a} (a a a) get> {triplicate}

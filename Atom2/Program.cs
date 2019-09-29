@@ -60,6 +60,11 @@ namespace Atom2
       scopes.Pop();
     }
 
+    public void SplitTail()
+    {
+
+    }
+
     public bool TryGetValue(TK key, out TV value)
     {
       foreach (Dictionary<TK, TV> currentScope in scopes)
@@ -134,6 +139,20 @@ namespace Atom2
       words.Add("split", new Action(Split));
       words.Add("create-event-handler", new Action(CreateEventHandler));
       words.Add("break", new Action(Break));
+      words.Add("call", new Action(Call));
+    }
+
+    private void Call()
+    {
+      Items items = (Items) stack.Peek();
+      string nameOrMethod = (string) items.LastOrDefault();
+      if (words.TryGetValue(nameOrMethod, out object word))
+      {
+        Evaluate();
+        return;
+      }
+      EvaluateAndSplit();
+      Execute();
     }
 
     private void Break()
@@ -160,14 +179,6 @@ namespace Atom2
     {
       try
       {
-        var strip = new MenuStrip();
-        var item = new ToolStripMenuItem();
-
-
-
-
-        strip.Items.Add(item);
-
         new Runtime(arguments[0]).Run(arguments[1]);
         Console.Write("done");
       }
