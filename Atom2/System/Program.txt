@@ -9,7 +9,7 @@
 
 (
   (menu-item menu-text click-handler) put
-  (menu-item) get [DropDownItems] [(menu-text) get Add] [(click-handler) get create-event-handler Click]   
+  menu-item [DropDownItems] [menu-text Add] [(click-handler) get create-event-handler Click]   
 )
 (add-menu-item) set
 
@@ -38,10 +38,3 @@
 (new-main-form) set
 
 Application [new-main-form Run]
-
-  fileMenuItem [DropDownItems] ["Open" Add] (openMenuItem) set
-  openMenuItem [(drop drop "Open" message) create-event-handler Click]   
-  fileMenuItem [DropDownItems] ["Save" Add] (saveMenuItem) set
-  saveMenuItem [(drop drop "Save" message) create-event-handler Click]   
-
-

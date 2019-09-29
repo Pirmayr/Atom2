@@ -146,7 +146,7 @@ namespace Atom2
     {
       Items items = (Items) stack.Peek();
       string nameOrMethod = (string) items.LastOrDefault();
-      if (words.TryGetValue(nameOrMethod, out object word))
+      if (TryGetWord(nameOrMethod, out object word))
       {
         Evaluate();
         return;
@@ -222,6 +222,15 @@ namespace Atom2
         return doubleValue;
       }
       return token;
+    }
+
+    private bool TryGetWord(string key, out object word)
+    {
+      if (parameters.TryGetValue(key, out word))
+      {
+        return true;
+      }
+      return words.TryGetValue(key, out word);
     }
 
     private void AddWordDescription(string token, string name, ActionKind actionKind, params Action[] actions)
@@ -576,7 +585,7 @@ namespace Atom2
 
     private void Process(object unit)
     {
-      if (words.TryGetValue(unit.ToString(), out object word))
+      if (TryGetWord(unit.ToString(), out object word))
       {
         if (word is Action action)
         {
