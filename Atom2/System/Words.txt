@@ -1,5 +1,5 @@
 ﻿(duplicate-second set) (set-sticky) set
-(get set) {set-by-word}
+(get set) (set-by-word) set 
 (duplicate get increment swap set) (increment-word) set
 (over get swap get add swap set) (increment-word-by-word) set
 (split drop) (verbatim) set

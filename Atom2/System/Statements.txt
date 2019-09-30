@@ -14,13 +14,13 @@
 
 (
   (array body) put
-  (array) get [GetEnumerator]
+  (array) get (GetEnumerator) call 
   (enumerator) put
   (
-    (enumerator) get [Current]
+    (enumerator) get (Current) call 
     (body) get evaluate
   )
-  ((enumerator) get [MoveNext])
+  ((enumerator) get (MoveNext) call )
   while
 )
-{map}
+(map) set 

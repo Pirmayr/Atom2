@@ -5,34 +5,34 @@
 (256) (invoke-method) set
 (1024) (get-field) set
 
-("mscorlib") {mscorlib-assembly}
-("System.Windows.Forms") {forms-assembly}
-("System.Numerics") {numerics-assembly}
+(mscorlib) (mscorlib-assembly) set 
+(System.Windows.Forms) (forms-assembly) set 
+(System.Numerics) (numerics-assembly) set 
 
-(mscorlib-assembly "System.Object") (object-info) set
-(mscorlib-assembly "System.Type") {type-info}
-(mscorlib-assembly "System.Reflection.Assembly") (assembly-info) set
-(mscorlib-assembly "System.Array") (array-info) set
-(mscorlib-assembly "System.Collections") (collections-info) set
-(mscorlib-assembly "System.String") (string-info) set
+(mscorlib-assembly System.Object) (object-info) set
+(mscorlib-assembly System.Type) (type-info) set 
+(mscorlib-assembly System.Reflection.Assembly) (assembly-info) set
+(mscorlib-assembly System.Array) (array-info) set
+(mscorlib-assembly System.Collections) (collections-info) set
+(mscorlib-assembly System.String) (string-info) set
 
 (instance invoke-method invoke) (invoke-instance-method) set
 (static invoke-method invoke) (invoke-static-method) set
 
-(0 object-info "GetType" invoke-instance-method) {object-get-type}
-(object-get-type type-get-name) {object-get-type-name}
+(0 object-info "GetType" invoke-instance-method) (object-get-type) set 
+(object-get-type type-get-name) (object-get-type-name) set 
 (0 object-info "ToString" invoke-instance-method) (to-string) set
 
 (1 string-info IsNullOrEmpty invoke-static-method) (is-null-or-empty) set
 
-(0 type-info "get_Assembly" invoke-instance-method) {type-get-assembly}
-(0 type-info "get_FullName" invoke-instance-method) {type-get-qualified-name}
-(0 type-info "get_Name" invoke-instance-method) {type-get-name}
-(0 type-info "get_Namespace" invoke-instance-method) {type-get-namespace}
-(0 type-info "GetMembers" invoke-instance-method) {type-get-members}
-(type-get-assembly assembly-get-name assembly-name-get-name) {type-get-assembly-name}
-(duplicate type-get-namespace "." add swap type-get-name add) {type-get-qualified-name-old}
-(duplicate type-get-assembly-name swap type-get-qualified-name) {get-type-info}
+(0 type-info "get_Assembly" invoke-instance-method) (type-get-assembly) set 
+(0 type-info "get_FullName" invoke-instance-method) (type-get-qualified-name) set 
+(0 type-info "get_Name" invoke-instance-method) (type-get-name) set 
+(0 type-info "get_Namespace" invoke-instance-method) (type-get-namespace) set 
+(0 type-info "GetMembers" invoke-instance-method) (type-get-members) set 
+(type-get-assembly assembly-get-name assembly-name-get-name) (type-get-assembly-name) set 
+(duplicate type-get-namespace "." add swap type-get-name add) (type-get-qualified-name-old) set 
+(duplicate type-get-assembly-name swap type-get-qualified-name) (get-type-info) set 
 
 (1 assembly-info "GetType" invoke-instance-method) (assembly-get-type) set
 (0 assembly-info "GetName" invoke-instance-method) (assembly-get-name) set
@@ -42,19 +42,19 @@
 (swap assembly-load-with-partial-name swap assembly-get-type) (get-type) set
 (mscorlib-assembly "System.Reflection.AssemblyName") (assembly-name-info) set
 
-(target object-get-type-name "RuntimeType" equal) {target-is-runtime-type}
-(name "new" equal) {name-is-create-instance-name}
-(target (arguments) get evaluate-and-split target object-get-type get-type-info name instance invoke-method) {instance-call-arguments}
-((arguments) get evaluate-and-split target get-type-info name static invoke-method) {static-call-arguments}
-((arguments) get evaluate-and-split target get-type-info name instance create-instance) {create-instance-arguments}
-((create-instance-arguments) (static-call-arguments) (name-is-create-instance-name) if-else) {create-instance-or-static-call-arguments}
-<{target name arguments} (create-instance-or-static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke> {call_}
+(target object-get-type-name "RuntimeType" equal) (target-is-runtime-type) set 
+(name "new" equal) (name-is-create-instance-name) set 
+(target (arguments) get evaluate-and-split target object-get-type get-type-info name instance invoke-method) (instance-call-arguments) set 
+((arguments) get evaluate-and-split target get-type-info name static invoke-method) (static-call-arguments) set 
+((arguments) get evaluate-and-split target get-type-info name instance create-instance) (create-instance-arguments) set 
+((create-instance-arguments) (static-call-arguments) (name-is-create-instance-name) if-else) (create-instance-or-static-call-arguments) set 
+((target name arguments) set  (create-instance-or-static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke) (call_) set 
 
 (
   verbatim
   assembly-load-with-partial-name (current-assembly) put
   (current-assembly) get
-  [GetTypes]
+  (GetTypes) call 
   (
     (current-type) put
     (current-type) get type-get-namespace (current-namespace) put
@@ -76,7 +76,7 @@
   verbatim
   assembly-load (current-assembly) put
   (current-assembly) get
-  [GetTypes]
+  (GetTypes) call 
   (
     (current-type) put
     (current-type) get type-get-namespace (current-namespace) put
@@ -98,7 +98,7 @@
   (namespace) put
   (namespace) get evaluate (assembly) put
   (assembly) get
-  [GetTypes]
+  (GetTypes) call 
   (
     (current-type) put
     (

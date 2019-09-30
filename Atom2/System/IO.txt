@@ -1,3 +1,3 @@
-﻿<to-string {message} System.Console.Type [(message) get WriteLine]> {show}
-<to-string {message} System.Windows.Forms.MessageBox.Type [(message) get Show] drop> {message}
+﻿(to-string (message) set  System.Console.Type ((message) get WriteLine) call ) (show) set 
+(to-string (message) set  System.Windows.Forms.MessageBox.Type ((message) get Show) call  drop) (message) set 
 ("hi!"  show) (hi) set

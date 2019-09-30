@@ -1,24 +1,24 @@
-﻿<{a}> {drop}
+﻿((a) set ) (drop) set 
 ((a b) put) (drop-2) set
-<{a b} (b a) get> {swap}
-<{a} (a a) get> {duplicate}
-<{a} (a a a) get> {triplicate}
-<{a b} (a b a) get> {over}
-<(rotate-1 rotate-2 rotate-3) set (rotate-2 rotate-3 rotate-1) get> {rotate}
-(over swap) {duplicate-second}
+((a b) set  (b a) get) (swap) set 
+((a) set  (a a) get) (duplicate) set 
+((a) set  (a a a) get) (triplicate) set 
+((a b) set  (a b a) get) (over) set 
+((rotate-1 rotate-2 rotate-3) set (rotate-2 rotate-3 rotate-1) get) (rotate) set 
+(over swap) (duplicate-second) set 
 
-<(a) set (a a) get> {get-0}
-<(a b) set (a b a) get> {get-1}
-<(a b c) set (a b c a) get> {get-2}
-<(a b c d) set (a b c d a) get> {get-3}
-<(a b c d e) set (a b c d e a) get> {get-4}
-<(a b) set (b) get> {set-0} 
-<(a b c) set (c b) get> {set-1} 
-<(a b c d) set (d b c) get> {set-2}
-<(a b c d e) set (e b c d) get> {set-3}
-<(a b) set (b a) get> {insert-after-0}
-<(a b c) set (c a b) get> {insert-after-1}
-<(a b c d) set (d a b c) get> {insert-after-2}
-<(a) set> {delete-0}
-<(a b) set (b) get> {delete-1}
-<(a b c) set (b c) get> {delete-2}
+((a) set (a a) get) (get-0) set 
+((a b) set (a b a) get) (get-1) set 
+((a b c) set (a b c a) get) (get-2) set 
+((a b c d) set (a b c d a) get) (get-3) set 
+((a b c d e) set (a b c d e a) get) (get-4) set 
+((a b) set (b) get) (set-0) set  
+((a b c) set (c b) get) (set-1) set  
+((a b c d) set (d b c) get) (set-2) set 
+((a b c d e) set (e b c d) get) (set-3) set 
+((a b) set (b a) get) (insert-after-0) set 
+((a b c) set (c a b) get) (insert-after-1) set 
+((a b c d) set (d a b c) get) (insert-after-2) set 
+((a) set) (delete-0) set 
+((a b) set (b) get) (delete-1) set 
+((a b c) set (b c) get) (delete-2) set 

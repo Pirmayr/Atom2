@@ -16,7 +16,6 @@ using Stack = System.Collections.Generic.Stack<object>;
 using Items = System.Collections.Generic.List<object>;
 using Words = Atom2.ScopedDictionary<string, object>;
 using Parameters = Atom2.ScopedDictionary<string, object>;
-using WordDescriptions = System.Collections.Generic.Dictionary<string, Atom2.WordDescription>;
 
 #pragma warning disable 618
 
@@ -96,9 +95,8 @@ namespace Atom2
     private const char Whitespace = char.MaxValue;
     private readonly Parameters parameters = new Parameters();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"'};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Whitespace, Eof, '"'};
-    private readonly WordDescriptions wordDescriptions = new WordDescriptions();
+    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"', '(', ')'};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, '"', '(', ')', Whitespace};
     private readonly Words words = new Words();
     private static string BaseDirectory { get; set; }
 
@@ -161,8 +159,6 @@ namespace Atom2
       return File.ReadAllText(BaseDirectory + "/" + filename);
     }
 
-    private static void EmptyAction() { }
-
     private static string GetToken(Characters characters, HashSet<char> stopCharacters)
     {
       string result = "";
@@ -190,32 +186,6 @@ namespace Atom2
         return doubleValue;
       }
       return token;
-    }
-
-    private void AddWordDescription(string token, string name, ActionKind actionKind, params Action[] actions)
-    {
-      WordDescription wordDescription = new WordDescription(name, actionKind, actions);
-      wordDescriptions.Add(token, wordDescription);
-      switch (wordDescription.actionKind)
-      {
-        case ActionKind.Normal:
-          words.Add(wordDescription.name, wordDescription.NormalAction);
-          break;
-        case ActionKind.LeftItemsDelimiter:
-        case ActionKind.RightItemsDelimiter:
-          Action preAction = wordDescription.PreAction;
-          if (preAction != null)
-          {
-            words.Add(wordDescription.PreName, preAction);
-          }
-          Action postAction = wordDescription.PostAction;
-          if (postAction != null)
-          {
-            words.Add(wordDescription.PostName, postAction);
-          }
-          break;
-      }
-      tokenStopCharacters.Add(token.First());
     }
 
     private Action BinaryAction(ExpressionType expressionType)
@@ -358,41 +328,19 @@ namespace Atom2
       }
     }
 
-    private Items GetItems(Tokens tokens, string firstToken, out string lastToken)
+    private Items GetItems(Tokens tokens)
     {
-      lastToken = null;
       Items result = new Items();
-      if (firstToken != null && wordDescriptions.TryGetValue(firstToken, out WordDescription wordDescription) && wordDescription.IsValidPostLeftDelimiter)
-      {
-        result.Add(wordDescription.PostName);
-      }
       while (0 < tokens.Count)
       {
         string currentToken = tokens.Dequeue().ToString();
-        lastToken = currentToken;
-        if (wordDescriptions.TryGetValue(currentToken, out WordDescription currentLeftDescription) && currentLeftDescription.IsLeftDelimiter)
+        if (currentToken.Equals("("))
         {
-          if (currentLeftDescription.IsValidPreLeftDelimiter)
-          {
-            result.Add(currentLeftDescription.PreName);
-          }
-          result.Add(GetItems(tokens, currentToken, out string currentLastToken));
-          if (wordDescriptions.TryGetValue(currentLastToken, out WordDescription currentRightDescription) && currentRightDescription.IsValidPostRightDelimiter)
-          {
-            result.Add(currentRightDescription.PostName);
-          }
+          result.Add(GetItems(tokens));
         }
-        else if (wordDescriptions.TryGetValue(currentToken, out WordDescription currentRightDescription) && currentRightDescription.IsRightDelimiter)
+        else if (currentToken.Equals(")"))
         {
-          if (currentRightDescription.IsValidPreRightDelimiter)
-          {
-            result.Add(currentRightDescription.PreName);
-          }
           break;
-        }
-        else if (wordDescriptions.TryGetValue(currentToken, out WordDescription currentNormalTokenDescription) && currentNormalTokenDescription.IsValidNormalToken)
-        {
-          result.Add(currentNormalTokenDescription.NormalTokenName);
         }
         else
         {
@@ -423,10 +371,10 @@ namespace Atom2
           result.Enqueue(GetToken(characters, stringStopCharacters));
           characters.Dequeue();
         }
-        else if (wordDescriptions.TryGetValue(nextCharacter.ToString(), out WordDescription _))
+        else if (nextCharacter == '(' || nextCharacter == ')')
         {
-          result.Enqueue(nextCharacter.ToString());
           characters.Dequeue();
+          result.Enqueue(nextCharacter);
         }
         else
         {
@@ -449,37 +397,6 @@ namespace Atom2
       string pragma = tokens.Dequeue().ToString();
       switch (pragma)
       {
-        case "single-character-token":
-        case LeftDelimiter:
-        case RightDelimiter:
-          ActionKind actionKind = ActionKind.Normal;
-          switch (pragma)
-          {
-            case LeftDelimiter:
-              actionKind = ActionKind.LeftItemsDelimiter;
-              break;
-            case RightDelimiter:
-              actionKind = ActionKind.RightItemsDelimiter;
-              break;
-          }
-          string token = tokens.Dequeue().ToString();
-          string name = tokens.Dequeue().ToString();
-          int actionsCount = (int) tokens.Dequeue();
-          Action[] actions = new Action[actionsCount];
-          for (int i = 0; i < actionsCount; ++i)
-          {
-            switch (tokens.Dequeue().ToString())
-            {
-              case ActionNameNoAction:
-                actions[i] = null;
-                break;
-              case ActionNameEmptyAction:
-                actions[i] = EmptyAction;
-                break;
-            }
-          }
-          AddWordDescription(token, name, actionKind, actions);
-          break;
         case "load-file":
           Run(tokens.Dequeue().ToString());
           break;
@@ -573,7 +490,7 @@ namespace Atom2
 
     private void Run(string filename)
     {
-      Evaluate(GetItems(GetTokens(Code(filename)), null, out _));
+      Evaluate(GetItems(GetTokens(Code(filename))));
     }
 
     private void Set()
@@ -627,41 +544,6 @@ namespace Atom2
         Evaluate(body);
         Evaluate(condition);
       }
-    }
-  }
-
-  public enum ActionKind
-  {
-    Normal,
-    LeftItemsDelimiter,
-    RightItemsDelimiter
-  }
-
-  public sealed class WordDescription
-  {
-    public readonly ActionKind actionKind;
-    public readonly string name;
-    private readonly Action[] actions;
-    public bool IsLeftDelimiter => actionKind == ActionKind.LeftItemsDelimiter;
-    public bool IsRightDelimiter => actionKind == ActionKind.RightItemsDelimiter;
-    public bool IsValidNormalToken => IsNormalToken && NormalAction != null;
-    public bool IsValidPostLeftDelimiter => IsLeftDelimiter && PostAction != null;
-    public bool IsValidPostRightDelimiter => IsRightDelimiter && PostAction != null;
-    public bool IsValidPreLeftDelimiter => IsLeftDelimiter && PreAction != null;
-    public bool IsValidPreRightDelimiter => IsRightDelimiter && PreAction != null;
-    public Action NormalAction => actions[0];
-    public string NormalTokenName => name;
-    public Action PostAction => actions[1];
-    public string PostName => "post-" + name;
-    public Action PreAction => actions[0];
-    public string PreName => "pre-" + name;
-    private bool IsNormalToken => actionKind == ActionKind.Normal;
-
-    public WordDescription(string name, ActionKind actionKind, params Action[] actions)
-    {
-      this.name = name;
-      this.actionKind = actionKind;
-      this.actions = actions;
     }
   }
 }
