@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Windows.Forms;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 using Tokens = System.Collections.Generic.Queue<object>;
@@ -15,8 +17,6 @@ using Items = System.Collections.Generic.List<object>;
 using Words = Atom2.ScopedDictionary<string, object>;
 using Parameters = Atom2.ScopedDictionary<string, object>;
 using WordDescriptions = System.Collections.Generic.Dictionary<string, Atom2.WordDescription>;
-using System.Windows.Forms;
-using System.Diagnostics;
 
 #pragma warning disable 618
 
@@ -60,9 +60,10 @@ namespace Atom2
       scopes.Pop();
     }
 
-    public void SplitTail()
+    // ReSharper disable once UnusedMember.Global
+    public List<KeyValuePair<TK, TV>> ToList()
     {
-
+      return scopes.Peek().ToList();
     }
 
     public bool TryGetValue(TK key, out TV value)
@@ -76,11 +77,6 @@ namespace Atom2
       }
       value = default(TV);
       return false;
-    }
-
-    public List<KeyValuePair<TK, TV>> ToList()
-    {
-      return scopes.Peek().ToList();
     }
 
     public TV this[TK key]
@@ -100,8 +96,8 @@ namespace Atom2
     private const char Whitespace = char.MaxValue;
     private readonly Parameters parameters = new Parameters();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, '"' };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Whitespace, Eof, '"' };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, '"'};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Whitespace, Eof, '"'};
     private readonly WordDescriptions wordDescriptions = new WordDescriptions();
     private readonly Words words = new Words();
     private static string BaseDirectory { get; set; }
@@ -142,39 +138,6 @@ namespace Atom2
       words.Add("call", new Action(Call));
     }
 
-    private void Call()
-    {
-      Items items = (Items) stack.Peek();
-      string nameOrMethod = (string) items.LastOrDefault();
-      if (TryGetWord(nameOrMethod, out object word))
-      {
-        Evaluate();
-        return;
-      }
-      EvaluateAndSplit();
-      Execute();
-    }
-
-    private void Break()
-    {
-      Debugger.Break();
-    }
-
-    private void Split()
-    {
-      Items items = (Items) stack.Pop();
-      foreach (object currentItem in items)
-      {
-        stack.Push(currentItem);
-      }
-      Push(items.Count);
-    }
-
-    private void Trace()
-    {
-      MessageBox.Show(stack.Peek()?.ToString());
-    }
-
     public static void Main(params string[] arguments)
     {
       try
@@ -186,6 +149,11 @@ namespace Atom2
       {
         Console.Write(exception.Message);
       }
+    }
+
+    private static void Break()
+    {
+      Debugger.Break();
     }
 
     private static string Code(string filename)
@@ -224,15 +192,6 @@ namespace Atom2
       return token;
     }
 
-    private bool TryGetWord(string key, out object word)
-    {
-      if (parameters.TryGetValue(key, out word))
-      {
-        return true;
-      }
-      return words.TryGetValue(key, out word);
-    }
-
     private void AddWordDescription(string token, string name, ActionKind actionKind, params Action[] actions)
     {
       WordDescription wordDescription = new WordDescription(name, actionKind, actions);
@@ -265,12 +224,25 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
+      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
       Delegate function = lambda.Compile();
       return delegate { Push(function.DynamicInvoke(stack.Pop(), stack.Pop())); };
+    }
+
+    private void Call()
+    {
+      Items items = (Items) stack.Peek();
+      string nameOrMethod = (string) items.LastOrDefault();
+      if (TryGetWord(nameOrMethod, out object _))
+      {
+        Evaluate();
+        return;
+      }
+      EvaluateAndSplit();
+      Execute();
     }
 
     private void Cast()
@@ -280,17 +252,11 @@ namespace Atom2
       stack.Push(Expression.Lambda(Expression.Convert(Expression.Constant(instance), type)).Compile().DynamicInvoke());
     }
 
-    private Action UnaryAction(ExpressionType expressionType)
+    private void CreateEventHandler()
     {
-      Type objectType = typeof(object);
-      ParameterExpression parameter = Expression.Parameter(objectType);
-      CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = { argumentInfo };
-      CallSiteBinder binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
-      DynamicExpression expression = Expression.Dynamic(binder, objectType, parameter);
-      LambdaExpression lambda = Expression.Lambda(expression, parameter);
-      Delegate function = lambda.Compile();
-      return delegate { Push(function.DynamicInvoke(stack.Pop())); };
+      Items items = (Items) stack.Pop();
+      EventHandler action = (sender, eventArguments) => EventHandler(items, sender, eventArguments);
+      stack.Push(action);
     }
 
     private void EnterScope()
@@ -326,13 +292,6 @@ namespace Atom2
       stack.Push(sender);
       stack.Push(eventArguments);
       Evaluate(items);
-    }
-
-    private void CreateEventHandler()
-    {
-      Items items = (Items) stack.Pop();
-      System.EventHandler action = (object sender, EventArgs eventArguments) => EventHandler(items, sender, eventArguments);
-      stack.Push(action);
     }
 
     private void Execute()
@@ -377,7 +336,6 @@ namespace Atom2
                 bindingFlags |= (hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty);
                 break;
               case EventInfo eventInfo:
-                hasReturnValue = false;
                 memberName = eventInfo.AddMethod.Name;
                 bindingFlags |= BindingFlags.InvokeMethod;
                 break;
@@ -558,6 +516,11 @@ namespace Atom2
       Push(result);
     }
 
+    private void Join()
+    {
+      stack.Push(new Items(Pop((int) stack.Pop())));
+    }
+
     private void LeaveScope()
     {
       words.LeaveScope();
@@ -566,11 +529,6 @@ namespace Atom2
     private void Length()
     {
       Push(((Items) stack.Pop()).Count);
-    }
-
-    private void Join()
-    {
-      stack.Push(new Items(Pop((int) stack.Pop())));
     }
 
     private object[] Pop(int count)
@@ -624,6 +582,39 @@ namespace Atom2
       {
         words[currentItem.ToString()] = stack.Pop();
       }
+    }
+
+    private void Split()
+    {
+      Items items = (Items) stack.Pop();
+      foreach (object currentItem in items)
+      {
+        stack.Push(currentItem);
+      }
+      Push(items.Count);
+    }
+
+    private void Trace()
+    {
+      MessageBox.Show(stack.Peek()?.ToString());
+    }
+
+    private bool TryGetWord(string key, out object word)
+    {
+      return parameters.TryGetValue(key, out word) || words.TryGetValue(key, out word);
+    }
+
+    private Action UnaryAction(ExpressionType expressionType)
+    {
+      Type objectType = typeof(object);
+      ParameterExpression parameter = Expression.Parameter(objectType);
+      CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
+      CSharpArgumentInfo[] argumentInfos = {argumentInfo};
+      CallSiteBinder binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
+      DynamicExpression expression = Expression.Dynamic(binder, objectType, parameter);
+      LambdaExpression lambda = Expression.Lambda(expression, parameter);
+      Delegate function = lambda.Compile();
+      return delegate { Push(function.DynamicInvoke(stack.Pop())); };
     }
 
     private void While()

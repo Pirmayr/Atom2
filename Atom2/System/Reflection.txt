@@ -38,6 +38,7 @@
 (0 assembly-info "GetName" invoke-instance-method) (assembly-get-name) set
 (0 assembly-name-info "get_Name" invoke-instance-method) (assembly-name-get-name) set
 (1 assembly-info "LoadWithPartialName" invoke-static-method) (assembly-load-with-partial-name) set
+(1 assembly-info "Load" invoke-static-method) (assembly-load) set
 (swap assembly-load-with-partial-name swap assembly-get-type) (get-type) set
 (mscorlib-assembly "System.Reflection.AssemblyName") (assembly-name-info) set
 
@@ -70,6 +71,28 @@
   map
 )
 (import) set
+
+(
+  verbatim
+  assembly-load (current-assembly) put
+  (current-assembly) get
+  [GetTypes]
+  (
+    (current-type) put
+    (current-type) get type-get-namespace (current-namespace) put
+    (
+      (current-assembly) get
+      (current-namespace) get
+      1 join set
+    )
+    ((current-namespace) get is-null-or-empty not)
+    if
+    (current-type) get
+    duplicate type-get-qualified-name ".Type" add 1 join set
+  )
+  map
+)
+(import-with-full-name) set
 
 (
   (namespace) put
