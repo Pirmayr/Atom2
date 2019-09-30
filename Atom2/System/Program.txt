@@ -7,30 +7,30 @@
 
 (
   (menu-item menu-text click-handler) put
-  menu-item (DropDownItems) call  (menu-text Add) call  ((click-handler) get create-event-handler Click) call    
+  menu-item (DropDownItems) call (menu-text Add) call ((click-handler) get create-event-handler Click) call   
 )
 (add-menu-item) set
 
 (
-  TextBox (new) call  (textBox) set
+  TextBox (new) call (textBox) set
   textBox (true Multiline) call 
-  textBox (DockStyle (Fill) call  Dock) call 
+  textBox (DockStyle (Fill) call Dock) call 
 
-  Button (new) call  (button) set
-  button (DockStyle (Top) call  Dock) call 
+  Button (new) call (button) set
+  button (DockStyle (Top) call Dock) call 
   button ("Press" Text) call 
   button ((drop drop textBox ("Hello World!" Text) call ) create-event-handler Click) call 
 
-  MenuStrip (new) call  (mainMenuStrip) set
-  mainMenuStrip (Items) call  ("File" Add) call  (fileMenuItem) set
+  MenuStrip (new) call (mainMenuStrip) set
+  mainMenuStrip (Items) call ("File" Add) call (fileMenuItem) set
   (fileMenuItem "New" (drop-2 "New" message) add-menu-item) call 
   (fileMenuItem "Open" (drop-2 "Open" message) add-menu-item) call 
   (fileMenuItem "Save" (drop-2 "Save" message) add-menu-item) call 
 
-  Form (new) call  (form) set
-  form (Controls) call  (textBox Add) call 
-  form (Controls) call  (button Add) call 
-  form (Controls) call  (mainMenuStrip Add) call 
+  Form (new) call (form) set
+  form (Controls) call (textBox Add) call 
+  form (Controls) call (button Add) call 
+  form (Controls) call (mainMenuStrip Add) call 
   (form) get
 )
 (new-main-form) set
