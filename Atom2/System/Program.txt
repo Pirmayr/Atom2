@@ -12,27 +12,40 @@
 (add-menu-item) set
 
 (
+  (menu-item-message) put
+  (drop-2) verbatim
+  (menu-item-message) get
+  (message) verbatim
+  3 join
+)
+(define-simple-event-handler) set 
+
+(
   TextBox (new) call (textBox) set
   textBox (true Multiline) call 
-  textBox (DockStyle (Fill) call Dock) call 
+  textBox (DockStyle (Fill) call Dock) call
 
   Button (new) call (button) set
-  button (DockStyle (Top) call Dock) call 
+  button (DockStyle (Top) call Dock) call
   button ("Press" Text) call 
-  button ((drop drop textBox ("Hello World!" Text) call ) create-event-handler Click) call 
+  button ((drop drop textBox (("Hello World!") verbatim Text) call ) create-event-handler Click) call
 
   MenuStrip (new) call (mainMenuStrip) set
   mainMenuStrip (Items) call ("File" Add) call (fileMenuItem) set
-  (fileMenuItem "New" (drop-2 "New" message) add-menu-item) call 
-  (fileMenuItem "Open" (drop-2 "Open" message) add-menu-item) call 
-  (fileMenuItem "Save" (drop-2 "Save" message) add-menu-item) call 
+  (fileMenuItem "New" "New" define-simple-event-handler add-menu-item) call
+  (fileMenuItem "Open" (drop-2 "Open" message) add-menu-item) call
+  (fileMenuItem "Save" (drop-2 "Save" message) add-menu-item) call
+  mainMenuStrip (Items) call (("Edit") verbatim Add) call (editMenuItem) set
+  (editMenuItem "Cut" (drop-2 "Cut" message) add-menu-item) call
+  (editMenuItem "Copy" (drop-2 "Copy" message) add-menu-item) call
+  (editMenuItem "Paste" (drop-2 "Paste" message) add-menu-item) call
 
   Form (new) call (form) set
-  form (Controls) call (textBox Add) call 
-  form (Controls) call (button Add) call 
-  form (Controls) call (mainMenuStrip Add) call 
+  form (Controls) call (textBox Add) call
+  form (Controls) call (button Add) call
+  form (Controls) call (mainMenuStrip Add) call
   (form) get
 )
 (new-main-form) set
 
-Application (new-main-form Run) call 
+Application (new-main-form Run) call
