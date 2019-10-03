@@ -31,7 +31,6 @@
 (0 type-info "get_Namespace" invoke-instance-method) (type-get-namespace) set 
 (0 type-info "GetMembers" invoke-instance-method) (type-get-members) set 
 (type-get-assembly assembly-get-name assembly-name-get-name) (type-get-assembly-name) set 
-(duplicate type-get-namespace "." add swap type-get-name add) (type-get-qualified-name-old) set 
 (duplicate type-get-assembly-name swap type-get-qualified-name) (get-type-info) set 
 
 (1 assembly-info "GetType" invoke-instance-method) (assembly-get-type) set
@@ -48,7 +47,6 @@
 ((arguments) get evaluate-and-split target get-type-info name static invoke-method) (static-call-arguments) set 
 ((arguments) get evaluate-and-split target get-type-info name instance create-instance) (create-instance-arguments) set 
 ((create-instance-arguments) (static-call-arguments) (name-is-create-instance-name) if-else) (create-instance-or-static-call-arguments) set 
-((target name arguments) set (create-instance-or-static-call-arguments) (instance-call-arguments) (target-is-runtime-type) if-else invoke) (call_) set 
 
 (
   verbatim
@@ -65,8 +63,6 @@
     )
     ((current-namespace) get is-null-or-empty not)
     if
-    (current-type) get
-    duplicate type-get-qualified-name ".Type" add 1 join set
   )
   map
 )
@@ -87,8 +83,6 @@
     )
     ((current-namespace) get is-null-or-empty not)
     if
-    (current-type) get
-    duplicate type-get-qualified-name ".Type" add 1 join set
   )
   map
 )

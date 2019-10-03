@@ -101,7 +101,6 @@ namespace Atom2
     private readonly Stack stack = new Stack();
     private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, Colon };
     private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, Colon, Whitespace };
-
     private static string BaseDirectory { get; set; }
 
     private Runtime(string baseDirectory)
@@ -149,21 +148,6 @@ namespace Atom2
       catch (Exception exception)
       {
         Console.Write(exception.Message);
-      }
-    }
-
-    private void ImportType(Type type)
-    {
-      if (type.IsPublic)
-      {
-        foreach (MemberInfo currentMember in type.GetMembers(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance))
-        {
-          setWords[currentMember.Name] = null;
-        }
-        foreach (Type currentType in type.GetNestedTypes())
-        {
-          ImportType(currentType);
-        }
       }
     }
 
@@ -217,7 +201,7 @@ namespace Atom2
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
       Delegate function = lambda.Compile();
-      return delegate { Push(function.DynamicInvoke(stack.Pop(), stack.Pop())); };
+      return delegate { Push(function.DynamicInvoke(Pop(), Pop())); };
     }
 
     private void Call()
@@ -227,36 +211,36 @@ namespace Atom2
 
     private void Cast()
     {
-      Type type = (Type) stack.Pop();
-      object instance = stack.Pop();
-      stack.Push(Expression.Lambda(Expression.Convert(Expression.Constant(instance), type)).Compile().DynamicInvoke());
+      Type type = (Type) Pop();
+      object instance = Pop();
+      Push(Expression.Lambda(Expression.Convert(Expression.Constant(instance), type)).Compile().DynamicInvoke());
     }
 
     private void CreateEventHandler()
     {
-      Items items = (Items) stack.Pop();
+      Items items = (Items) Pop();
       EventHandler action = (sender, eventArguments) => EventHandler(items, sender, eventArguments);
-      stack.Push(action);
+      Push(action);
     }
 
-    private void Evaluate(object unit)
+    private void Evaluate(object item)
     {
-      if (unit is Items list)
+      if (item is Items list)
       {
         list.ForEach(Process);
         return;
       }
-      Process(unit);
+      Process(item);
     }
 
     private void Evaluate()
     {
-      Evaluate(stack.Pop());
+      Evaluate(Pop());
     }
 
     private void EvaluateAndSplit()
     {
-      object items = stack.Pop();
+      object items = Pop();
       int stackLength = stack.Count;
       Evaluate(items);
       Push(stack.Count - stackLength);
@@ -264,18 +248,18 @@ namespace Atom2
 
     private void EventHandler(Items items, object sender, EventArgs eventArguments)
     {
-      stack.Push(sender);
-      stack.Push(eventArguments);
+      Push(sender);
+      Push(eventArguments);
       Evaluate(items);
     }
 
     private void Execute()
     {
-      string memberName = (string) stack.Pop();
+      string memberName = (string) Pop();
       EvaluateAndSplit();
-      int argumentsCount = (int) stack.Pop();
+      int argumentsCount = (int) Pop();
       object[] arguments = Pop(argumentsCount).ToArray();
-      object typeOrTarget = stack.Pop();
+      object typeOrTarget = Pop();
       bool isType = typeOrTarget is Type;
       Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
       object target = isType ? null : typeOrTarget;
@@ -283,10 +267,6 @@ namespace Atom2
       bool hasReturnValue = false;
       switch (memberName)
       {
-        case "initialize":
-          memberName = "";
-          bindingFlags |= BindingFlags.Static | BindingFlags.CreateInstance;
-          break;
         case "new":
           memberName = "";
           hasReturnValue = true;
@@ -322,15 +302,15 @@ namespace Atom2
       object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
       if (hasReturnValue)
       {
-        stack.Push(invokeResult);
+        Push(invokeResult);
       }
     }
 
     private void Get()
     {
-      foreach (string currentKey in ((Items) stack.Pop()).Select(currentItem => currentItem.ToString()))
+      foreach (string currentKey in ((Items) Pop()).Select(currentItem => currentItem.ToString()))
       {
-          Push(putWords.ContainsKey(currentKey) ? putWords[currentKey] : setWords[currentKey]);
+        Push(putWords.ContainsKey(currentKey) ? putWords[currentKey] : setWords[currentKey]);
       }
     }
 
@@ -407,10 +387,10 @@ namespace Atom2
 
     private void If()
     {
-      object condition = stack.Pop();
-      object body = stack.Pop();
+      object condition = Pop();
+      object body = Pop();
       Evaluate(condition);
-      if ((dynamic) stack.Pop())
+      if ((dynamic) Pop())
       {
         Evaluate(body);
       }
@@ -418,31 +398,31 @@ namespace Atom2
 
     private void Invoke()
     {
-      BindingFlags memberKind = (BindingFlags) stack.Pop();
-      BindingFlags memberType = (BindingFlags) stack.Pop();
-      string memberName = (string) stack.Pop();
-      string typeName = (string) stack.Pop();
-      string assemblyName = (string) stack.Pop();
-      int argumentsCount = (int) stack.Pop();
+      BindingFlags memberKind = (BindingFlags) Pop();
+      BindingFlags memberType = (BindingFlags) Pop();
+      string memberName = (string) Pop();
+      string typeName = (string) Pop();
+      string assemblyName = (string) Pop();
+      int argumentsCount = (int) Pop();
       object[] arguments = Pop(argumentsCount).ToArray();
       Assembly assembly = Assembly.LoadWithPartialName(assemblyName);
       Type type = assembly.GetType(typeName);
       BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | memberKind | memberType;
       bool isInstance = memberType.HasFlag(BindingFlags.Instance);
       bool isConstructor = memberKind.HasFlag(BindingFlags.CreateInstance);
-      object target = isInstance && !isConstructor ? stack.Pop() : null;
+      object target = isInstance && !isConstructor ? Pop() : null;
       object result = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
       Push(result);
     }
 
     private void Join()
     {
-      stack.Push(new Items(Pop((int) stack.Pop())));
+      Push(new Items(Pop((int) Pop())));
     }
 
     private void Length()
     {
-      Push(((Items) stack.Pop()).Count);
+      Push(((Items) Pop()).Count);
     }
 
     private IEnumerable<object> Pop(int count)
@@ -455,9 +435,19 @@ namespace Atom2
       return result;
     }
 
-    private void Process(object unit)
+    private object Pop()
     {
-      if (TryGetWord(unit.ToString(), out object word))
+      return stack.Pop();
+    }
+
+    private void Push(object item)
+    {
+      stack.Push(item);
+    }
+
+    private void Process(object item)
+    {
+      if (TryGetWord(item.ToString(), out object word))
       {
         if (word is Action action)
         {
@@ -469,19 +459,14 @@ namespace Atom2
         putWords.LeaveScope();
         return;
       }
-      Push(unit);
-    }
-
-    private void Push(object item)
-    {
-      stack.Push(item);
+      Push(item);
     }
 
     private void Put()
     {
-      foreach (object currentItem in Enumerable.Reverse((Items) stack.Pop()))
+      foreach (object currentItem in Enumerable.Reverse((Items) Pop()))
       {
-        putWords[currentItem.ToString()] = stack.Pop();
+        putWords[currentItem.ToString()] = Pop();
       }
     }
 
@@ -492,18 +477,18 @@ namespace Atom2
 
     private void Set()
     {
-      foreach (object currentItem in Enumerable.Reverse((Items) stack.Pop()))
+      foreach (object currentItem in Enumerable.Reverse((Items) Pop()))
       {
-        setWords[currentItem.ToString()] = stack.Pop();
+        setWords[currentItem.ToString()] = Pop();
       }
     }
 
     private void Split()
     {
-      Items items = (Items) stack.Pop();
+      Items items = (Items) Pop();
       foreach (object currentItem in items)
       {
-        stack.Push(currentItem);
+        Push(currentItem);
       }
       Push(items.Count);
     }
@@ -528,15 +513,15 @@ namespace Atom2
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameter);
       LambdaExpression lambda = Expression.Lambda(expression, parameter);
       Delegate function = lambda.Compile();
-      return delegate { Push(function.DynamicInvoke(stack.Pop())); };
+      return delegate { Push(function.DynamicInvoke(Pop())); };
     }
 
     private void While()
     {
-      object condition = stack.Pop();
-      object body = stack.Pop();
+      object condition = Pop();
+      object body = Pop();
       Evaluate(condition);
-      while ((dynamic) stack.Pop())
+      while ((dynamic) Pop())
       {
         Evaluate(body);
         Evaluate(condition);

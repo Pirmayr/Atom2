@@ -44,14 +44,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="System\System.txt" />
-    <None Include="System\Delimiters.txt" />
     <None Include="System\Program.txt" />
     <None Include="System\Stack.txt" />
     <None Include="System\Words.txt" />
     <None Include="System\Statements.txt" />
     <None Include="System\Math.txt" />
     <None Include="System\Reflection.txt" />
-    <None Include="System\Assemblies.txt" />
     <None Include="System\Tests.txt" />
     <None Include="System\IO.txt" />
   </ItemGroup>

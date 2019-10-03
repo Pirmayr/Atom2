@@ -1,7 +1,7 @@
 ﻿load-file System.txt pragma
 
 (mscorlib) import
-("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089") import-with-full-name
+("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089") import
 
 (System.Windows.Forms) use
 
@@ -12,15 +12,6 @@
 (add-menu-item) set
 
 (
-  (menu-item-message) put
-  (drop-2) verbatim
-  (menu-item-message) get
-  (message) verbatim
-  3 join
-)
-(define-simple-event-handler) set 
-
-(
   TextBox () new: (textBox) set
   textBox (true) Multiline: 
   textBox (DockStyle () Fill:) Dock:
@@ -28,11 +19,11 @@
   Button () new: (button) set
   button (DockStyle () Top:) Dock:
   button ("Press") Text: 
-  button ((drop drop textBox (("Hello World!") verbatim) Text:) create-event-handler) Click:
+  button ((drop-2 textBox (("Hello World!") verbatim) Text:) create-event-handler) Click:
 
   MenuStrip () new: (mainMenuStrip) set
   mainMenuStrip () Items: ("File") Add: (fileMenuItem) set
-  (fileMenuItem "New" "New" define-simple-event-handler) evaluate add-menu-item
+  (fileMenuItem "New" (drop-2 "New" message)) evaluate add-menu-item
   (fileMenuItem "Open" (drop-2 "Open" message)) evaluate add-menu-item
   (fileMenuItem "Save" (drop-2 "Save" message)) evaluate add-menu-item
   mainMenuStrip () Items: (("Edit") verbatim) Add: (editMenuItem) set
