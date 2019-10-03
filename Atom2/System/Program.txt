@@ -7,7 +7,7 @@
 
 (
   (menu-item menu-text click-handler) put
-  menu-item (DropDownItems) call (menu-text Add) call ((click-handler) get create-event-handler Click) call   
+  menu-item () DropDownItems: (menu-text) Add: ((click-handler) get create-event-handler) Click:
 )
 (add-menu-item) set
 
@@ -21,31 +21,31 @@
 (define-simple-event-handler) set 
 
 (
-  TextBox (new) call (textBox) set
-  textBox (true Multiline) call 
-  textBox (DockStyle (Fill) call Dock) call
+  TextBox () new: (textBox) set
+  textBox (true) Multiline: 
+  textBox (DockStyle () Fill:) Dock:
 
-  Button (new) call (button) set
-  button (DockStyle (Top) call Dock) call
-  button ("Press" Text) call 
-  button ((drop drop textBox (("Hello World!") verbatim Text) call ) create-event-handler Click) call
+  Button () new: (button) set
+  button (DockStyle () Top:) Dock:
+  button ("Press") Text: 
+  button ((drop drop textBox (("Hello World!") verbatim) Text:) create-event-handler) Click:
 
-  MenuStrip (new) call (mainMenuStrip) set
-  mainMenuStrip (Items) call ("File" Add) call (fileMenuItem) set
-  (fileMenuItem "New" "New" define-simple-event-handler add-menu-item) call
-  (fileMenuItem "Open" (drop-2 "Open" message) add-menu-item) call
-  (fileMenuItem "Save" (drop-2 "Save" message) add-menu-item) call
-  mainMenuStrip (Items) call (("Edit") verbatim Add) call (editMenuItem) set
-  (editMenuItem "Cut" (drop-2 "Cut" message) add-menu-item) call
-  (editMenuItem "Copy" (drop-2 "Copy" message) add-menu-item) call
-  (editMenuItem "Paste" (drop-2 "Paste" message) add-menu-item) call
+  MenuStrip () new: (mainMenuStrip) set
+  mainMenuStrip () Items: ("File") Add: (fileMenuItem) set
+  (fileMenuItem "New" "New" define-simple-event-handler) evaluate add-menu-item
+  (fileMenuItem "Open" (drop-2 "Open" message)) evaluate add-menu-item
+  (fileMenuItem "Save" (drop-2 "Save" message)) evaluate add-menu-item
+  mainMenuStrip () Items: (("Edit") verbatim) Add: (editMenuItem) set
+  (editMenuItem "Cut" (drop-2 "Cut" message)) evaluate add-menu-item
+  (editMenuItem "Copy" (drop-2 "Copy" message)) evaluate add-menu-item
+  (editMenuItem "Paste" (drop-2 "Paste" message)) evaluate add-menu-item
 
-  Form (new) call (form) set
-  form (Controls) call (textBox Add) call
-  form (Controls) call (button Add) call
-  form (Controls) call (mainMenuStrip Add) call
+  Form () new: (form) set
+  form () Controls: (textBox) Add:
+  form () Controls: (button) Add:
+  form () Controls: (mainMenuStrip) Add:
   (form) get
 )
 (new-main-form) set
 
-Application (new-main-form Run) call
+Application (new-main-form) Run:

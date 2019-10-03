@@ -14,13 +14,13 @@
 
 (
   (array body) put
-  (array) get (GetEnumerator) call 
+  (array) get () GetEnumerator: 
   (enumerator) put
   (
-    (enumerator) get (Current) call 
+    (enumerator) get () Current: 
     (body) get evaluate
   )
-  ((enumerator) get (MoveNext) call )
+  ((enumerator) get () MoveNext:)
   while
 )
 (map) set 

@@ -54,7 +54,7 @@
   verbatim
   assembly-load-with-partial-name (current-assembly) put
   (current-assembly) get
-  (GetTypes) call 
+  () GetTypes: 
   (
     (current-type) put
     (current-type) get type-get-namespace (current-namespace) put
@@ -76,7 +76,7 @@
   verbatim
   assembly-load (current-assembly) put
   (current-assembly) get
-  (GetTypes) call 
+  () GetTypes: 
   (
     (current-type) put
     (current-type) get type-get-namespace (current-namespace) put
@@ -98,7 +98,7 @@
   (namespace) put
   (namespace) get evaluate (assembly) put
   (assembly) get
-  (GetTypes) call 
+  () GetTypes: 
   (
     (current-type) put
     (

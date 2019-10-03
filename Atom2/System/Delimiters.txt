@@ -1,3 +1,1 @@
-﻿left-delimiter ( left-parenthesis 2 empty-action no-action pragma
-right-delimiter ) right-parenthesis 2 no-action empty-action pragma
-
+﻿

@@ -88,17 +88,19 @@ namespace Atom2
   {
     private const char Eof = char.MinValue;
     private const char Whitespace = char.MaxValue;
+    private const char Colon = ':';
     private const char LeftParenthesis = '(';
     private const char RightParenthesis = ')';
     private const char Quote = '"';
     private readonly string PragmaToken = "pragma";
     private readonly string BlockBeginToken = LeftParenthesis.ToString();
     private readonly string BlockEndToken = RightParenthesis.ToString();
+    private readonly string ExecuteToken = Colon.ToString();
     private readonly Words setWords = new Words();
     private readonly Words putWords = new Words();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, Whitespace };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, Colon };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, Colon, Whitespace };
 
     private static string BaseDirectory { get; set; }
 
@@ -108,7 +110,6 @@ namespace Atom2
       setWords.Add("trace", new Action(Trace));
       setWords.Add("break", new Action(Break));
       setWords.Add("invoke", new Action(Invoke));
-      setWords.Add("execute", new Action(Execute));
       setWords.Add("call", new Action(Call));
       setWords.Add("ones-complement", UnaryAction(ExpressionType.OnesComplement));
       setWords.Add("equal", BinaryAction(ExpressionType.Equal));
@@ -132,8 +133,10 @@ namespace Atom2
       setWords.Add("evaluate-and-split", new Action(EvaluateAndSplit));
       setWords.Add("join", new Action(Join));
       setWords.Add("cast", new Action(Cast));
-      setWords.Add("get-runtime", new Action(GetRuntime));
       setWords.Add("create-event-handler", new Action(CreateEventHandler));
+      setWords.Add("Runtime", typeof(Runtime));
+      setWords.Add("runtime", this);
+      setWords.Add(ExecuteToken, new Action(Execute));
     }
 
     public static void Main(params string[] arguments)
@@ -149,7 +152,22 @@ namespace Atom2
       }
     }
 
-    private static void Break()
+    private void ImportType(Type type)
+    {
+      if (type.IsPublic)
+      {
+        foreach (MemberInfo currentMember in type.GetMembers(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance))
+        {
+          setWords[currentMember.Name] = null;
+        }
+        foreach (Type currentType in type.GetNestedTypes())
+        {
+          ImportType(currentType);
+        }
+      }
+    }
+
+    private void Break()
     {
       Debugger.Break();
     }
@@ -204,14 +222,6 @@ namespace Atom2
 
     private void Call()
     {
-      Items items = (Items) stack.Peek();
-      string nameOrMethod = (string) items.LastOrDefault();
-      if (TryGetWord(nameOrMethod, out object _))
-      {
-        Evaluate();
-        return;
-      }
-      EvaluateAndSplit();
       Execute();
     }
 
@@ -261,9 +271,10 @@ namespace Atom2
 
     private void Execute()
     {
-      int argumentsCount = (int) stack.Pop();
       string memberName = (string) stack.Pop();
-      object[] arguments = Pop(argumentsCount - 1).ToArray();
+      EvaluateAndSplit();
+      int argumentsCount = (int) stack.Pop();
+      object[] arguments = Pop(argumentsCount).ToArray();
       object typeOrTarget = stack.Pop();
       bool isType = typeOrTarget is Type;
       Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
@@ -345,43 +356,39 @@ namespace Atom2
       return result;
     }
 
-    private void GetRuntime()
-    {
-      stack.Push(this);
-    }
-
     private Tokens GetTokens(string code)
     {
       Tokens result = new Tokens();
       Characters characters = new Characters(code.ToCharArray());
       for (char nextCharacter = NextCharacter(characters); nextCharacter != Eof; nextCharacter = NextCharacter(characters))
       {
-        if (nextCharacter == Whitespace)
+        switch (nextCharacter)
         {
-          characters.Dequeue();
-        }
-        else if (nextCharacter == Quote)
-        {
-          characters.Dequeue();
-          result.Enqueue(GetToken(characters, stringStopCharacters));
-          characters.Dequeue();
-        }
-        else if (nextCharacter == LeftParenthesis || nextCharacter == RightParenthesis)
-        {
-          characters.Dequeue();
-          result.Enqueue(nextCharacter.ToString());
-        }
-        else
-        {
-          string currentToken = GetToken(characters, tokenStopCharacters);
-          if (currentToken == PragmaToken)
-          {
-            HandlePragma(result);
-          }
-          else
-          {
-            result.Enqueue(currentToken);
-          }
+          case Whitespace:
+            characters.Dequeue();
+            break;
+          case Quote:
+            characters.Dequeue();
+            result.Enqueue(GetToken(characters, stringStopCharacters));
+            characters.Dequeue();
+            break;
+          case LeftParenthesis:
+          case RightParenthesis:
+          case Colon:
+            characters.Dequeue();
+            result.Enqueue(nextCharacter.ToString());
+            break;
+          default:
+            string currentToken = GetToken(characters, tokenStopCharacters);
+            if (currentToken == PragmaToken)
+            {
+              HandlePragma(result);
+            }
+            else
+            {
+              result.Enqueue(currentToken);
+            }
+            break;
         }
       }
       return result;
@@ -389,11 +396,11 @@ namespace Atom2
 
     private void HandlePragma(Tokens tokens)
     {
-      string pragma = tokens.Dequeue().ToString();
+      string pragma = tokens.Dequeue();
       switch (pragma)
       {
         case "load-file":
-          Run(tokens.Dequeue().ToString());
+          Run(tokens.Dequeue());
           break;
       }
     }
