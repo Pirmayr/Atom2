@@ -92,14 +92,16 @@ namespace Atom2
     private const char LeftParenthesis = '(';
     private const char RightParenthesis = ')';
     private const char Quote = '"';
+    private const char LeftAngle = '<';
+    private const char RightAngle = '>';
     private readonly string PragmaToken = "pragma";
-    private readonly HashSet<string> BlockBeginTokens = new HashSet<string> { LeftParenthesis.ToString(), "<"}; // LeftParenthesis.ToString();
-    private readonly HashSet<string> BlockEndTokens = new HashSet<string>{RightParenthesis.ToString(), ">"}; // RightParenthesis.ToString();
+    private readonly HashSet<string> BlockBeginTokens = new HashSet<string> { LeftParenthesis.ToString(), LeftAngle.ToString() };
+    private readonly HashSet<string> BlockEndTokens = new HashSet<string> { RightParenthesis.ToString(), RightAngle.ToString() };
     private readonly Words setWords = new Words();
     private readonly Words putWords = new Words();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, '<', '>' };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, '<', '>', Whitespace };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Whitespace };
     private static string BaseDirectory { get; set; }
 
     private Runtime(string baseDirectory)
@@ -108,7 +110,8 @@ namespace Atom2
       setWords.Add("trace", new Action(Trace));
       setWords.Add("break", new Action(Break));
       setWords.Add("invoke", new Action(Invoke));
-      setWords.Add("execute", new Action(Execute));
+      setWords.Add(")", new Action(DoNothing));
+      setWords.Add(">", new Action(Execute));
       setWords.Add("ones-complement", UnaryAction(ExpressionType.OnesComplement));
       setWords.Add("equal", BinaryAction(ExpressionType.Equal));
       setWords.Add("not-equal", BinaryAction(ExpressionType.NotEqual));
@@ -135,6 +138,10 @@ namespace Atom2
       setWords.Add("Runtime", typeof(Runtime));
       setWords.Add("runtime", this);
       setWords.Add("show", new Action(Show));
+    }
+
+    private void DoNothing()
+    {
     }
 
     private void Show()
@@ -326,16 +333,11 @@ namespace Atom2
       {
         string currentToken = tokens.Dequeue();
         lastToken = currentToken;
-        // if (currentToken.Equals(BlockBeginToken))
         if (BlockBeginTokens.Contains(currentToken))
         {
           result.Add(GetItems(tokens, out string currentLastToken));
-          if (currentLastToken == ">")
-          {
-            result.Add("execute");
-          }
+          result.Add(currentLastToken);
         }
-        // else if (currentToken.Equals(BlockEndToken))
         else if (BlockEndTokens.Contains(currentToken))
         {
           break;
@@ -366,8 +368,8 @@ namespace Atom2
             break;
           case LeftParenthesis:
           case RightParenthesis:
-          case '<':
-          case '>':
+          case LeftAngle:
+          case RightAngle:
           case Colon:
             characters.Dequeue();
             result.Enqueue(nextCharacter.ToString());
@@ -509,16 +511,8 @@ namespace Atom2
 
     private void Trace()
     {
-      var item = stack.Peek();
-
-      string message = "(empty)";
-
-      if (item != null)
-      {
-        message = item + " (" + item.GetType().Name + ")";
-      }
-
-      MessageBox.Show(message);
+      object item = stack.Peek();
+      MessageBox.Show(item == null ? "(empty)" : $"{item} ({item.GetType().Name})");
     }
 
     private bool TryGetWord(string key, out object word)

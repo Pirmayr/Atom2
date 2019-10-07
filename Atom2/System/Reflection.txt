@@ -69,26 +69,6 @@
 (import) set
 
 (
-  verbatim
-  assembly-load (current-assembly) put
-  (current-assembly) get
-  <GetTypes>
-  (
-    (current-type) put
-    (current-type) get type-get-namespace (current-namespace) put
-    (
-      (current-assembly) get
-      (current-namespace) get
-      1 join set
-    )
-    ((current-namespace) get is-null-or-empty not)
-    if
-  )
-  map
-)
-(import-with-full-name) set
-
-(
   (namespace) put
   (namespace) get evaluate (assembly) put
   (assembly) get

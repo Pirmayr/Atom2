@@ -1,48 +1,42 @@
 ﻿load-file System.txt pragma
 
-(mscorlib) import
-("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089") import-with-full-name
+("mscorlib, Version=4.0.0.0, Culture=neutral") import
+("System.Windows.Forms, Version=4.0.0.0, Culture=neutral") import
 
 (System.Windows.Forms) use
 
-"hallo" show
-
-Form <new> trace <Show>
-
-"end" show
-
 (
   (menu-item menu-text click-handler) put
-  menu-item () DropDownItems: (menu-text) Add: ((click-handler) get create-event-handler) Click:
+  menu-item <DropDownItems> <menu-text Add> <(click-handler) get create-event-handler Click>
 )
 (add-menu-item) set
 
 (
-  TextBox () new: (textBox) set
-  textBox (true) Multiline: 
-  textBox (DockStyle () Fill:) Dock:
+  TextBox <new> (textBox) set
+  textBox <true Multiline>
+  textBox <DockStyle <Fill> Dock>
 
-  Button () new: (button) set
-  button (DockStyle () Top:) Dock:
-  button ("Press") Text: 
-  button ((drop-2 textBox (("Hello World!") verbatim) Text:) create-event-handler) Click:
+  Button <new> (button) set
+  button <DockStyle <Top> Dock>
+  button <"Press" Text>
+  button <(drop-2 textBox <"Hello World!" Text>) create-event-handler Click>
 
-  MenuStrip () new: (mainMenuStrip) set
-  mainMenuStrip () Items: ("File") Add: (fileMenuItem) set
-  (fileMenuItem "New" (drop-2 "New" message)) evaluate add-menu-item
-  (fileMenuItem "Open" (drop-2 "Open" message)) evaluate add-menu-item
-  (fileMenuItem "Save" (drop-2 "Save" message)) evaluate add-menu-item
-  mainMenuStrip () Items: (("Edit") verbatim) Add: (editMenuItem) set
-  (editMenuItem "Cut" (drop-2 "Cut" message)) evaluate add-menu-item
-  (editMenuItem "Copy" (drop-2 "Copy" message)) evaluate add-menu-item
-  (editMenuItem "Paste" (drop-2 "Paste" message)) evaluate add-menu-item
+  MenuStrip <new> (mainMenuStrip) set
+  mainMenuStrip <Items> <"File" Add> (menuItem) set
+  menuItem "New" (drop-2 "New" show) add-menu-item
+  menuItem "Open" (drop-2 "Open" show) add-menu-item
+  menuItem "Close" (drop-2 "Close" show) add-menu-item
+  mainMenuStrip <Items> <"Edit" Add> (menuItem) set
+  menuItem "Cut" (drop-2 "Cut" show) add-menu-item
+  menuItem "Copy" (drop-2 "Copy" show) add-menu-item
+  menuItem "Paste" (drop-2 "Paste" show) add-menu-item
 
-  Form () new: (form) set
-  form () Controls: (textBox) Add:
-  form () Controls: (button) Add:
-  form () Controls: (mainMenuStrip) Add:
+  Form <new> (form) set
+  form <Controls> <textBox Add>
+  form <Controls> <button Add>
+  form <Controls> <mainMenuStrip Add>
   (form) get
 )
 (new-main-form) set
 
-Application (new-main-form) Run:
+Application <new-main-form Run>
