@@ -93,14 +93,13 @@ namespace Atom2
     private const char RightParenthesis = ')';
     private const char Quote = '"';
     private readonly string PragmaToken = "pragma";
-    private readonly string BlockBeginToken = LeftParenthesis.ToString();
-    private readonly string BlockEndToken = RightParenthesis.ToString();
-    private readonly string ExecuteToken = Colon.ToString();
+    private readonly HashSet<string> BlockBeginTokens = new HashSet<string> { LeftParenthesis.ToString(), "<"}; // LeftParenthesis.ToString();
+    private readonly HashSet<string> BlockEndTokens = new HashSet<string>{RightParenthesis.ToString(), ">"}; // RightParenthesis.ToString();
     private readonly Words setWords = new Words();
     private readonly Words putWords = new Words();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, Colon };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, Colon, Whitespace };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, '<', '>' };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, '<', '>', Whitespace };
     private static string BaseDirectory { get; set; }
 
     private Runtime(string baseDirectory)
@@ -109,7 +108,7 @@ namespace Atom2
       setWords.Add("trace", new Action(Trace));
       setWords.Add("break", new Action(Break));
       setWords.Add("invoke", new Action(Invoke));
-      setWords.Add("call", new Action(Call));
+      setWords.Add("execute", new Action(Execute));
       setWords.Add("ones-complement", UnaryAction(ExpressionType.OnesComplement));
       setWords.Add("equal", BinaryAction(ExpressionType.Equal));
       setWords.Add("not-equal", BinaryAction(ExpressionType.NotEqual));
@@ -135,7 +134,12 @@ namespace Atom2
       setWords.Add("create-event-handler", new Action(CreateEventHandler));
       setWords.Add("Runtime", typeof(Runtime));
       setWords.Add("runtime", this);
-      setWords.Add(ExecuteToken, new Action(Execute));
+      setWords.Add("show", new Action(Show));
+    }
+
+    private void Show()
+    {
+      MessageBox.Show(Pop().ToString());
     }
 
     public static void Main(params string[] arguments)
@@ -255,10 +259,10 @@ namespace Atom2
 
     private void Execute()
     {
-      string memberName = (string) Pop();
       EvaluateAndSplit();
       int argumentsCount = (int) Pop();
-      object[] arguments = Pop(argumentsCount).ToArray();
+      string memberName = (string) Pop();
+      object[] arguments = Pop(argumentsCount - 1).ToArray();
       object typeOrTarget = Pop();
       bool isType = typeOrTarget is Type;
       Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
@@ -314,17 +318,25 @@ namespace Atom2
       }
     }
 
-    private Items GetItems(Tokens tokens)
+    private Items GetItems(Tokens tokens, out string lastToken)
     {
+      lastToken = "";
       Items result = new Items();
       while (0 < tokens.Count)
       {
         string currentToken = tokens.Dequeue();
-        if (currentToken.Equals(BlockBeginToken))
+        lastToken = currentToken;
+        // if (currentToken.Equals(BlockBeginToken))
+        if (BlockBeginTokens.Contains(currentToken))
         {
-          result.Add(GetItems(tokens));
+          result.Add(GetItems(tokens, out string currentLastToken));
+          if (currentLastToken == ">")
+          {
+            result.Add("execute");
+          }
         }
-        else if (currentToken.Equals(BlockEndToken))
+        // else if (currentToken.Equals(BlockEndToken))
+        else if (BlockEndTokens.Contains(currentToken))
         {
           break;
         }
@@ -354,6 +366,8 @@ namespace Atom2
             break;
           case LeftParenthesis:
           case RightParenthesis:
+          case '<':
+          case '>':
           case Colon:
             characters.Dequeue();
             result.Enqueue(nextCharacter.ToString());
@@ -472,7 +486,7 @@ namespace Atom2
 
     private void Run(string filename)
     {
-      Evaluate(GetItems(GetTokens(Code(filename))));
+      Evaluate(GetItems(GetTokens(Code(filename)), out _));
     }
 
     private void Set()
@@ -495,7 +509,16 @@ namespace Atom2
 
     private void Trace()
     {
-      MessageBox.Show(stack.Peek()?.ToString());
+      var item = stack.Peek();
+
+      string message = "(empty)";
+
+      if (item != null)
+      {
+        message = item + " (" + item.GetType().Name + ")";
+      }
+
+      MessageBox.Show(message);
     }
 
     private bool TryGetWord(string key, out object word)

@@ -1,9 +1,15 @@
 ﻿load-file System.txt pragma
 
 (mscorlib) import
-("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089") import
+("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089") import-with-full-name
 
 (System.Windows.Forms) use
+
+"hallo" show
+
+Form <new> trace <Show>
+
+"end" show
 
 (
   (menu-item menu-text click-handler) put

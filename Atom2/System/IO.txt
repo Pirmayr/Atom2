@@ -1,2 +1,2 @@
-﻿(to-string (message) set Console ((message) get) WriteLine:) (show) set 
-(to-string (message) set MessageBox ((message) get) Show: drop) (message) set 
+﻿(to-string (message) set Console <(message) get WriteLine>) (show_) set 
+(to-string (message) set MessageBox <(message) get Show> drop) (message) set 
