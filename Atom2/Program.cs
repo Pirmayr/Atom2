@@ -11,6 +11,7 @@ using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 using Tokens = System.Collections.Generic.Queue<string>;
 using CharHashSet = System.Collections.Generic.HashSet<char>;
+using StringHashSet = System.Collections.Generic.HashSet<string>;
 using Characters = System.Collections.Generic.Queue<char>;
 using Stack = System.Collections.Generic.Stack<object>;
 using Items = System.Collections.Generic.List<object>;
@@ -20,71 +21,7 @@ using Words = Atom2.ScopedDictionary<string, object>;
 
 namespace Atom2
 {
-  public sealed class ScopedDictionary<TK, TV>
-  {
-    private sealed class Scopes : Stack<Dictionary<TK, TV>> { }
-
-    private readonly Scopes scopes = new Scopes();
-
-    public ScopedDictionary()
-    {
-      EnterScope();
-    }
-
-    public void Add(TK key, TV value)
-    {
-      scopes.Peek().Add(key, value);
-    }
-
-    public bool ContainsKey(TK key)
-    {
-      foreach (Dictionary<TK, TV> currentScope in scopes)
-      {
-        if (currentScope.ContainsKey(key))
-        {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    public void EnterScope()
-    {
-      scopes.Push(new Dictionary<TK, TV>());
-    }
-
-    public void LeaveScope()
-    {
-      scopes.Pop();
-    }
-
-    // ReSharper disable once UnusedMember.Global
-    public List<KeyValuePair<TK, TV>> ToList()
-    {
-      return scopes.Peek().ToList();
-    }
-
-    public bool TryGetValue(TK key, out TV value)
-    {
-      foreach (Dictionary<TK, TV> currentScope in scopes)
-      {
-        if (currentScope.TryGetValue(key, out value))
-        {
-          return true;
-        }
-      }
-      value = default(TV);
-      return false;
-    }
-
-    public TV this[TK key]
-    {
-      get => TryGetValue(key, out TV result) ? result : default(TV);
-      set => scopes.Peek()[key] = value;
-    }
-  }
-
-  public sealed class Runtime
+  public sealed partial class Runtime
   {
     private const char Eof = char.MinValue;
     private const char Whitespace = char.MaxValue;
@@ -94,14 +31,16 @@ namespace Atom2
     private const char Quote = '"';
     private const char LeftAngle = '<';
     private const char RightAngle = '>';
+    private const char Pipe = '|';
+    private const string LoadFilePragma = "load-file";
     private readonly string PragmaToken = "pragma";
-    private readonly HashSet<string> BlockBeginTokens = new HashSet<string> { LeftParenthesis.ToString(), LeftAngle.ToString() };
-    private readonly HashSet<string> BlockEndTokens = new HashSet<string> { RightParenthesis.ToString(), RightAngle.ToString() };
+    private readonly StringHashSet BlockBeginTokens = new StringHashSet { LeftParenthesis.ToString(), LeftAngle.ToString(), Pipe.ToString() };
+    private readonly StringHashSet BlockEndTokens = new StringHashSet { RightParenthesis.ToString(), RightAngle.ToString() };
     private readonly Words setWords = new Words();
     private readonly Words putWords = new Words();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Whitespace };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Whitespace };
     private static string BaseDirectory { get; set; }
 
     private Runtime(string baseDirectory)
@@ -112,6 +51,8 @@ namespace Atom2
       setWords.Add("invoke", new Action(Invoke));
       setWords.Add(")", new Action(DoNothing));
       setWords.Add(">", new Action(Execute));
+      setWords.Add("execute", new Action(Execute));
+      setWords.Add("|", new Action(Put));
       setWords.Add("ones-complement", UnaryAction(ExpressionType.OnesComplement));
       setWords.Add("equal", BinaryAction(ExpressionType.Equal));
       setWords.Add("not-equal", BinaryAction(ExpressionType.NotEqual));
@@ -335,11 +276,13 @@ namespace Atom2
         lastToken = currentToken;
         if (BlockBeginTokens.Contains(currentToken))
         {
+          OnBlockBegin(currentToken);
           result.Add(GetItems(tokens, out string currentLastToken));
           result.Add(currentLastToken);
         }
         else if (BlockEndTokens.Contains(currentToken))
         {
+          OnBlockEnd(currentToken);
           break;
         }
         else
@@ -348,6 +291,24 @@ namespace Atom2
         }
       }
       return result;
+    }
+
+    private void OnBlockBegin(string token)
+    {
+      if (token == Pipe.ToString())
+      {
+        BlockBeginTokens.Remove(Pipe.ToString());
+        BlockEndTokens.Add(Pipe.ToString());
+      }
+    }
+
+    private void OnBlockEnd(string token)
+    {
+      if (token == Pipe.ToString())
+      {
+        BlockEndTokens.Remove(Pipe.ToString());
+        BlockBeginTokens.Add(Pipe.ToString());
+      }
     }
 
     private Tokens GetTokens(string code)
@@ -370,6 +331,7 @@ namespace Atom2
           case RightParenthesis:
           case LeftAngle:
           case RightAngle:
+          case Pipe:
           case Colon:
             characters.Dequeue();
             result.Enqueue(nextCharacter.ToString());
@@ -395,7 +357,7 @@ namespace Atom2
       string pragma = tokens.Dequeue();
       switch (pragma)
       {
-        case "load-file":
+        case LoadFilePragma:
           Run(tokens.Dequeue());
           break;
       }
@@ -463,19 +425,25 @@ namespace Atom2
 
     private void Process(object item)
     {
-      if (TryGetWord(item.ToString(), out object word))
+      switch (TryGetWord(item.ToString(), out object word))
       {
-        if (word is Action action)
-        {
-          action.Invoke();
+        case WordKind.Set:
+          if (word is Action action)
+          {
+            action.Invoke();
+            return;
+          }
+          putWords.EnterScope();
+          Evaluate(word);
+          putWords.LeaveScope();
           return;
-        }
-        putWords.EnterScope();
-        Evaluate(word);
-        putWords.LeaveScope();
-        return;
+        case WordKind.Put:
+          Push(word);
+          return;
+        default:
+          Push(item);
+          return;
       }
-      Push(item);
     }
 
     private void Put()
@@ -515,9 +483,17 @@ namespace Atom2
       MessageBox.Show(item == null ? "(empty)" : $"{item} ({item.GetType().Name})");
     }
 
-    private bool TryGetWord(string key, out object word)
+    private WordKind TryGetWord(string key, out object word)
     {
-      return putWords.TryGetValue(key, out word) || setWords.TryGetValue(key, out word);
+      if (putWords.TryGetValue(key, out word))
+      {
+        return WordKind.Put;
+      }
+      if (setWords.TryGetValue(key, out word))
+      {
+        return WordKind.Set;
+      }
+      return WordKind.None;
     }
 
     private Action UnaryAction(ExpressionType expressionType)

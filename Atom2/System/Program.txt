@@ -5,33 +5,36 @@
 
 (System.Windows.Forms) use
 
-(
-  (menu-item menu-text click-handler) put
-  menu-item <DropDownItems> <menu-text Add> <(click-handler) get create-event-handler Click>
+( 
+  |menuItem menuText context clickHandler|
+  menuItem <DropDownItems> <menuText Add> context clickHandler addClickHandler
 )
-(add-menu-item) set
+(addMenuItem) set
 
 (
-  TextBox <new> (textBox) set
+  Form <new> (form) set
+
+  TextBox <new> |textBox|
   textBox <true Multiline>
   textBox <DockStyle <Fill> Dock>
 
-  Button <new> (button) set
-  button <DockStyle <Top> Dock>
-  button <"Press" Text>
-  button <(drop-2 textBox <"Hello World!" Text>) create-event-handler Click>
+  Button <new>
+  : <DockStyle <Top> Dock>
+  : <"Press" Text>
+  : (textBox) (|sender arguments| textBox <"Hello World!" Text>) addClickHandler
+  |button|
 
-  MenuStrip <new> (mainMenuStrip) set
-  mainMenuStrip <Items> <"File" Add> (menuItem) set
-  menuItem "New" (drop-2 "New" show) add-menu-item
-  menuItem "Open" (drop-2 "Open" show) add-menu-item
-  menuItem "Close" (drop-2 "Close" show) add-menu-item
-  mainMenuStrip <Items> <"Edit" Add> (menuItem) set
-  menuItem "Cut" (drop-2 "Cut" show) add-menu-item
-  menuItem "Copy" (drop-2 "Copy" show) add-menu-item
-  menuItem "Paste" (drop-2 "Paste" show) add-menu-item
+  MenuStrip <new> 
+  : <Items> <"File" Add>
+    : "New" (form) (|sender arguments| "New" show) addMenuItem
+    : "Open" (form) (|sender arguments| "Open" show) addMenuItem
+      "Close" (form) (|sender arguments| form <Hide> Application <Exit>) addMenuItem
+  : <Items> <"Edit" Add>
+    : "Cut" (form) (|sender arguments| "Cut" show) addMenuItem
+    : "Copy" (form) (|sender arguments| "Copy" show) addMenuItem
+      "Paste" (form) (|sender arguments| "Paste" show) addMenuItem
+  |mainMenuStrip|
 
-  Form <new> (form) set
   form <Controls> <textBox Add>
   form <Controls> <button Add>
   form <Controls> <mainMenuStrip Add>
@@ -40,3 +43,4 @@
 (new-main-form) set
 
 Application <new-main-form Run>
+

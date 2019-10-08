@@ -1,0 +1,2 @@
+﻿(lambda create-event-handler) (createEventHandler) set
+((createEventHandler) verbatim (Click) verbatim 4 join execute) (addClickHandler) set

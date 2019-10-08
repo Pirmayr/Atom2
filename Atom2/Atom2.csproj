@@ -41,6 +41,9 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScopedDictionary.cs" />
+    <Compile Include="WordKind.cs" />
+    <Compile Include="TextEditor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="System\System.txt" />
@@ -52,6 +55,7 @@
     <None Include="System\Reflection.txt" />
     <None Include="System\Tests.txt" />
     <None Include="System\IO.txt" />
+    <None Include="System\UI.txt" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="System\Comment.txt" />
