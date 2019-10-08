@@ -43,7 +43,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScopedDictionary.cs" />
     <Compile Include="WordKind.cs" />
-    <Compile Include="TextEditor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="System\System.txt" />

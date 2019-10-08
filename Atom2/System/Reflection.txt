@@ -5,7 +5,7 @@
 (256) (invoke-method) set
 (1024) (get-field) set
 
-(mscorlib) (mscorlib-assembly) set 
+("mscorlib") (mscorlib-assembly) set 
 (System.Windows.Forms) (forms-assembly) set 
 (System.Numerics) (numerics-assembly) set 
 
@@ -19,30 +19,30 @@
 (instance invoke-method invoke) (invoke-instance-method) set
 (static invoke-method invoke) (invoke-static-method) set
 
-(0 object-info "GetType" invoke-instance-method) (object-get-type) set 
+(0 object-info GetType invoke-instance-method) (object-get-type) set 
 (object-get-type type-get-name) (object-get-type-name) set 
-(0 object-info "ToString" invoke-instance-method) (to-string) set
+(0 object-info ToString invoke-instance-method) (to-string) set
 
 (1 string-info IsNullOrEmpty invoke-static-method) (is-null-or-empty) set
 
-(0 type-info "get_Assembly" invoke-instance-method) (type-get-assembly) set 
-(0 type-info "get_FullName" invoke-instance-method) (type-get-qualified-name) set 
-(0 type-info "get_Name" invoke-instance-method) (type-get-name) set 
-(0 type-info "get_Namespace" invoke-instance-method) (type-get-namespace) set 
-(0 type-info "GetMembers" invoke-instance-method) (type-get-members) set 
+(0 type-info get_Assembly invoke-instance-method) (type-get-assembly) set 
+(0 type-info get_FullName invoke-instance-method) (type-get-qualified-name) set 
+(0 type-info get_Name invoke-instance-method) (type-get-name) set 
+(0 type-info get_Namespace invoke-instance-method) (type-get-namespace) set 
+(0 type-info GetMembers invoke-instance-method) (type-get-members) set 
 (type-get-assembly assembly-get-name assembly-name-get-name) (type-get-assembly-name) set 
 (duplicate type-get-assembly-name swap type-get-qualified-name) (get-type-info) set 
 
-(1 assembly-info "GetType" invoke-instance-method) (assembly-get-type) set
-(0 assembly-info "GetName" invoke-instance-method) (assembly-get-name) set
-(0 assembly-name-info "get_Name" invoke-instance-method) (assembly-name-get-name) set
-(1 assembly-info "LoadWithPartialName" invoke-static-method) (assembly-load-with-partial-name) set
-(1 assembly-info "Load" invoke-static-method) (assembly-load) set
+(1 assembly-info GetType invoke-instance-method) (assembly-get-type) set
+(0 assembly-info GetName invoke-instance-method) (assembly-get-name) set
+(0 assembly-name-info get_Name invoke-instance-method) (assembly-name-get-name) set
+(1 assembly-info LoadWithPartialName invoke-static-method) (assembly-load-with-partial-name) set
+(1 assembly-info Load invoke-static-method) (assembly-load) set
 (swap assembly-load-with-partial-name swap assembly-get-type) (get-type) set
-(mscorlib-assembly "System.Reflection.AssemblyName") (assembly-name-info) set
+(mscorlib-assembly System.Reflection.AssemblyName) (assembly-name-info) set
 
-(target object-get-type-name "RuntimeType" equal) (target-is-runtime-type) set 
-(name "new" equal) (name-is-create-instance-name) set 
+(target object-get-type-name RuntimeType equal) (target-is-runtime-type) set 
+(name new equal) (name-is-create-instance-name) set 
 (target (arguments) get evaluate-and-split target object-get-type get-type-info name instance invoke-method) (instance-call-arguments) set 
 ((arguments) get evaluate-and-split target get-type-info name static invoke-method) (static-call-arguments) set 
 ((arguments) get evaluate-and-split target get-type-info name instance create-instance) (create-instance-arguments) set 
@@ -58,10 +58,10 @@
     (current-type) get type-get-namespace (current-namespace) put
     (
       (current-assembly) get
-      (current-namespace) get
+      (current-namespace) get to-name
       1 join set
     )
-    ((current-namespace) get is-null-or-empty not)
+    ((current-namespace) get is-null-or-empty not) 
     if
   )
   map
@@ -76,10 +76,10 @@
   (
     (current-type) put
     (
-      (current-type) get duplicate type-get-name 1 join set
+      (current-type) get duplicate type-get-name to-name 1 join set
     )
     (
-      (current-type) get type-get-namespace (namespace) get verbatim equal
+      (current-type) get type-get-namespace (namespace) get verbatim <Value> equal
     ) if
   )
   map
