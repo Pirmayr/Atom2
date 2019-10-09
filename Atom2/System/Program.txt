@@ -14,7 +14,7 @@
 (
   Form <new> (form) set
 
-  TextBox <new> |textBox|
+  RichTextBox <new> |textBox|
   textBox <true Multiline>
   textBox <DockStyle <Fill> Dock>
 

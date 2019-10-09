@@ -7,14 +7,16 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
+
 using Microsoft.CSharp.RuntimeBinder;
+
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
-using Tokens = System.Collections.Generic.Queue<object>;
-using CharHashSet = System.Collections.Generic.HashSet<char>;
-using NameHashSet = System.Collections.Generic.HashSet<Atom2.Runtime.Name>;
 using Characters = System.Collections.Generic.Queue<char>;
-using Stack = System.Collections.Generic.Stack<object>;
+using CharHashSet = System.Collections.Generic.HashSet<char>;
 using Items = System.Collections.Generic.List<object>;
+using NameHashSet = System.Collections.Generic.HashSet<Atom2.Runtime.Name>;
+using Stack = System.Collections.Generic.Stack<object>;
+using Tokens = System.Collections.Generic.Queue<object>;
 using Words = Atom2.ScopedDictionary<Atom2.Runtime.Name, object>;
 
 #pragma warning disable 618
@@ -27,9 +29,9 @@ namespace Atom2
     {
       public string Value { get; set; }
 
-      public override bool Equals(object value)
+      public override bool Equals(object obj)
       {
-        return value is Name name && Value == name.Value;
+        return obj is Name name && Value == name.Value;
       }
 
       public override int GetHashCode()
@@ -48,67 +50,54 @@ namespace Atom2
     private const char RightAngle = '>';
     private const char RightParenthesis = ')';
     private const char Whitespace = char.MaxValue;
-    private readonly NameHashSet blockBeginTokens = new NameHashSet {new Name {Value = LeftParenthesis.ToString()}, new Name {Value = LeftAngle.ToString()}, new Name {Value = Pipe.ToString()}};
-    private readonly NameHashSet blockEndTokens = new NameHashSet {new Name {Value = RightParenthesis.ToString()}, new Name {Value = RightAngle.ToString()}};
-    private readonly Name pipeName = new Name {Value = Pipe.ToString()};
+    private readonly NameHashSet blockBeginTokens = new NameHashSet { new Name { Value = LeftParenthesis.ToString() }, new Name { Value = LeftAngle.ToString() }, new Name { Value = Pipe.ToString() } };
+    private readonly NameHashSet blockEndTokens = new NameHashSet { new Name { Value = RightParenthesis.ToString() }, new Name { Value = RightAngle.ToString() } };
+    private readonly Name pipeName = new Name { Value = Pipe.ToString() };
     private readonly Words putWords = new Words();
     private readonly Words setWords = new Words();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Whitespace};
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Whitespace };
     private static string BaseDirectory { get; set; }
 
-    private Runtime(string baseDirectory)
+    public Runtime(string baseDirectory)
     {
       BaseDirectory = baseDirectory;
-      setWords.Add(new Name {Value = "trace"}, new Action(Trace));
-      setWords.Add(new Name {Value = "break"}, new Action(Break));
-      setWords.Add(new Name {Value = "invoke"}, new Action(Invoke));
-      setWords.Add(new Name {Value = ")"}, new Action(DoNothing));
-      setWords.Add(new Name {Value = ">"}, new Action(Execute));
-      setWords.Add(new Name {Value = "execute"}, new Action(Execute));
-      setWords.Add(new Name {Value = "|"}, new Action(Put));
-      setWords.Add(new Name {Value = "ones-complement"}, UnaryAction(ExpressionType.OnesComplement));
-      setWords.Add(new Name {Value = "equal"}, BinaryAction(ExpressionType.Equal));
-      setWords.Add(new Name {Value = "not-equal"}, BinaryAction(ExpressionType.NotEqual));
-      setWords.Add(new Name {Value = "less-or-equal"}, BinaryAction(ExpressionType.LessThanOrEqual));
-      setWords.Add(new Name {Value = "less"}, BinaryAction(ExpressionType.LessThan));
-      setWords.Add(new Name {Value = "greater-or-equal"}, BinaryAction(ExpressionType.GreaterThanOrEqual));
-      setWords.Add(new Name {Value = "greater"}, BinaryAction(ExpressionType.GreaterThan));
-      setWords.Add(new Name {Value = "add"}, BinaryAction(ExpressionType.Add));
-      setWords.Add(new Name {Value = "subtract"}, BinaryAction(ExpressionType.Subtract));
-      setWords.Add(new Name {Value = "multiply"}, BinaryAction(ExpressionType.Multiply));
-      setWords.Add(new Name {Value = "divide"}, BinaryAction(ExpressionType.Divide));
-      setWords.Add(new Name {Value = "put"}, new Action(Put));
-      setWords.Add(new Name {Value = "set"}, new Action(Set));
-      setWords.Add(new Name {Value = "get"}, new Action(Get));
-      setWords.Add(new Name {Value = "if"}, new Action(If));
-      setWords.Add(new Name {Value = "while"}, new Action(While));
-      setWords.Add(new Name {Value = "evaluate"}, new Action(Evaluate));
-      setWords.Add(new Name {Value = "length"}, new Action(Length));
-      setWords.Add(new Name {Value = "split"}, new Action(Split));
-      setWords.Add(new Name {Value = "evaluate-and-split"}, new Action(EvaluateAndSplit));
-      setWords.Add(new Name {Value = "join"}, new Action(Join));
-      setWords.Add(new Name {Value = "cast"}, new Action(Cast));
-      setWords.Add(new Name {Value = "create-event-handler"}, new Action(CreateEventHandler));
-      setWords.Add(new Name {Value = "Runtime"}, typeof(Runtime));
-      setWords.Add(new Name {Value = "runtime"}, this);
-      setWords.Add(new Name {Value = "show"}, new Action(Show));
-      setWords.Add(new Name {Value = "hello"}, new Action(Hello));
-      setWords.Add(new Name {Value = "to-name"}, new Action(ToName));
-    }
-
-    public static void Main(params string[] arguments)
-    {
-      try
-      {
-        new Runtime(arguments[0]).Run(arguments[1]);
-        Console.Write("done");
-      }
-      catch (Exception exception)
-      {
-        Console.Write(exception.Message);
-      }
+      setWords.Add(new Name { Value = "trace" }, new Action(Trace));
+      setWords.Add(new Name { Value = "break" }, new Action(Break));
+      setWords.Add(new Name { Value = "invoke" }, new Action(Invoke));
+      setWords.Add(new Name { Value = ")" }, new Action(DoNothing));
+      setWords.Add(new Name { Value = ">" }, new Action(Execute));
+      setWords.Add(new Name { Value = "execute" }, new Action(Execute));
+      setWords.Add(new Name { Value = "|" }, new Action(Put));
+      setWords.Add(new Name { Value = "ones-complement" }, UnaryAction(ExpressionType.OnesComplement));
+      setWords.Add(new Name { Value = "equal" }, BinaryAction(ExpressionType.Equal));
+      setWords.Add(new Name { Value = "not-equal" }, BinaryAction(ExpressionType.NotEqual));
+      setWords.Add(new Name { Value = "less-or-equal" }, BinaryAction(ExpressionType.LessThanOrEqual));
+      setWords.Add(new Name { Value = "less" }, BinaryAction(ExpressionType.LessThan));
+      setWords.Add(new Name { Value = "greater-or-equal" }, BinaryAction(ExpressionType.GreaterThanOrEqual));
+      setWords.Add(new Name { Value = "greater" }, BinaryAction(ExpressionType.GreaterThan));
+      setWords.Add(new Name { Value = "add" }, BinaryAction(ExpressionType.Add));
+      setWords.Add(new Name { Value = "subtract" }, BinaryAction(ExpressionType.Subtract));
+      setWords.Add(new Name { Value = "multiply" }, BinaryAction(ExpressionType.Multiply));
+      setWords.Add(new Name { Value = "divide" }, BinaryAction(ExpressionType.Divide));
+      setWords.Add(new Name { Value = "put" }, new Action(Put));
+      setWords.Add(new Name { Value = "set" }, new Action(Set));
+      setWords.Add(new Name { Value = "get" }, new Action(Get));
+      setWords.Add(new Name { Value = "if" }, new Action(If));
+      setWords.Add(new Name { Value = "while" }, new Action(While));
+      setWords.Add(new Name { Value = "evaluate" }, new Action(Evaluate));
+      setWords.Add(new Name { Value = "length" }, new Action(Length));
+      setWords.Add(new Name { Value = "split" }, new Action(Split));
+      setWords.Add(new Name { Value = "evaluate-and-split" }, new Action(EvaluateAndSplit));
+      setWords.Add(new Name { Value = "join" }, new Action(Join));
+      setWords.Add(new Name { Value = "cast" }, new Action(Cast));
+      setWords.Add(new Name { Value = "create-event-handler" }, new Action(CreateEventHandler));
+      setWords.Add(new Name { Value = "Runtime" }, typeof(Runtime));
+      setWords.Add(new Name { Value = "runtime" }, this);
+      setWords.Add(new Name { Value = "show" }, new Action(Show));
+      setWords.Add(new Name { Value = "hello" }, new Action(Hello));
+      setWords.Add(new Name { Value = "to-name" }, new Action(ToName));
     }
 
     private static void Break()
@@ -154,7 +143,7 @@ namespace Atom2
       {
         return doubleValue;
       }
-      return new Name {Value = token.ToString()};
+      return new Name { Value = token.ToString() };
     }
 
     private Action BinaryAction(ExpressionType expressionType)
@@ -163,7 +152,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -467,7 +456,7 @@ namespace Atom2
       }
     }
 
-    private void Run(string filename)
+    public void Run(string filename)
     {
       Tokens tokens = GetTokens(Code(filename));
       Items items = GetItems(tokens, out _);
@@ -501,7 +490,7 @@ namespace Atom2
 
     private void ToName()
     {
-      Push(new Name {Value = Pop().ToString()});
+      Push(new Name { Value = Pop().ToString() });
     }
 
     private void Trace()
@@ -532,7 +521,7 @@ namespace Atom2
       Type objectType = typeof(object);
       ParameterExpression parameter = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = {argumentInfo};
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo };
       CallSiteBinder binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameter);
       LambdaExpression lambda = Expression.Lambda(expression, parameter);
