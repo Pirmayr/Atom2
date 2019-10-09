@@ -2,14 +2,16 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Net.Mime;
 using System.Windows.Forms;
 
 namespace Atom2.System
 {
   public class Editor : Form
   {
-    private readonly RichTextBox editWindow = new RichTextBox();
+    private readonly TextBox editWindow = new TextBox();
 
+    [STAThread]
     public static void Main(params string[] arguments)
     {
       try
@@ -68,7 +70,7 @@ namespace Atom2.System
 
     private void OnOpen(object sender, EventArgs e)
     {
-      using OpenFileDialog dialog = new OpenFileDialog();
+      OpenFileDialog dialog = new OpenFileDialog();
       if (dialog.ShowDialog() == DialogResult.OK)
       {
         editWindow.Text = File.ReadAllText(dialog.FileName);

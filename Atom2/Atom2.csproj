@@ -33,6 +33,9 @@
     <NoWarn>CS0618</NoWarn>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp">
     </Reference>
@@ -46,9 +49,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScopedDictionary.cs" />
     <Compile Include="WordKind.cs" />
-    <Compile Include="System\Editor.cs" />
+    <Compile Include="Editor.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.manifest" />
     <None Include="System\System.txt" />
     <None Include="System\Program.txt" />
     <None Include="System\Stack.txt" />
