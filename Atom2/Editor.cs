@@ -10,21 +10,16 @@ namespace Atom2.System
   public class Editor : Form
   {
     private readonly TextBox editWindow = new TextBox();
+    private readonly Runtime runtime;
 
     [STAThread]
     public static void Main(params string[] arguments)
     {
       try
       {
-
-        new Runtime(arguments[0]).Run(arguments[1]);
-        Console.Write("done");
-
-        /*
         Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(true);
-        Application.Run(new Editor());
-        */
+        Application.SetCompatibleTextRenderingDefault(false);
+        Application.Run(new Editor(arguments[0]));
       }
       catch (Exception exception)
       {
@@ -32,8 +27,10 @@ namespace Atom2.System
       }
     }
 
-    public Editor()
+    public Editor(string baseDirectory)
     {
+      runtime = new Runtime(baseDirectory);
+
       editWindow.Multiline = true;
       editWindow.Dock = DockStyle.Fill;
 
@@ -74,7 +71,7 @@ namespace Atom2.System
 
     private void OnRun(object sender, EventArgs e)
     {
-      throw new NotImplementedException();
+      runtime.Run(editWindow.Text);
     }
 
     private void OnOpen(object sender, EventArgs e)

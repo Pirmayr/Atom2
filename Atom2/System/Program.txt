@@ -39,5 +39,5 @@
 )
 (new-main-form) set
 
-Application <new-main-form Run>
+new-main-form <Show>
 

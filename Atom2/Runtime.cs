@@ -104,9 +104,10 @@ namespace Atom2
       Debugger.Break();
     }
 
-    private static string Code(string filename)
+    private static string Code(string codeOrFilename)
     {
-      return File.ReadAllText(BaseDirectory + "/" + filename);
+      string path = BaseDirectory + "/" + codeOrFilename;
+      return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
     }
 
     private static void DoNothing() { }
@@ -472,9 +473,10 @@ namespace Atom2
       }
     }
 
-    public void Run(string filename)
+    public void Run(string codeOrPath)
     {
-      Tokens tokens = GetTokens(Code(filename));
+      // string code = File.Exists(codeOrPath) ? Code(codeOrPath) : codeOrPath;
+      Tokens tokens = GetTokens(Code(codeOrPath));
       Items items = GetItems(tokens, out _);
       Evaluate(items);
     }
