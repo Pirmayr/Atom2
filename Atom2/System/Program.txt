@@ -40,4 +40,3 @@
 (new-main-form) set
 
 new-main-form <Show>
-

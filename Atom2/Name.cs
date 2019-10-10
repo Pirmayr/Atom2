@@ -1,6 +1,4 @@
-﻿// #pragma warning disable 618
-
-namespace Atom2
+﻿namespace Atom2
 {
   public sealed partial class Runtime
   {
@@ -16,6 +14,11 @@ namespace Atom2
       public override int GetHashCode()
       {
         return (Value != null ? Value.GetHashCode() : 0);
+      }
+
+      public override string ToString()
+      {
+        return Value.ToString();
       }
     }
   }

@@ -43,7 +43,10 @@ namespace Atom2
     private readonly Stack stack = new Stack();
     private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote };
     private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe };
+
     private static string BaseDirectory { get; set; }
+
+    public Items CurrentRootItems { get; set; }
 
     private NameHashSet NewNameHashSet(params object[] arguments)
     {
@@ -340,7 +343,10 @@ namespace Atom2
       switch (pragma)
       {
         case LoadFilePragma:
-          Run(((Name) tokens.Dequeue()).Value);
+          if (!Run(((Name) tokens.Dequeue()).Value, out Exception exception))
+          {
+            throw exception;
+          }
           break;
       }
     }
@@ -473,12 +479,20 @@ namespace Atom2
       }
     }
 
-    public void Run(string codeOrPath)
+    public bool Run(string codeOrPath, out Exception result)
     {
-      // string code = File.Exists(codeOrPath) ? Code(codeOrPath) : codeOrPath;
-      Tokens tokens = GetTokens(Code(codeOrPath));
-      Items items = GetItems(tokens, out _);
-      Evaluate(items);
+      try
+      {
+        CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)), out _);
+        Evaluate(CurrentRootItems);
+        result = null;
+        return true;
+      }
+      catch (Exception exception)
+      {
+        result = exception;
+        return false;
+      }
     }
 
     private void Set()
