@@ -5,18 +5,13 @@
 
 (System.Windows.Forms) use
 
-( 
-  |menuItem menuText context clickHandler|
-  menuItem <DropDownItems> <menuText Add> context clickHandler addClickHandler
-)
-(addMenuItem) set
-
 (
-  Form <new> (form) set
+  Form <new> |form|
 
-  RichTextBox <new> |textBox|
-  textBox <true Multiline>
-  textBox <DockStyle <Fill> Dock>
+  RichTextBox <new> 
+  : <true Multiline>
+  : <DockStyle <Fill> Dock>
+  |textBox|
 
   Button <new>
   : <DockStyle <Top> Dock>
@@ -35,10 +30,12 @@
       "Paste" (form) (|sender arguments| "Paste" show) addMenuItem
   |mainMenuStrip|
 
-  form <Controls> <textBox Add>
-  form <Controls> <button Add>
-  form <Controls> <mainMenuStrip Add>
-  (form) get
+  form <Controls>
+  : <textBox Add>
+  : <button Add>
+    <mainMenuStrip Add>
+
+  form
 )
 (new-main-form) set
 

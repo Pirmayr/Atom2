@@ -19,49 +19,47 @@ using Stack = System.Collections.Generic.Stack<object>;
 using Tokens = System.Collections.Generic.Queue<object>;
 using Words = Atom2.ScopedDictionary<Atom2.Runtime.Name, object>;
 
-#pragma warning disable 618
-
 namespace Atom2
 {
   public sealed partial class Runtime
   {
-    public sealed class Name
-    {
-      public string Value { get; set; }
-
-      public override bool Equals(object obj)
-      {
-        return obj is Name name && Value == name.Value;
-      }
-
-      public override int GetHashCode()
-      {
-        return (Value != null ? Value.GetHashCode() : 0);
-      }
-    }
-
-    private const char Eof = char.MinValue;
+    private const string LoadFilePragma = "load-file";
+    private const string PragmaToken = "pragma";
     private const char LeftAngle = '<';
     private const char LeftParenthesis = '(';
-    private const string LoadFilePragma = "load-file";
     private const char Pipe = '|';
-    private const string PragmaToken = "pragma";
     private const char Quote = '"';
+    private const char Apostrophe = '\'';
     private const char RightAngle = '>';
     private const char RightParenthesis = ')';
+    private const char Eof = char.MinValue;
     private const char Whitespace = char.MaxValue;
-    private readonly NameHashSet blockBeginTokens = new NameHashSet { new Name { Value = LeftParenthesis.ToString() }, new Name { Value = LeftAngle.ToString() }, new Name { Value = Pipe.ToString() } };
-    private readonly NameHashSet blockEndTokens = new NameHashSet { new Name { Value = RightParenthesis.ToString() }, new Name { Value = RightAngle.ToString() } };
+    private readonly NameHashSet blockBeginTokens;
+    private readonly NameHashSet blockEndTokens;
     private readonly Name pipeName = new Name { Value = Pipe.ToString() };
+    private readonly Name apostropheName = new Name { Value = Apostrophe.ToString() };
     private readonly Words putWords = new Words();
     private readonly Words setWords = new Words();
     private readonly Stack stack = new Stack();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Whitespace };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe };
     private static string BaseDirectory { get; set; }
+
+    private NameHashSet NewNameHashSet(params object[] arguments)
+    {
+      NameHashSet result = new NameHashSet();
+      foreach (object currentArgument in arguments)
+      {
+        result.Add(new Name { Value = currentArgument.ToString() });
+      }
+      return result;
+    }
 
     public Runtime(string baseDirectory)
     {
+      blockBeginTokens = NewNameHashSet(LeftParenthesis, LeftAngle, Pipe, Apostrophe);
+      blockEndTokens = NewNameHashSet(RightParenthesis, RightAngle);
+
       BaseDirectory = baseDirectory;
       setWords.Add(new Name { Value = "trace" }, new Action(Trace));
       setWords.Add(new Name { Value = "break" }, new Action(Break));
@@ -70,6 +68,7 @@ namespace Atom2
       setWords.Add(new Name { Value = ">" }, new Action(Execute));
       setWords.Add(new Name { Value = "execute" }, new Action(Execute));
       setWords.Add(new Name { Value = "|" }, new Action(Put));
+      setWords.Add(new Name { Value = "\'" }, new Action(DoNothing));
       setWords.Add(new Name { Value = "ones-complement" }, UnaryAction(ExpressionType.OnesComplement));
       setWords.Add(new Name { Value = "equal" }, BinaryAction(ExpressionType.Equal));
       setWords.Add(new Name { Value = "not-equal" }, BinaryAction(ExpressionType.NotEqual));
@@ -100,7 +99,7 @@ namespace Atom2
       setWords.Add(new Name { Value = "to-name" }, new Action(ToName));
     }
 
-    private static void Break()
+    private void Break()
     {
       Debugger.Break();
     }
@@ -314,6 +313,7 @@ namespace Atom2
           case LeftAngle:
           case RightAngle:
           case Pipe:
+          case Apostrophe:
             characters.Dequeue();
             result.Enqueue(ToObject(nextCharacter));
             break;
@@ -389,19 +389,35 @@ namespace Atom2
 
     private void OnBlockBegin(object token)
     {
-      if (token is Name name && name.Equals(pipeName))
+      if (token is Name name)
       {
-        blockBeginTokens.Remove(pipeName);
-        blockEndTokens.Add(pipeName);
+        if (name.Equals(pipeName))
+        {
+          blockBeginTokens.Remove(pipeName);
+          blockEndTokens.Add(pipeName);
+        }
+        else if (name.Equals(apostropheName))
+        {
+          blockBeginTokens.Remove(apostropheName);
+          blockEndTokens.Add(apostropheName);
+        }
       }
     }
 
     private void OnBlockEnd(object token)
     {
-      if (token is Name name && name.Equals(pipeName))
+      if (token is Name name)
       {
-        blockEndTokens.Remove(pipeName);
-        blockBeginTokens.Add(pipeName);
+        if (name.Equals(pipeName))
+        {
+          blockEndTokens.Remove(pipeName);
+          blockBeginTokens.Add(pipeName);
+        }
+        else if (name.Equals(apostropheName))
+        {
+          blockEndTokens.Remove(apostropheName);
+          blockBeginTokens.Add(apostropheName);
+        }
       }
     }
 
@@ -465,9 +481,7 @@ namespace Atom2
 
     private void Set()
     {
-      object item = Pop();
-      Items items = (Items) item;
-      foreach (Name currentItem in Enumerable.Reverse(items))
+      foreach (Name currentItem in Enumerable.Reverse((Items) Pop()))
       {
         setWords[currentItem] = Pop();
       }
@@ -480,7 +494,8 @@ namespace Atom2
 
     private void Split()
     {
-      Items items = (Items) Pop();
+      object item = Pop();
+      Items items = (Items) item;
       foreach (object currentItem in items)
       {
         Push(currentItem);

@@ -52,6 +52,7 @@
     <Compile Include="Editor.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Name.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.manifest" />
@@ -65,6 +66,7 @@
     <None Include="System\Tests.txt" />
     <None Include="System\IO.txt" />
     <None Include="System\UI.txt" />
+    <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="System\Comment.txt" />
