@@ -10,9 +10,7 @@ namespace Atom2
       try
       {
         EtoFormsEditor.Run(arguments);
-
         // WinformsEditor.Run(arguments);
-
       }
       catch (Exception exception)
       {

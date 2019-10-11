@@ -1,45 +1,28 @@
-﻿namespace Atom2
+﻿using Eto.Drawing;
+using Eto.Forms;
+
+namespace Atom2
 {
-  using Eto.Forms;
-  using Eto.Drawing;
-
-  public class EtoFormsEditor : Form
+  public sealed class EtoFormsEditor : Form
   {
-    private static readonly Application application = new Application();
+    private static readonly Application Application = new Application();
 
-    public EtoFormsEditor()
+    private EtoFormsEditor()
     {
       Title = "Hello World!";
       ClientSize = new Size(600, 600);
-
-      TableLayout layout = new TableLayout
-      {
-        Spacing = new Size(0, 0),
-        Padding = new Padding(0, 0, 0, 0)
-      };
-
+      Menu = new MenuBar {Items = {new ButtonMenuItem {Text = "&File", Items = {new Command((sender, e) => MessageBox.Show("Open")) {MenuText = "Open"}, new ButtonMenuItem {Text = "Click Me, MenuItem"}}}}};
+      TableLayout layout = new TableLayout {Spacing = new Size(0, 0), Padding = new Padding(0, 0, 0, 0)};
       TableLayout middle = new TableLayout();
-
-      middle.Rows.Add(new TableRow(new TableCell(new TextArea(), true)) { ScaleHeight = true });
+      middle.Rows.Add(new TableRow(new TableCell(new TextArea(), true)) {ScaleHeight = true});
       middle.Rows.Add(new TableRow(new TextArea()));
-
-      layout.Rows.Add
-      (
-        new TableRow
-        (
-          new TextArea { Text = "Third Column" },
-          new TableCell(middle, true),
-          new TextArea { Text = "Third Column" }
-        )
-      );
-
-
+      layout.Rows.Add(new TableRow(new TextArea {Text = "Third Column"}, new TableCell(middle, true), new TextArea {Text = "Third Column"}));
       Content = layout;
     }
 
     public static void Run(string[] arguments)
     {
-      application.Run(new EtoFormsEditor());
+      Application.Run(new EtoFormsEditor());
     }
   }
 }
