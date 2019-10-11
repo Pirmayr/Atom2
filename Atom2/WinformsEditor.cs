@@ -12,13 +12,11 @@ namespace Atom2
     private readonly TextBox editWindow = new TextBox();
     private readonly Size minimalWindowSize = new Size(300, 300);
     private readonly TextBox outputWindow = new TextBox();
-    private readonly Runtime runtime;
     private readonly Font standardFont = new Font("Verdana", 10);
     private readonly ListBox trackWindow = new ListBox();
 
-    private WinformsEditor(string baseDirectory)
+    private WinformsEditor()
     {
-      runtime = new Runtime(baseDirectory);
       SuspendLayout();
       editWindow.Font = standardFont;
       editWindow.Multiline = true;
@@ -50,7 +48,7 @@ namespace Atom2
     {
       Application.EnableVisualStyles();
       Application.SetCompatibleTextRenderingDefault(false);
-      Application.Run(new WinformsEditor(arguments[0]));
+      Application.Run(new WinformsEditor());
     }
 
     private static void RebuildTrackWindow(ListBox list, IEnumerable<object> rootItems, int indentation = 0)
@@ -84,7 +82,7 @@ namespace Atom2
 
     private void OnRun(object sender, EventArgs e)
     {
-      if (!runtime.Run(editWindow.Text, out Exception exception))
+      if (!Program.Runtime.Run(editWindow.Text, out Exception exception))
       {
         outputWindow.Text = exception.Message;
       }
@@ -95,7 +93,7 @@ namespace Atom2
     {
       list.BeginUpdate();
       list.Items.Clear();
-      RebuildTrackWindow(list, runtime.CurrentRootItems);
+      RebuildTrackWindow(list, Program.Runtime.CurrentRootItems);
       list.EndUpdate();
     }
   }

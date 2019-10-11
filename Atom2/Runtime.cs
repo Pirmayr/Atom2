@@ -110,7 +110,7 @@ namespace Atom2
       Debugger.Break();
     }
 
-    private static string Code(string codeOrFilename)
+    public static string Code(string codeOrFilename)
     {
       string path = BaseDirectory + "/" + codeOrFilename;
       return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;

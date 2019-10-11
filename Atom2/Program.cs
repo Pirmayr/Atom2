@@ -2,13 +2,17 @@
 
 namespace Atom2
 {
-  public class Program
+  public static class Program
   {
+    public static Runtime Runtime { get; private set; }
+
+
     [STAThread]
     public static void Main(params string[] arguments)
     {
       try
       {
+        Runtime = new Runtime(arguments[0]);
         EtoFormsEditor.Run(arguments);
         // WinformsEditor.Run(arguments);
       }
