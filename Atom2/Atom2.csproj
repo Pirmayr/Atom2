@@ -71,6 +71,7 @@
     <Compile Include="Editor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Types.cs" />
+    <Compile Include="Scopes.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="System\System.txt" />

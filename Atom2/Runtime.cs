@@ -16,10 +16,14 @@ namespace Atom2
 {
   public class CallEnvironment
   {
+    public Items Block { get; set; }
+    public object CurrentItem { get; set; }
+    public Scope<Name, object> Scope { get; set; }
   }
 
+  public class CallEnvironments : Stack<CallEnvironment> { }
 
-  public sealed partial class Runtime
+  public sealed class Runtime
   {
     private const char Apostrophe = '\'';
     private const char Eof = char.MinValue;
@@ -41,6 +45,7 @@ namespace Atom2
     private readonly Stack stack = new Stack();
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
     private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe};
+    public readonly CallEnvironments callEnvironments = new CallEnvironments();
     public Items CurrentRootItems { get; private set; }
     private static string BaseDirectory { get; set; }
 
