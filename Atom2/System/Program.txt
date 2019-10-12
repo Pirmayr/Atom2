@@ -39,4 +39,4 @@
 )
 (new-main-form) set
 
-new-main-form <Show>
+Application <new-main-form Run>
