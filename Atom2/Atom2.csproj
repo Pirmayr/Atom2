@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\RoslynCodeTaskFactory.2.0.7\build\RoslynCodeTaskFactory.props" Condition="Exists('..\packages\RoslynCodeTaskFactory.2.0.7\build\RoslynCodeTaskFactory.props')" />
   <PropertyGroup>
@@ -37,9 +37,6 @@
     <NoWarn>CS0618</NoWarn>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Eto, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Eto.Forms.2.5.0-rc.4\lib\netstandard1.0\Eto.dll</HintPath>
@@ -70,15 +67,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScopedDictionary.cs" />
     <Compile Include="WordKind.cs" />
-    <Compile Include="WinformsEditor.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Name.cs" />
-    <Compile Include="EtoFormsEditor.cs" />
+    <Compile Include="Editor.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Types.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.manifest" />
     <None Include="System\System.txt" />
     <None Include="System\Program.txt" />
     <None Include="System\Stack.txt" />
@@ -89,7 +83,6 @@
     <None Include="System\Tests.txt" />
     <None Include="System\IO.txt" />
     <None Include="System\UI.txt" />
-    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

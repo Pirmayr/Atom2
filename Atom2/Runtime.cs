@@ -9,18 +9,16 @@ using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
-using Characters = System.Collections.Generic.Queue<char>;
-using CharHashSet = System.Collections.Generic.HashSet<char>;
-using Items = System.Collections.Generic.List<object>;
-using NameHashSet = System.Collections.Generic.HashSet<Atom2.Runtime.Name>;
-using Stack = System.Collections.Generic.Stack<object>;
-using Tokens = System.Collections.Generic.Queue<object>;
-using Words = Atom2.ScopedDictionary<Atom2.Runtime.Name, object>;
 
 #pragma warning disable 618
 
 namespace Atom2
 {
+  public class CallEnvironment
+  {
+  }
+
+
   public sealed partial class Runtime
   {
     private const char Apostrophe = '\'';

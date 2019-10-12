@@ -6,15 +6,13 @@ namespace Atom2
   {
     public static Runtime Runtime { get; private set; }
 
-
     [STAThread]
     public static void Main(params string[] arguments)
     {
       try
       {
         Runtime = new Runtime(arguments[0]);
-        EtoFormsEditor.Run(arguments);
-        // WinformsEditor.Run(arguments);
+        Editor.Run(arguments);
       }
       catch (Exception exception)
       {

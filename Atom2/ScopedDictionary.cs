@@ -5,11 +5,16 @@ using System.Linq;
 
 namespace Atom2
 {
-  public sealed class ScopedDictionary<TK, TV>
+  public class ScopedDictionary<TK, TV>
   {
-    private sealed class Scopes : Stack<Dictionary<TK, TV>> { }
+    public sealed class Scopes : Stack<Dictionary<TK, TV>> { }
 
     private readonly Scopes scopes = new Scopes();
+
+    public Scopes GetScopes()
+    {
+      return scopes;
+    }
 
     public ScopedDictionary()
     {

@@ -1,25 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using Eto.Drawing;
 using Eto.Forms;
-using Items = System.Collections.Generic.List<object>;
 
 namespace Atom2
 {
-  public sealed class EtoFormsEditor : Form
+  public sealed class Editor : Form
   {
     private static readonly Application Application = new Application();
-    private static readonly Font StandardFont = new Font("Verdana", 10);
+    private static readonly Font StandardFont = new Font("Helvetica", 12);
     private readonly TextArea codeTextArea;
     private readonly TextArea outputTextArea;
     private readonly TreeGridView codeTreeGridView;
+    private readonly TreeGridView stackGridView;
 
 
     TreeGridView NewTreeGridView(params string[] headers)
     {
       TreeGridView result = new TreeGridView();
-      GridColumnCollection gridColumns = new GridColumnCollection();
       for (int i = 0; i < headers.Length; ++i)
       {
         GridColumn currentGridColumn = new GridColumn();
@@ -28,30 +26,11 @@ namespace Atom2
         currentGridColumn.DataCell = new TextBoxCell(i);
         result.Columns.Add(currentGridColumn);
       }
-
-      /*
-      TreeGridItemCollection treecollection = new TreeGridItemCollection();
-      TreeGridItem item1 = new TreeGridItem { Values = new[] { "1", "2", "3" } };
-      item1.Expanded = true;
-      item1.Children.Add(new TreeGridItem { Values = new[] { "4", "5", "6" } });
-      item1.Children.Add(new TreeGridItem { Values = new[] { "7", "8", "9" } });
-      treecollection.Add(item1);
-      TreeGridItem item2 = new TreeGridItem { Values = new[] { "a", "b", "c" } };
-      treecollection.Add(item2);
-      result.DataStore = treecollection;
-      */
-
-      var test = new GridColumn();
-
-
-
       result.Width = 300;
-
       return result;
     }
 
-
-    private EtoFormsEditor(string startProgramPath)
+    private Editor(string startProgramPath)
     {
       Title = "Atom2";
       WindowState = WindowState.Maximized;
@@ -83,7 +62,7 @@ namespace Atom2
       // Output:
       outputTextArea = new TextArea();
       TableRow outputTableRow = new TableRow(outputTextArea);
-      outputTextArea.Height = 300;
+      outputTextArea.Height = 250;
 
       // Central column:
       TableLayout centerTableLayout = new TableLayout(codeTableRow, outputTableRow);
@@ -91,7 +70,7 @@ namespace Atom2
       TableCell centerTableCell = new TableCell(centerTableLayout, true);
 
       // Left column:
-      TreeGridView stackGridView = NewTreeGridView("Value", "Type");
+      stackGridView = NewTreeGridView("Value", "Type");
 
       // Right column:
       codeTreeGridView = NewTreeGridView("Value", "Type");
@@ -116,12 +95,11 @@ namespace Atom2
       {
         outputTextArea.Text = exception.Message;
       }
-      RebuildCodeWindow(codeTreeGridView);
+      RebuildCodeTreeView();
     }
 
-    private void RebuildCodeWindow(TreeGridView view)
+    private void RebuildCodeTreeView()
     {
-      TreeGridItemCollection collection = new TreeGridItemCollection();
       codeTreeGridView.DataStore = RebuildTrackWindow(Program.Runtime.CurrentRootItems);
     }
 
@@ -145,7 +123,7 @@ namespace Atom2
 
     public static void Run(string[] arguments)
     {
-      Application.Run(new EtoFormsEditor(arguments[1]));
+      Application.Run(new Editor(arguments[1]));
     }
   }
 }
