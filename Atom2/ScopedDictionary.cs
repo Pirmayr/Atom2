@@ -7,15 +7,14 @@ namespace Atom2
 {
   public class ScopedDictionary<TK, TV>
   {
-    public class Scope : Dictionary<TK, TV> { }
+    public sealed class Scope : Dictionary<TK, TV> { }
 
-    public sealed class Scopes : Stack<Scope> { }
+    private sealed class Scopes : Stack<Scope> { }
 
     private readonly Scopes scopes = new Scopes();
-
     public Scope CurrentScope => scopes.Peek();
 
-    public ScopedDictionary()
+    protected ScopedDictionary()
     {
       EnterScope();
     }
@@ -27,7 +26,7 @@ namespace Atom2
 
     public bool ContainsKey(TK key)
     {
-      foreach (Dictionary<TK, TV> currentScope in scopes)
+      foreach (Scope currentScope in scopes)
       {
         if (currentScope.ContainsKey(key))
         {
@@ -54,20 +53,20 @@ namespace Atom2
 
     public bool TryGetValue(TK key, out TV value)
     {
-      foreach (Dictionary<TK, TV> currentScope in scopes)
+      foreach (Scope currentScope in scopes)
       {
         if (currentScope.TryGetValue(key, out value))
         {
           return true;
         }
       }
-      value = default(TV);
+      value = default;
       return false;
     }
 
     public TV this[TK key]
     {
-      get => TryGetValue(key, out TV result) ? result : default(TV);
+      get => TryGetValue(key, out TV result) ? result : default;
       set => scopes.Peek()[key] = value;
     }
   }

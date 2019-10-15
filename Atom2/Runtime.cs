@@ -1,33 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Windows.Forms;
+using Eto.Forms;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
-using Application = Eto.Forms.Application;
+using MessageBox = System.Windows.Forms.MessageBox;
 
 #pragma warning disable 618
 
 namespace Atom2
 {
-  public class CallEnvironment
+  public sealed class CallEnvironment
   {
-    public Items Items { get; set; }
     public object CurrentItem { get; set; }
-    public Words.Scope Scope { get; set; }
+    public Items Items { get; set; }
+    public ScopedDictionary<Name, object>.Scope Scope { get; set; }
   }
 
-  public class CallEnvironments : Stack<CallEnvironment> { }
+  public sealed class CallEnvironments : Stack<CallEnvironment> { }
 
   public sealed class Runtime
   {
-    public event Action Breaking;
-
     private const char Apostrophe = '\'';
     private const char Eof = char.MinValue;
     private const char LeftAngle = '<';
@@ -48,19 +45,14 @@ namespace Atom2
     private readonly Stack stack = new Stack();
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
     private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe};
-
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
-
-    public Items CurrentRootItems { get; private set; }
-
-    private Application Application { get; set; }
-
+    private Items CurrentRootItems { get; set; }
     private static string BaseDirectory { get; set; }
+    private Application Application { get; set; }
 
     public Runtime(Application application, string baseDirectory)
     {
       Application = application;
-
       blockBeginTokens = NewNameHashSet(LeftParenthesis, LeftAngle, Pipe, Apostrophe);
       blockEndTokens = NewNameHashSet(RightParenthesis, RightAngle);
       BaseDirectory = baseDirectory;
@@ -102,12 +94,18 @@ namespace Atom2
       setWords.Add(new Name {Value = "to-name"}, new Action(ToName));
     }
 
+    public static string Code(string codeOrFilename)
+    {
+      string path = BaseDirectory + "/" + codeOrFilename;
+      return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
+    }
+
     public bool Run(string codeOrPath, out Exception result)
     {
       try
       {
         CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)), out _);
-        CallEnvironments.Push(new CallEnvironment { Items = CurrentRootItems, Scope = putWords.CurrentScope });
+        CallEnvironments.Push(new CallEnvironment {Items = CurrentRootItems, Scope = putWords.CurrentScope});
         Evaluate(CurrentRootItems);
         CallEnvironments.Pop();
         result = null;
@@ -118,17 +116,6 @@ namespace Atom2
         result = exception;
         return false;
       }
-    }
-
-    private void Break()
-    {
-      Breaking();
-    }
-
-    public static string Code(string codeOrFilename)
-    {
-      string path = BaseDirectory + "/" + codeOrFilename;
-      return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
     }
 
     private static void DoNothing() { }
@@ -191,6 +178,11 @@ namespace Atom2
       return delegate { Push(function.DynamicInvoke(Pop(), Pop())); };
     }
 
+    private void Break()
+    {
+      Breaking?.Invoke();
+    }
+
     private void Cast()
     {
       Type type = (Type) Pop();
@@ -203,47 +195,6 @@ namespace Atom2
       Items items = (Items) Pop();
       EventHandler action = (sender, eventArguments) => EventHandler(items, sender, eventArguments);
       Push(action);
-    }
-
-    private void Evaluate(object item)
-    {
-      if (item is Items items)
-      {
-        foreach (object currentItem in items)
-        {
-          CallEnvironments.Peek().CurrentItem = currentItem;
-          Process(currentItem);
-        }
-        return;
-      }
-      CallEnvironments.Peek().CurrentItem = item;
-      Process(item);
-    }
-
-    private void Evaluate()
-    {
-      Evaluate(Pop());
-    }
-
-    private void EvaluateAndSplit()
-    {
-      object items = Pop();
-      int stackLength = stack.Count;
-      Evaluate(items);
-      Push(stack.Count - stackLength);
-    }
-
-    private void EventHandler(Items items, object sender, EventArgs eventArguments)
-    {
-      Push(sender);
-      Push(eventArguments);
-      Evaluate(items);
-    }
-
-    private void Execute()
-    {
-      EvaluateAndSplit();
-      Application.Invoke(DoExecute);
     }
 
     private void DoExecute()
@@ -297,6 +248,69 @@ namespace Atom2
       {
         Push(invokeResult);
       }
+    }
+
+    private void DoInvoke()
+    {
+      BindingFlags memberKind = (BindingFlags) Pop();
+      BindingFlags memberType = (BindingFlags) Pop();
+      object memberNameObject = Pop();
+      string memberName = ((Name) memberNameObject).Value;
+      object typeNameObject = Pop();
+      string typeName = ((Name) typeNameObject).Value;
+      object assemblyNameObject = Pop();
+      string assemblyName = (string) assemblyNameObject;
+      int argumentsCount = (int) Pop();
+      object[] arguments = Pop(argumentsCount).ToArray();
+      Assembly assembly = Assembly.LoadWithPartialName(assemblyName);
+      Type type = assembly.GetType(typeName);
+      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | memberKind | memberType;
+      bool isInstance = memberType.HasFlag(BindingFlags.Instance);
+      bool isConstructor = memberKind.HasFlag(BindingFlags.CreateInstance);
+      object target = isInstance && !isConstructor ? Pop() : null;
+      object result = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
+      Push(result);
+    }
+
+    private void Evaluate(object item)
+    {
+      if (item is Items items)
+      {
+        foreach (object currentItem in items)
+        {
+          CallEnvironments.Peek().CurrentItem = currentItem;
+          Process(currentItem);
+        }
+        return;
+      }
+      CallEnvironments.Peek().CurrentItem = item;
+      Process(item);
+    }
+
+    private void Evaluate()
+    {
+      Evaluate(Pop());
+    }
+
+    private void EvaluateAndSplit()
+    {
+      object items = Pop();
+      int stackLength = stack.Count;
+      Evaluate(items);
+      Push(stack.Count - stackLength);
+    }
+
+    private void EventHandler(Items items, object sender, EventArgs eventArguments)
+    {
+      Push(sender);
+      Push(eventArguments);
+      Evaluate(items);
+    }
+
+    private void Execute()
+    {
+      EvaluateAndSplit();
+      Application.Invoke(DoExecute);
     }
 
     private void Get()
@@ -405,28 +419,6 @@ namespace Atom2
       Application.Invoke(DoInvoke);
     }
 
-    private void DoInvoke()
-    {
-      BindingFlags memberKind = (BindingFlags) Pop();
-      BindingFlags memberType = (BindingFlags) Pop();
-      object memberNameObject = Pop();
-      string memberName = ((Name) memberNameObject).Value;
-      object typeNameObject = Pop();
-      string typeName = ((Name) typeNameObject).Value;
-      object assemblyNameObject = Pop();
-      string assemblyName = (string) assemblyNameObject;
-      int argumentsCount = (int) Pop();
-      object[] arguments = Pop(argumentsCount).ToArray();
-      Assembly assembly = Assembly.LoadWithPartialName(assemblyName);
-      Type type = assembly.GetType(typeName);
-      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | memberKind | memberType;
-      bool isInstance = memberType.HasFlag(BindingFlags.Instance);
-      bool isConstructor = memberKind.HasFlag(BindingFlags.CreateInstance);
-      object target = isInstance && !isConstructor ? Pop() : null;
-      object result = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
-      Push(result);
-    }
-
     private void Join()
     {
       Push(new Items(Pop((int) Pop())));
@@ -491,22 +483,21 @@ namespace Atom2
       switch (TryGetWord(item, out object word))
       {
         case WordKind.Set:
-          if (word is Action action)
-          {
-            action.Invoke();
-            return;
+          switch (word) {
+            case Action action:
+              action.Invoke();
+              return;
+            case Items items:
+              putWords.EnterScope();
+              CallEnvironments.Push(new CallEnvironment {Items = items, Scope = putWords.CurrentScope});
+              Evaluate(items);
+              CallEnvironments.Pop();
+              putWords.LeaveScope();
+              return;
+            default:
+              Evaluate(word);
+              return;
           }
-          if (word is Items items)
-          {
-            putWords.EnterScope();
-            CallEnvironments.Push(new CallEnvironment { Items = items, Scope = putWords.CurrentScope });
-            Evaluate(items);
-            CallEnvironments.Pop();
-            putWords.LeaveScope();
-            return;
-          }
-          Evaluate(word);
-          return;
         case WordKind.Put:
           Push(word);
           return;
@@ -605,5 +596,7 @@ namespace Atom2
         Evaluate(condition);
       }
     }
+
+    public event Action Breaking;
   }
 }
