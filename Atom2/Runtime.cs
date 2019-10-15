@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
+using Application = Eto.Forms.Application;
 
 #pragma warning disable 618
 
@@ -16,15 +17,17 @@ namespace Atom2
 {
   public class CallEnvironment
   {
-    public Items Block { get; set; }
+    public Items Items { get; set; }
     public object CurrentItem { get; set; }
-    public Scope<Name, object> Scope { get; set; }
+    public Words.Scope Scope { get; set; }
   }
 
   public class CallEnvironments : Stack<CallEnvironment> { }
 
   public sealed class Runtime
   {
+    public event Action Breaking;
+
     private const char Apostrophe = '\'';
     private const char Eof = char.MinValue;
     private const char LeftAngle = '<';
@@ -45,12 +48,19 @@ namespace Atom2
     private readonly Stack stack = new Stack();
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
     private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe};
-    public readonly CallEnvironments callEnvironments = new CallEnvironments();
+
+    public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
+
     public Items CurrentRootItems { get; private set; }
+
+    private Application Application { get; set; }
+
     private static string BaseDirectory { get; set; }
 
-    public Runtime(string baseDirectory)
+    public Runtime(Application application, string baseDirectory)
     {
+      Application = application;
+
       blockBeginTokens = NewNameHashSet(LeftParenthesis, LeftAngle, Pipe, Apostrophe);
       blockEndTokens = NewNameHashSet(RightParenthesis, RightAngle);
       BaseDirectory = baseDirectory;
@@ -97,7 +107,9 @@ namespace Atom2
       try
       {
         CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)), out _);
+        CallEnvironments.Push(new CallEnvironment { Items = CurrentRootItems, Scope = putWords.CurrentScope });
         Evaluate(CurrentRootItems);
+        CallEnvironments.Pop();
         result = null;
         return true;
       }
@@ -108,9 +120,9 @@ namespace Atom2
       }
     }
 
-    private static void Break()
+    private void Break()
     {
-      Debugger.Break();
+      Breaking();
     }
 
     public static string Code(string codeOrFilename)
@@ -195,11 +207,16 @@ namespace Atom2
 
     private void Evaluate(object item)
     {
-      if (item is Items list)
+      if (item is Items items)
       {
-        list.ForEach(Process);
+        foreach (object currentItem in items)
+        {
+          CallEnvironments.Peek().CurrentItem = currentItem;
+          Process(currentItem);
+        }
         return;
       }
+      CallEnvironments.Peek().CurrentItem = item;
       Process(item);
     }
 
@@ -226,6 +243,11 @@ namespace Atom2
     private void Execute()
     {
       EvaluateAndSplit();
+      Application.Invoke(DoExecute);
+    }
+
+    private void DoExecute()
+    {
       int argumentsCount = (int) Pop();
       object testItem = Pop();
       string memberName = ((Name) testItem).Value;
@@ -380,6 +402,11 @@ namespace Atom2
 
     private void Invoke()
     {
+      Application.Invoke(DoInvoke);
+    }
+
+    private void DoInvoke()
+    {
       BindingFlags memberKind = (BindingFlags) Pop();
       BindingFlags memberType = (BindingFlags) Pop();
       object memberNameObject = Pop();
@@ -469,9 +496,16 @@ namespace Atom2
             action.Invoke();
             return;
           }
-          putWords.EnterScope();
+          if (word is Items items)
+          {
+            putWords.EnterScope();
+            CallEnvironments.Push(new CallEnvironment { Items = items, Scope = putWords.CurrentScope });
+            Evaluate(items);
+            CallEnvironments.Pop();
+            putWords.LeaveScope();
+            return;
+          }
           Evaluate(word);
-          putWords.LeaveScope();
           return;
         case WordKind.Put:
           Push(word);

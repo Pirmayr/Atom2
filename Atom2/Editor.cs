@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Eto.Drawing;
 using Eto.Forms;
 
@@ -13,7 +14,8 @@ namespace Atom2
     private readonly TextArea outputTextArea;
     private readonly TreeGridView codeTreeGridView;
     private readonly TreeGridView stackGridView;
-
+    private readonly Runtime Runtime;
+    private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
 
     TreeGridView NewTreeGridView(params string[] headers)
     {
@@ -30,20 +32,22 @@ namespace Atom2
       return result;
     }
 
-    private Editor(string startProgramPath)
+    private Editor(params string[] arguments)
     {
+      Runtime = new Runtime(Application, arguments[0]);
+
       Title = "Atom2";
       WindowState = WindowState.Maximized;
 
-      Command openCommand = new Command(OnOpen);
-      openCommand.MenuText = "&Open";
       Command runCommand = new Command(OnRun);
       runCommand.MenuText = "&Run";
+      Command continueCommand = new Command(OnContinue);
+      continueCommand.MenuText = "&Continue";
 
       ButtonMenuItem fileMenuItem = new ButtonMenuItem();
       fileMenuItem.Text = "&File";
-      fileMenuItem.Items.Add(openCommand);
       fileMenuItem.Items.Add(runCommand);
+      fileMenuItem.Items.Add(continueCommand);
 
       MenuBar menuBar = new MenuBar();
       menuBar.Items.Add(fileMenuItem);
@@ -52,7 +56,7 @@ namespace Atom2
       // Code:
       codeTextArea = new TextArea();
       codeTextArea.Font = StandardFont;
-      codeTextArea.Text = Runtime.Code(startProgramPath);
+      codeTextArea.Text = Runtime.Code(arguments[1]);
 
       TableCell codeTableCell = new TableCell(codeTextArea, true);
 
@@ -82,40 +86,60 @@ namespace Atom2
       TableLayout layout = new TableLayout();
       layout.Rows.Add(tableRow);
       Content = layout;
+
+      Runtime.Breaking += OnBreaking;
     }
 
-    private void OnOpen(object sender, EventArgs arguments)
+    private void OnContinue(object sender, EventArgs e)
     {
-      MessageBox.Show("Open");
+      manualResetEvent.Set();
+    }
+
+    private void OnBreaking()
+    {
+      Application.Invoke(DoBreaking);
+      manualResetEvent.WaitOne();
+      manualResetEvent.Reset();
+      // Thread.Sleep(5000);
+    }
+
+    private void DoBreaking()
+    {
+      CallEnvironment topmostCallEnvironment = Runtime.CallEnvironments.Peek();
+      RebuildCodeTreeView(topmostCallEnvironment.Items, topmostCallEnvironment.CurrentItem);
     }
 
     private void OnRun(object sender, EventArgs arguments)
     {
-      if (!Program.Runtime.Run(codeTextArea.Text, out Exception exception))
-      {
-        outputTextArea.Text = exception.Message;
-      }
-      RebuildCodeTreeView();
+      Thread thread = new Thread(DoRun);
+
+      thread.Start(codeTextArea.Text);
     }
 
-    private void RebuildCodeTreeView()
+    private void DoRun(object code)
     {
-      codeTreeGridView.DataStore = RebuildTrackWindow(Program.Runtime.CurrentRootItems);
+      Runtime.Run((string) code, out _);
     }
 
-    private static TreeGridItemCollection RebuildTrackWindow(IEnumerable<object> rootItems, int indentation = 0)
+    private void RebuildCodeTreeView(Items items, object executingItem)
+    {
+      TreeGridItem executingTreeGridItem = null;
+      codeTreeGridView.DataStore = RebuildTrackWindow(items, executingItem, ref executingTreeGridItem);
+      codeTreeGridView.SelectedItem = executingTreeGridItem;
+    }
+
+    private static TreeGridItemCollection RebuildTrackWindow(IEnumerable<object> rootItems, object executingItem, ref TreeGridItem executingTreeGridViewItem, int indentation = 0)
     {
       TreeGridItemCollection result = new TreeGridItemCollection();
       string indentationPrefix = new string(' ', indentation * 2);
       foreach (object currentItem in rootItems)
       {
-        if (currentItem is Items currentItems)
+        TreeGridItem newTreeViewItem = currentItem is Items currentItems ? new TreeGridItem(RebuildTrackWindow(currentItems, executingItem, ref executingTreeGridViewItem, indentation + 1), "(Block)") : new TreeGridItem(indentationPrefix + currentItem);
+        newTreeViewItem.Expanded = true;
+        result.Add(newTreeViewItem);
+        if (currentItem == executingItem)
         {
-          result.Add(new TreeGridItem(RebuildTrackWindow(currentItems, indentation + 1), "(Block)") { Expanded = true });
-        }
-        else
-        {
-          result.Add(new TreeGridItem(indentationPrefix + currentItem));
+          executingTreeGridViewItem = newTreeViewItem;
         }
       }
       return result;
@@ -123,7 +147,7 @@ namespace Atom2
 
     public static void Run(string[] arguments)
     {
-      Application.Run(new Editor(arguments[1]));
+      Application.Run(new Editor(arguments));
     }
   }
 }

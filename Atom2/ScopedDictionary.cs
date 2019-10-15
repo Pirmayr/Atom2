@@ -7,9 +7,13 @@ namespace Atom2
 {
   public class ScopedDictionary<TK, TV>
   {
-    private readonly Scopes<TK, TV> scopes = new Scopes<TK, TV>();
+    public class Scope : Dictionary<TK, TV> { }
 
-    public Scope<TK, TV> CurrentScope => scopes.Peek();
+    public sealed class Scopes : Stack<Scope> { }
+
+    private readonly Scopes scopes = new Scopes();
+
+    public Scope CurrentScope => scopes.Peek();
 
     public ScopedDictionary()
     {
@@ -35,7 +39,7 @@ namespace Atom2
 
     public void EnterScope()
     {
-      scopes.Push(new Scope<TK, TV>());
+      scopes.Push(new Scope());
     }
 
     public void LeaveScope()
