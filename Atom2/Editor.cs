@@ -11,6 +11,7 @@ namespace Atom2
     private static readonly Application Application = new Application();
     private static readonly Font StandardFont = new Font("Helvetica", 12);
     private readonly TextArea codeTextArea;
+    private readonly ListBox callStackListBox;
     private readonly TreeGridView codeTreeGridView;
     private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
     private readonly TextArea outputTextArea;
@@ -55,16 +56,28 @@ namespace Atom2
       stackGridView = NewTreeGridView("Value", "Type");
 
       // Right column:
+      callStackListBox = new ListBox();
+      callStackListBox.Height = 250;
+      callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
       codeTreeGridView = NewTreeGridView("Value", "Type");
 
+      TableLayout rightColumnLayout = new TableLayout(callStackListBox, codeTreeGridView);
+
       // Table row:
-      TableRow tableRow = new TableRow(stackGridView, centerTableCell, codeTreeGridView);
+      TableRow tableRow = new TableRow(stackGridView, centerTableCell, /*codeTreeGridView*/ rightColumnLayout);
 
       // Layout
       TableLayout layout = new TableLayout();
       layout.Rows.Add(tableRow);
       Content = layout;
       runtime.Breaking += OnBreaking;
+    }
+
+    private void OnCallStackListBoxSelectedIndexChanged(object sender, EventArgs e)
+    {
+      ListItem selectedItem = (ListItem) callStackListBox.Items[callStackListBox.SelectedIndex];
+      CallEnvironment callEnvironment = (CallEnvironment) selectedItem.Tag;
+      RebuildCodeTreeView(callEnvironment.Items, callEnvironment.CurrentItem);
     }
 
     public static void Run(string[] arguments)
@@ -106,8 +119,22 @@ namespace Atom2
 
     private void DoBreaking()
     {
-      CallEnvironment topmostCallEnvironment = runtime.CallEnvironments.Peek();
+      CallEnvironments callEnvironments = runtime.CallEnvironments;
+      CallEnvironment topmostCallEnvironment = callEnvironments.Peek();
+      RebuildCallStackListBox(callEnvironments);
       RebuildCodeTreeView(topmostCallEnvironment.Items, topmostCallEnvironment.CurrentItem);
+    }
+
+    private void RebuildCallStackListBox(CallEnvironments callEnvironments)
+    {
+      callStackListBox.Items.Clear();
+      foreach (CallEnvironment currentCallEnvironment in callEnvironments)
+      {
+        ListItem newListItem = new ListItem();
+        newListItem.Text = currentCallEnvironment.CurrentItem.ToString();
+        newListItem.Tag = currentCallEnvironment;
+        callStackListBox.Items.Add(newListItem);
+      }
     }
 
     private void DoRun(object code)
@@ -120,7 +147,6 @@ namespace Atom2
       Application.Invoke(DoBreaking);
       manualResetEvent.WaitOne();
       manualResetEvent.Reset();
-      // Thread.Sleep(5000);
     }
 
     private void OnContinue(object sender, EventArgs e)

@@ -30,6 +30,8 @@
       "Paste" (form) (|sender arguments| "Paste" show) addMenuItem
   |mainMenuStrip|
 
+  break
+
   form <Controls>
   : <textBox Add>
   : <button Add>
