@@ -23,7 +23,7 @@ namespace Atom2
     private bool stepMode;
     private readonly Command runCommand;
     private readonly Command continueCommand;
-    private readonly CheckMenuItem checkMenuItem;
+    private readonly Command stepCommand;
 
     private Editor(params string[] arguments)
     {
@@ -39,14 +39,14 @@ namespace Atom2
       runCommand.MenuText = "&Run";
       continueCommand = new Command(OnContinue);
       continueCommand.MenuText = "&Continue";
-      continueCommand.Shortcut = Keys.F10;
-      checkMenuItem = new CheckMenuItem(new CheckCommand(OnStep));
-      checkMenuItem.Text = "&Step";
+      stepCommand = new Command(OnStep);
+      stepCommand.MenuText = "&Step";
+      stepCommand.Shortcut = Keys.F10;
       ButtonMenuItem fileMenuItem = new ButtonMenuItem();
       fileMenuItem.Text = "&File";
       fileMenuItem.Items.Add(runCommand);
       fileMenuItem.Items.Add(continueCommand);
-      fileMenuItem.Items.Add(checkMenuItem);
+      fileMenuItem.Items.Add(stepCommand);
       MenuBar menuBar = new MenuBar();
       menuBar.Items.Add(fileMenuItem);
       Menu = menuBar;
@@ -109,6 +109,7 @@ namespace Atom2
     {
       if (stepMode)
       {
+        stepMode = false;
         Pause();
       }
     }
@@ -117,12 +118,13 @@ namespace Atom2
     {
       runCommand.Enabled = !running;
       continueCommand.Enabled = paused;
-      checkMenuItem.Checked = stepMode;
+      stepCommand.Enabled = paused;
     }
 
     private void OnStep(object sender, EventArgs e)
     {
-      stepMode = !stepMode;
+      stepMode = true;
+      manualResetEvent.Set();
     }
 
     public static void Run(string[] arguments)
@@ -145,13 +147,13 @@ namespace Atom2
       return result;
     }
 
-    private static TreeGridItemCollection RebuildTrackWindow(IEnumerable<object> rootItems, object executingItem, ref TreeGridItem executingTreeGridViewItem, int indentation = 0)
+    private static TreeGridItemCollection GetCodeTree(IEnumerable<object> rootItems, object executingItem, ref TreeGridItem executingTreeGridViewItem, int indentation = 0)
     {
       TreeGridItemCollection result = new TreeGridItemCollection();
       string indentationPrefix = new string(' ', indentation * 2);
       foreach (object currentItem in rootItems)
       {
-        TreeGridItem newTreeViewItem = currentItem is Items currentItems ? new TreeGridItem(RebuildTrackWindow(currentItems, executingItem, ref executingTreeGridViewItem, indentation + 1), "(Block)") : new TreeGridItem(indentationPrefix + currentItem);
+        TreeGridItem newTreeViewItem = currentItem is Items currentItems ? new TreeGridItem(GetCodeTree(currentItems, executingItem, ref executingTreeGridViewItem, indentation + 1), "(Block)") : new TreeGridItem(indentationPrefix + currentItem);
         newTreeViewItem.Expanded = true;
         result.Add(newTreeViewItem);
         if (currentItem == executingItem)
@@ -174,7 +176,7 @@ namespace Atom2
     private void RebuildStackListBox()
     {
       stackListBox.Items.Clear();
-      foreach (var currentValue in runtime.Stack)
+      foreach (object currentValue in runtime.Stack)
       {
         stackListBox.Items.Add(currentValue.ToString());
       }
@@ -226,7 +228,7 @@ namespace Atom2
     private void RebuildCodeTreeView(Items items, object executingItem)
     {
       TreeGridItem executingTreeGridItem = null;
-      codeTreeGridView.DataStore = RebuildTrackWindow(items, executingItem, ref executingTreeGridItem);
+      codeTreeGridView.DataStore = GetCodeTree(items, executingItem, ref executingTreeGridItem);
       codeTreeGridView.SelectedItem = executingTreeGridItem;
     }
   }
