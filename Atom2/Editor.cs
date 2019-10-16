@@ -16,21 +16,37 @@ namespace Atom2
     private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
     private readonly TextArea outputTextArea;
     private readonly Runtime runtime;
-    private readonly TreeGridView stackGridView;
+    private readonly ListBox stackListBox;
+    private readonly UITimer timer = new UITimer();
+    private bool running;
+    private bool paused;
+    private bool stepMode;
+    private readonly Command runCommand;
+    private readonly Command continueCommand;
+    private readonly CheckMenuItem checkMenuItem;
 
     private Editor(params string[] arguments)
     {
+      // Runtime:
       runtime = new Runtime(Application, arguments[0]);
+      runtime.Breaking += OnBreaking;
+      runtime.Stepping += OnStepping;
+
+      // Menu:
       Title = "Atom2";
       WindowState = WindowState.Maximized;
-      Command runCommand = new Command(OnRun);
+      runCommand = new Command(OnRun);
       runCommand.MenuText = "&Run";
-      Command continueCommand = new Command(OnContinue);
+      continueCommand = new Command(OnContinue);
       continueCommand.MenuText = "&Continue";
+      continueCommand.Shortcut = Keys.F10;
+      checkMenuItem = new CheckMenuItem(new CheckCommand(OnStep));
+      checkMenuItem.Text = "&Step";
       ButtonMenuItem fileMenuItem = new ButtonMenuItem();
       fileMenuItem.Text = "&File";
       fileMenuItem.Items.Add(runCommand);
       fileMenuItem.Items.Add(continueCommand);
+      fileMenuItem.Items.Add(checkMenuItem);
       MenuBar menuBar = new MenuBar();
       menuBar.Items.Add(fileMenuItem);
       Menu = menuBar;
@@ -53,24 +69,33 @@ namespace Atom2
       TableCell centerTableCell = new TableCell(centerTableLayout, true);
 
       // Left column:
-      stackGridView = NewTreeGridView("Value", "Type");
+      stackListBox = new ListBox();
+      stackListBox.Width = 250;
 
       // Right column:
       callStackListBox = new ListBox();
       callStackListBox.Height = 250;
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
       codeTreeGridView = NewTreeGridView("Value", "Type");
+      codeTreeGridView.Width = 250;
 
       TableLayout rightColumnLayout = new TableLayout(callStackListBox, codeTreeGridView);
 
       // Table row:
-      TableRow tableRow = new TableRow(stackGridView, centerTableCell, /*codeTreeGridView*/ rightColumnLayout);
+      TableRow tableRow = new TableRow(stackListBox, centerTableCell, rightColumnLayout);
 
       // Layout
       TableLayout layout = new TableLayout();
       layout.Rows.Add(tableRow);
       Content = layout;
+
+      // Other initializations:
+      runtime = new Runtime(Application, arguments[0]);
       runtime.Breaking += OnBreaking;
+      runtime.Stepping += OnStepping;
+      timer.Interval = 0.3;
+      timer.Elapsed += OnElapsed;
+      timer.Start();
     }
 
     private void OnCallStackListBoxSelectedIndexChanged(object sender, EventArgs e)
@@ -78,6 +103,26 @@ namespace Atom2
       ListItem selectedItem = (ListItem) callStackListBox.Items[callStackListBox.SelectedIndex];
       CallEnvironment callEnvironment = (CallEnvironment) selectedItem.Tag;
       RebuildCodeTreeView(callEnvironment.Items, callEnvironment.CurrentItem);
+    }
+
+    private void OnStepping()
+    {
+      if (stepMode)
+      {
+        Pause();
+      }
+    }
+
+    private void OnElapsed(object sender, EventArgs e)
+    {
+      runCommand.Enabled = !running;
+      continueCommand.Enabled = paused;
+      checkMenuItem.Checked = stepMode;
+    }
+
+    private void OnStep(object sender, EventArgs e)
+    {
+      stepMode = !stepMode;
     }
 
     public static void Run(string[] arguments)
@@ -117,12 +162,22 @@ namespace Atom2
       return result;
     }
 
-    private void DoBreaking()
+    private void UpdatePauseUI()
     {
       CallEnvironments callEnvironments = runtime.CallEnvironments;
       CallEnvironment topmostCallEnvironment = callEnvironments.Peek();
       RebuildCallStackListBox(callEnvironments);
       RebuildCodeTreeView(topmostCallEnvironment.Items, topmostCallEnvironment.CurrentItem);
+      RebuildStackListBox();
+    }
+
+    private void RebuildStackListBox()
+    {
+      stackListBox.Items.Clear();
+      foreach (var currentValue in runtime.Stack)
+      {
+        stackListBox.Items.Add(currentValue.ToString());
+      }
     }
 
     private void RebuildCallStackListBox(CallEnvironments callEnvironments)
@@ -144,9 +199,16 @@ namespace Atom2
 
     private void OnBreaking()
     {
-      Application.Invoke(DoBreaking);
+      Pause();
+    }
+
+    private void Pause()
+    {
+      paused = true;
+      Application.Invoke(UpdatePauseUI);
       manualResetEvent.WaitOne();
       manualResetEvent.Reset();
+      paused = false;
     }
 
     private void OnContinue(object sender, EventArgs e)
@@ -156,6 +218,7 @@ namespace Atom2
 
     private void OnRun(object sender, EventArgs arguments)
     {
+      running = true;
       Thread thread = new Thread(DoRun);
       thread.Start(codeTextArea.Text);
     }

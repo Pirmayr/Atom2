@@ -42,7 +42,7 @@ namespace Atom2
     private readonly Name pipeName = new Name {Value = Pipe.ToString()};
     private readonly Words putWords = new Words();
     private readonly Words setWords = new Words();
-    private readonly Stack stack = new Stack();
+    public Stack Stack { get; } = new Stack();
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
     private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe};
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
@@ -295,9 +295,9 @@ namespace Atom2
     private void EvaluateAndSplit()
     {
       object items = Pop();
-      int stackLength = stack.Count;
+      int stackLength = Stack.Count;
       Evaluate(items);
-      Push(stack.Count - stackLength);
+      Push(Stack.Count - stackLength);
     }
 
     private void EventHandler(Items items, object sender, EventArgs eventArguments)
@@ -468,18 +468,19 @@ namespace Atom2
       object[] result = new object[count];
       for (int i = count - 1; 0 <= i; --i)
       {
-        result[i] = stack.Pop();
+        result[i] = Stack.Pop();
       }
       return result;
     }
 
     private object Pop()
     {
-      return stack.Pop();
+      return Stack.Pop();
     }
 
     private void Process(object item)
     {
+      Stepping?.Invoke();
       switch (TryGetWord(item, out object word))
       {
         case WordKind.Set:
@@ -509,7 +510,7 @@ namespace Atom2
 
     private void Push(object item)
     {
-      stack.Push(item);
+      Stack.Push(item);
     }
 
     private void Put()
@@ -551,7 +552,7 @@ namespace Atom2
 
     private void Trace()
     {
-      object item = stack.Peek();
+      object item = Stack.Peek();
       MessageBox.Show(item == null ? "(empty)" : $"{item} ({item.GetType().Name})");
     }
 
@@ -598,5 +599,6 @@ namespace Atom2
     }
 
     public event Action Breaking;
+    public event Action Stepping;
   }
 }
