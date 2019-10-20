@@ -22,4 +22,6 @@ namespace Atom2
   public sealed class Tokens : Queue<object> { }
 
   public sealed class Words : ScopedDictionary<Name, object> { }
+
+  public sealed class CallEnvironments : Stack<CallEnvironment> { }
 }

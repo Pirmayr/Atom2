@@ -14,15 +14,6 @@ using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace Atom2
 {
-  public sealed class CallEnvironment
-  {
-    public object CurrentItem { get; set; }
-    public Items Items { get; set; }
-    public ScopedDictionary<Name, object>.Scope Scope { get; set; }
-  }
-
-  public sealed class CallEnvironments : Stack<CallEnvironment> { }
-
   public sealed class Runtime
   {
     private const char Apostrophe = '\'';
