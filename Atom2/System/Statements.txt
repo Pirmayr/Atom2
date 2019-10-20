@@ -23,4 +23,18 @@
   ((enumerator) get <MoveNext>)
   while
 )
-(map) set 
+(map) set
+
+(
+  (value bodies) put
+  (bodies) get <GetEnumerator>
+  (enumerator) put
+  (
+    (value) get
+    (enumerator) get <Current> evaluate
+    (enumerator) get <MoveNext>
+  )
+  ((enumerator) get <MoveNext>)
+  while
+) (apply) set
+

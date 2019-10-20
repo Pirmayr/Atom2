@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -171,6 +172,7 @@ namespace Atom2
 
     private void Break()
     {
+      Debugger.Break();
       Breaking?.Invoke();
     }
 
@@ -522,6 +524,11 @@ namespace Atom2
 
     private void Show()
     {
+      Application.Invoke(DoShow);
+    }
+
+    private void DoShow()
+    {
       MessageBox.Show(Pop().ToString());
     }
 
@@ -542,6 +549,11 @@ namespace Atom2
     }
 
     private void Trace()
+    {
+      Application.Invoke(DoTrace);
+    }
+
+    private void DoTrace()
     {
       object item = Stack.Peek();
       MessageBox.Show(item == null ? "(empty)" : $"{item} ({item.GetType().Name})");

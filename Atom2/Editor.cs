@@ -208,7 +208,8 @@ namespace Atom2
 
     private void OnBreaking()
     {
-      Pause();
+      return;
+      // Pause();
     }
 
     private void Pause()

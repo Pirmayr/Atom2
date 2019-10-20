@@ -5,6 +5,8 @@
 
 (System.Windows.Forms) use
 
+2 ((show) (6 multiply show) (duplicate multiply show)) apply
+
 (
   Form <new> |form|
 
