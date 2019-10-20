@@ -1,6 +1,4 @@
-﻿#pragma warning disable 618
-
-namespace Atom2
+﻿namespace Atom2
 {
   public sealed class CallEnvironment
   {

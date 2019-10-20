@@ -8,6 +8,7 @@ namespace Atom2
 {
   public sealed class Editor : Form
   {
+    const int StandardWidth = 300;
     private static readonly Application Application = new Application();
     private static readonly Font StandardFont = new Font("Helvetica", 12);
     private readonly TextArea codeTextArea;
@@ -70,14 +71,20 @@ namespace Atom2
 
       // Left column:
       stackListBox = new ListBox();
-      stackListBox.Width = 250;
+      stackListBox.Width = StandardWidth;
 
       // Right column:
       callStackListBox = new ListBox();
       callStackListBox.Height = 250;
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
       codeTreeGridView = NewTreeGridView("Value", "Type");
-      codeTreeGridView.Width = 250;
+      codeTreeGridView.Columns[0].AutoSize = false;
+      codeTreeGridView.Columns[0].Resizable = false;
+      codeTreeGridView.Columns[0].Width = StandardWidth / 2 - 1;
+      codeTreeGridView.Columns[1].AutoSize = false;
+      codeTreeGridView.Columns[1].Resizable = false;
+      codeTreeGridView.Columns[1].Width = StandardWidth / 2 - 1;
+      codeTreeGridView.Width = StandardWidth;
 
       TableLayout rightColumnLayout = new TableLayout(callStackListBox, codeTreeGridView);
 
