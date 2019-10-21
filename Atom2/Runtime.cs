@@ -172,7 +172,7 @@ namespace Atom2
 
     private void Break()
     {
-      Debugger.Break();
+      // Debugger.Break();
       Breaking?.Invoke();
     }
 

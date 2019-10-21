@@ -5,15 +5,10 @@
 
 (System.Windows.Forms) use
 
-2 ((show) (6 multiply show) (duplicate multiply show)) apply
-
 (
   Form <new> |form|
 
-  RichTextBox <new> 
-  : <true Multiline>
-  : <DockStyle <Fill> Dock>
-  |textBox|
+  RichTextBox <new> (<true Multiline> <DockStyle <Fill> Dock>) initialize |textBox|
 
   Button <new>
   : <DockStyle <Top> Dock>
@@ -32,8 +27,6 @@
       "Paste" (form) (|sender arguments| "Paste" show) addMenuItem
   |mainMenuStrip|
 
-  break
-
   form <Controls>
   : <textBox Add>
   : <button Add>
@@ -44,3 +37,8 @@
 (new-main-form) set
 
 new-main-form <ShowDialog>
+
+  RichTextBox <new> 
+  : <true Multiline>
+  : <DockStyle <Fill> Dock>
+  |textBox|

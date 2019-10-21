@@ -2,7 +2,7 @@
 ('createEventHandler' 'Click' 4 join execute) (addClickHandler) set
 
 ( 
-  |menuItem menuText context clickHandler| break
+  |menuItem menuText context clickHandler|
   menuItem <DropDownItems> <menuText Add> context clickHandler addClickHandler
 )
 (addMenuItem) set

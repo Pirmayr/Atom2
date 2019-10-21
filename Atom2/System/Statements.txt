@@ -38,3 +38,19 @@
   while
 ) (apply) set
 
+(
+  (value bodies) put
+  (bodies) get <GetEnumerator>
+  (enumerator) put
+  (
+    (value) get
+    (enumerator) get <Current>
+    (enumerator) get <MoveNext> drop
+    (enumerator) get <Current>
+    2 join evaluate
+  )
+  ((enumerator) get <MoveNext>)
+  while
+  (value) get
+) (initialize) set
+
