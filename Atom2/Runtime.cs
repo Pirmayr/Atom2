@@ -192,6 +192,7 @@ namespace Atom2
 
     private void DoExecute()
     {
+      EvaluateAndSplit();
       int argumentsCount = (int) Pop();
       object testItem = Pop();
       string memberName = ((Name) testItem).Value;
@@ -302,7 +303,6 @@ namespace Atom2
 
     private void Execute()
     {
-      EvaluateAndSplit();
       Application.Invoke(DoExecute);
     }
 

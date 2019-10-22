@@ -4,13 +4,13 @@
 (over get swap get add swap set) (increment-word-by-word) set
 (split drop) (verbatim) set
 (verbatim) "'" to-name 1 join set
-(put) "|pipe" to-name 1 join set
+(split 1 add join) (prepend) set
+(duplicate) (:) set
 
 (0 0 equal) (true) set
 (0 0 not-equal) (false) set
 ((false) (true) rotate if-else) (not) set
-(split 1 add join) (prepend) set
 
-(duplicate) (:) set
+((type initializations) put (type) get <new> (initializations) get initialize) (create) set
 
 (|arguments code| arguments evaluate-and-split join 'evaluate' arguments 'put' code split 4 add join) (lambda) set

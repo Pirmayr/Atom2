@@ -46,11 +46,17 @@
     (value) get
     (enumerator) get <Current>
     (enumerator) get <MoveNext> drop
-    (enumerator) get <Current>
-    2 join evaluate
+    (enumerator) get <Current> (current-block-kind) put
+    (
+      (current-block-kind) get 2 join evaluate
+    )
+    (
+      evaluate
+    )
+    ((current-block-kind) get to-string ">" equal)
+    if-else    
   )
   ((enumerator) get <MoveNext>)
   while
   (value) get
 ) (initialize) set
-

@@ -8,12 +8,14 @@
 (
   Form <new> |form|
 
-  RichTextBox <new> (<true Multiline> <DockStyle <Fill> Dock>) initialize |textBox|
+  RichTextBox (<true Multiline> <DockStyle <Fill> Dock>) create |textBox|
 
-  Button <new>
-  : <DockStyle <Top> Dock>
-  : <"Press" Text>
-  : (textBox) (|sender arguments| textBox <"Hello World!" Text>) addClickHandler
+  Button
+  (
+    <DockStyle <Top> Dock>
+    <"Press" Text>
+    ((textBox) (|sender arguments| textBox <"Hello World!" Text>) addClickHandler)
+  ) create
   |button|
 
   MenuStrip <new> 
@@ -31,14 +33,8 @@
   : <textBox Add>
   : <button Add>
     <mainMenuStrip Add>
-
   form
 )
 (new-main-form) set
 
 new-main-form <ShowDialog>
-
-  RichTextBox <new> 
-  : <true Multiline>
-  : <DockStyle <Fill> Dock>
-  |textBox|
