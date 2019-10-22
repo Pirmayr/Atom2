@@ -10,13 +10,7 @@
 
   RichTextBox (<true Multiline> <DockStyle <Fill> Dock>) create |textBox|
 
-  Button
-  (
-    <DockStyle <Top> Dock>
-    <"Press" Text>
-    ((textBox) (|sender arguments| textBox <"Hello World!" Text>) addClickHandler)
-  ) create
-  |button|
+  Button (<DockStyle <Top> Dock> <"Press" Text> ((textBox) (drop2 textBox <"Hello World!" Text>) addClickHandler)) create |button|
 
   MenuStrip <new> 
   : <Items> <"File" Add>
@@ -29,10 +23,7 @@
       "Paste" (form) (|sender arguments| "Paste" show) addMenuItem
   |mainMenuStrip|
 
-  form <Controls>
-  : <textBox Add>
-  : <button Add>
-    <mainMenuStrip Add>
+  form <Controls> (<textBox Add> <button Add> <mainMenuStrip Add>) apply
   form
 )
 (new-main-form) set
