@@ -46,6 +46,7 @@ namespace Atom2
       scopes.Pop();
     }
 
+    // ReSharper disable once UnusedMember.Global
     public List<KeyValuePair<TK, TV>> ToList()
     {
       return scopes.Peek().ToList();
