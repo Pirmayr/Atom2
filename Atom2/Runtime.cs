@@ -53,7 +53,8 @@ namespace Atom2
       setWords.Add(new Name {Value = "invoke"}, new Action(Invoke));
       setWords.Add(new Name {Value = ")"}, new Action(DoNothing));
       setWords.Add(new Name {Value = ">"}, new Action(Execute));
-      setWords.Add(new Name {Value = "execute"}, new Action(Execute));
+      setWords.Add(new Name { Value = "execute" }, new Action(Execute));
+      setWords.Add(new Name { Value = "execute1" }, new Action(Execute1));
       setWords.Add(new Name {Value = "|"}, new Action(Put));
       setWords.Add(new Name {Value = "\'"}, new Action(DoNothing));
       setWords.Add(new Name {Value = "ones-complement"}, UnaryAction(ExpressionType.OnesComplement));
@@ -92,14 +93,22 @@ namespace Atom2
       return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
     }
 
-    public bool Run(string codeOrPath, out Exception result)
+    public bool Run(string codeOrPath, out Exception result, bool referenceAssemblies = false)
     {
       try
       {
+        if (referenceAssemblies)
+        {
+          Push("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
+          Push("System.Windows.Forms");
+          Reference();
+        }
+
         CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)), out _);
         CallEnvironments.Push(new CallEnvironment {Items = CurrentRootItems, Scope = putWords.CurrentScope});
         Evaluate(CurrentRootItems);
         CallEnvironments.Pop();
+
         result = null;
         return true;
       }
@@ -244,6 +253,59 @@ namespace Atom2
       }
     }
 
+    private void DoExecute1()
+    {
+      string memberName = (string) Pop();
+      EvaluateAndSplit();
+      int argumentsCount = (int) Pop();
+      object[] arguments = Pop(argumentsCount).ToArray();
+      object typeOrTarget = Pop();
+      bool isType = typeOrTarget is Type;
+      Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
+      object target = isType ? null : typeOrTarget;
+      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
+      bool hasReturnValue = false;
+      switch (memberName)
+      {
+        case "new":
+          memberName = "";
+          hasReturnValue = true;
+          bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;
+          break;
+        default:
+          bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
+          MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
+          if (member != null)
+          {
+            switch (member)
+            {
+              case MethodInfo methodInfo:
+                hasReturnValue = methodInfo.ReturnType != typeof(void);
+                bindingFlags |= BindingFlags.InvokeMethod;
+                break;
+              case FieldInfo _:
+                hasReturnValue = arguments.Length == 0;
+                bindingFlags |= (hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField);
+                break;
+              case PropertyInfo _:
+                hasReturnValue = arguments.Length == 0;
+                bindingFlags |= (hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty);
+                break;
+              case EventInfo eventInfo:
+                memberName = eventInfo.AddMethod.Name;
+                bindingFlags |= BindingFlags.InvokeMethod;
+                break;
+            }
+          }
+          break;
+      }
+      object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
+      if (hasReturnValue)
+      {
+        Push(invokeResult);
+      }
+    }
+
     private void DoInvoke()
     {
       BindingFlags memberKind = (BindingFlags) Pop();
@@ -304,6 +366,11 @@ namespace Atom2
     private void Execute()
     {
       Application.Invoke(DoExecute);
+    }
+
+    private void Execute1()
+    {
+      Application.Invoke(DoExecute1);
     }
 
     private void Get()
@@ -601,6 +668,49 @@ namespace Atom2
       }
     }
 
+    private void Reference()
+    {
+      HashSet<string> names = new HashSet<string>();
+      string nameSpace = (string) Pop();
+      string assemblyName = (string) Pop();
+      Assembly assembly = Assembly.Load(assemblyName);
+      foreach (Type currentType in assembly.GetTypes())
+      {
+        if (currentType.Namespace == nameSpace)
+        {
+          foreach (MemberInfo currentMember in currentType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+          {
+            bool accept = false;
+            switch (currentMember)
+            {
+              case MethodInfo methodInfo:
+                accept = !methodInfo.IsSpecialName;
+                break;
+              case FieldInfo fieldInfo:
+                accept = !fieldInfo.IsSpecialName;
+                break;
+              case PropertyInfo propertyInfo:
+                accept = !propertyInfo.IsSpecialName;
+                break;
+            }
+            if (accept)
+            {
+              names.Add(currentMember.Name);
+            }
+          }
+        }
+      }
+      Name actionName = new Name { Value = "execute1" };
+      foreach (string currentName in names)
+      {
+        Name newName = new Name { Value = "_" + currentName };
+        if (!setWords.ContainsKey(newName))
+        {
+          setWords.Add(newName, new Items { currentName, actionName });
+        }
+      }
+    }
+    
     public event Action Breaking;
     public event Action Stepping;
   }

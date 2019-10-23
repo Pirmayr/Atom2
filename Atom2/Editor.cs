@@ -203,7 +203,7 @@ namespace Atom2
 
     private void DoRun(object code)
     {
-      runtime.Run((string) code, out _);
+      runtime.Run((string) code, out _, true);
     }
 
     private void OnBreaking()

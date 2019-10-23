@@ -8,7 +8,7 @@
 (
   Form <new> |form|
 
-  RichTextBox (<true Multiline> <DockStyle <Fill> Dock>) create |textBox|
+  RichTextBox (((true) _Multiline) ((DockStyle () _Fill) _Dock)) create |textBox|
 
   Button (<DockStyle <Top> Dock> <"Press" Text> ((textBox) (drop2 textBox <"Hello World!" Text>) addClickHandler)) create |button|
 
@@ -28,4 +28,6 @@
 )
 (new-main-form) set
 
-new-main-form <ShowDialog>
+new-main-form () _ShowDialog
+
+form: DockStyle: Fill Dock
