@@ -6,16 +6,16 @@
 (System.Windows.Forms) use
 
 (
-  Form <new> |form|
+  Form (new) execute |form|
 
-  RichTextBox (((true) _Multiline) ((DockStyle () _Fill) _Dock)) create |textBox|
+  RichTextBox (((true) Multiline) ((DockStyle () Fill) Dock)) create |textBox|
 
-  Button (((DockStyle () _Top) _Dock) (("Press") _Text) ((textBox) (drop2 textBox ("Hello World!") _Text) addClickHandler)) create |button|
+  Button (((DockStyle () Top) Dock) (("Press") Text) ((textBox) (drop2 textBox ("Hello World!") Text) addClickHandler)) create |button|
 
-  form () _Controls (((textBox) _Add) ((button) _Add)) apply
+  form () Controls (((textBox) Add) ((button) Add)) apply
   form
 )
 (new-main-form) set
 
-new-main-form () _ShowDialog
+new-main-form () ShowDialog
 

@@ -706,7 +706,7 @@ namespace Atom2
       Name actionName = new Name { Value = "execute1" };
       foreach (string currentName in names)
       {
-        Name newName = new Name { Value = "_" + currentName };
+        Name newName = new Name { Value = currentName };
         if (!setWords.ContainsKey(newName))
         {
           setWords.Add(newName, new Items { currentName, actionName });

@@ -1,8 +1,8 @@
 ﻿(lambda create-event-handler) (createEventHandler) set
-('createEventHandler' 'Click' 4 join execute) (addClickHandler) set
+('createEventHandler' 3 join Click) (addClickHandler) set
 
 ( 
   |menuItem menuText context clickHandler|
-  menuItem () _DropDownItems (menuText) _Add context clickHandler addClickHandler
+  menuItem () DropDownItems (menuText) Add context clickHandler addClickHandler
 )
 (addMenuItem) set

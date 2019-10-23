@@ -14,26 +14,26 @@
 
 (
   (array body) put
-  (array) get () _GetEnumerator
+  (array) get () GetEnumerator
   (enumerator) put
   (
-    (enumerator) get () _Current
+    (enumerator) get () Current
     (body) get evaluate
   )
-  ((enumerator) get () _MoveNext)
+  ((enumerator) get () MoveNext)
   while
 )
 (map) set
 
 (
   (value bodies) put
-  (bodies) get () _GetEnumerator
+  (bodies) get () GetEnumerator
   (enumerator) put
   (
     (value) get
-    (enumerator) get () _Current
-    (enumerator) get () _MoveNext drop
-    (enumerator) get () _Current (current-block-kind) put
+    (enumerator) get () Current
+    (enumerator) get () MoveNext drop
+    (enumerator) get () Current (current-block-kind) put
     (
       (current-block-kind) get 2 join evaluate
     )
@@ -43,19 +43,19 @@
     ((current-block-kind) get to-string ">" equal)
     if-else    
   )
-  ((enumerator) get () _MoveNext)
+  ((enumerator) get () MoveNext)
   while
 ) (apply) set
 
 (
   (value bodies) put
-  (bodies) get () _GetEnumerator
+  (bodies) get () GetEnumerator
   (enumerator) put
   (
     (value) get
-    (enumerator) get () _Current
-    (enumerator) get () _MoveNext drop
-    (enumerator) get () _Current (current-block-kind) put
+    (enumerator) get () Current
+    (enumerator) get () MoveNext drop
+    (enumerator) get () Current (current-block-kind) put
     (
       (current-block-kind) get 2 join evaluate
     )
@@ -65,7 +65,7 @@
     ((current-block-kind) get to-string ">" equal)
     if-else    
   )
-  ((enumerator) get () _MoveNext)
+  ((enumerator) get () MoveNext)
   while
   (value) get
 ) (initialize) set

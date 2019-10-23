@@ -11,6 +11,6 @@
 (0 0 not-equal) (false) set
 ((false) (true) rotate if-else) (not) set
 
-((type initializations) put (type) get <new> (initializations) get initialize) (create) set
+((type initializations) put (type) get (new) execute (initializations) get initialize) (create) set
 
 (|arguments code| arguments evaluate-and-split join 'evaluate' arguments 'put' code split 4 add join) (lambda) set
