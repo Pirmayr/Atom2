@@ -1,12 +1,7 @@
 ﻿load-file System.txt pragma
 
-("mscorlib, Version=4.0.0.0, Culture=neutral") import
-("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089") import
-
-(System.Windows.Forms) use
-
 (
-  Form (new) execute |form|
+  Form () new |form|
 
   RichTextBox (((true) Multiline) ((DockStyle () Fill) Dock)) create |textBox|
 
@@ -18,4 +13,3 @@
 (new-main-form) set
 
 new-main-form () ShowDialog
-
