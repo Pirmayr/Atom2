@@ -99,6 +99,9 @@ namespace Atom2
       {
         if (referenceAssemblies)
         {
+          Push("mscorlib, Version=4.0.0.0, Culture=neutral");
+          Push("System.Reflection");
+          Reference();
           Push("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
           Push("System.Windows.Forms");
           Reference();

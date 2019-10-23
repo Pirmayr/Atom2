@@ -3,6 +3,6 @@
 
 ( 
   |menuItem menuText context clickHandler|
-  menuItem <DropDownItems> <menuText Add> context clickHandler addClickHandler
+  menuItem () _DropDownItems (menuText) _Add context clickHandler addClickHandler
 )
 (addMenuItem) set

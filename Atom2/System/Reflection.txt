@@ -52,7 +52,7 @@
   verbatim
   assembly-load-with-partial-name (current-assembly) put
   (current-assembly) get
-  <GetTypes>
+  () _GetTypes
   (
     (current-type) put
     (current-type) get type-get-namespace (current-namespace) put
@@ -72,14 +72,14 @@
   (namespace) put
   (namespace) get evaluate (assembly) put
   (assembly) get
-  <GetTypes>
+  () _GetTypes
   (
     (current-type) put
     (
       (current-type) get duplicate type-get-name to-name 1 join set
     )
     (
-      (current-type) get type-get-namespace (namespace) get verbatim <Value> equal
+      (current-type) get type-get-namespace (namespace) get verbatim () _Value equal
     ) if
   )
   map

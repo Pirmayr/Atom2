@@ -10,24 +10,12 @@
 
   RichTextBox (((true) _Multiline) ((DockStyle () _Fill) _Dock)) create |textBox|
 
-  Button (<DockStyle <Top> Dock> <"Press" Text> ((textBox) (drop2 textBox <"Hello World!" Text>) addClickHandler)) create |button|
+  Button (((DockStyle () _Top) _Dock) (("Press") _Text) ((textBox) (drop2 textBox ("Hello World!") _Text) addClickHandler)) create |button|
 
-  MenuStrip <new> 
-  : <Items> <"File" Add>
-    : "New" (form) (|sender arguments| "New" show) addMenuItem
-    : "Open" (form) (|sender arguments| "Open" show) addMenuItem
-      "Close" (form) (|sender arguments| form <Hide> Application <Exit>) addMenuItem
-  : <Items> <"Edit" Add>
-    : "Cut" (form) (|sender arguments| "Cut" show) addMenuItem
-    : "Copy" (form) (|sender arguments| "Copy" show) addMenuItem
-      "Paste" (form) (|sender arguments| "Paste" show) addMenuItem
-  |mainMenuStrip|
-
-  form <Controls> (<textBox Add> <button Add> <mainMenuStrip Add>) apply
+  form () _Controls (((textBox) _Add) ((button) _Add)) apply
   form
 )
 (new-main-form) set
 
 new-main-form () _ShowDialog
 
-form: DockStyle: Fill Dock
