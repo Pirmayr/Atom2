@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -179,6 +180,7 @@ namespace Atom2
 
     private void Break()
     {
+      Debugger.Break();
       Breaking?.Invoke();
     }
 
@@ -198,15 +200,18 @@ namespace Atom2
 
     private Exception DoExecute()
     {
+      string memberName = "(unknown)";
+      object[] arguments = null;
+      Type type = null;
       try
       {
-        string memberName = (string) Pop();
+        memberName = (string) Pop();
         EvaluateAndSplit();
         int argumentsCount = (int) Pop();
-        object[] arguments = Pop(argumentsCount).ToArray();
+        arguments = Pop(argumentsCount).ToArray();
         object typeOrTarget = Pop();
         bool isType = typeOrTarget is Type;
-        Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
+        type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
         object target = isType ? null : typeOrTarget;
         BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
         bool hasReturnValue = false;
@@ -253,8 +258,15 @@ namespace Atom2
       }
       catch (Exception exception)
       {
-        return exception;
+        return new Exception($"Cannot execute '{GetCall(type, memberName, arguments)}'", exception);
       }
+    }
+
+    private string GetCall(Type type, string memberName, object[] arguments)
+    {
+      string typeName = type == null ? "" : type.Name;
+      string argumentsString = arguments == null ? "" : string.Join(", ", arguments);
+      return typeName + "." + memberName + "(" + argumentsString + ")";
     }
 
     private void DoShow()
@@ -270,17 +282,17 @@ namespace Atom2
 
     private void Evaluate(object item)
     {
-      if (item is Items items)
+      if (!(item is Items items))
       {
-        foreach (object currentItem in items)
-        {
-          CallEnvironments.Peek().CurrentItem = currentItem;
-          Process(currentItem);
-        }
-        return;
+        items = new Items(item);
       }
-      CallEnvironments.Peek().CurrentItem = item;
-      Process(item);
+      CallEnvironments.Push(new CallEnvironment { Items = items, Scope = putWords.CurrentScope });
+      foreach (object currentItem in items)
+      {
+        CallEnvironments.Peek().CurrentItem = currentItem;
+        Process(currentItem);
+      }
+      CallEnvironments.Pop();
     }
 
     private void Evaluate()
@@ -484,9 +496,7 @@ namespace Atom2
               return;
             case Items items:
               putWords.EnterScope();
-              CallEnvironments.Push(new CallEnvironment { Items = items, Scope = putWords.CurrentScope });
               Evaluate(items);
-              CallEnvironments.Pop();
               putWords.LeaveScope();
               return;
             default:

@@ -1,24 +1,39 @@
 ﻿load-file System.txt pragma
 
 (
-  Form () new |form|
-
-  RichTextBox
+  Form 
   (
-    ((true) Multiline)
-    ((DockStyle () Fill) Dock)
-  ) create |textBox|
-
-  Button
-  (
-    ((DockStyle () Top) Dock)
-    (("Press") Text)
-    ((textBox) (drop2 textBox ("Hello World!") Text) addClickHandler)
-  ) create |button|
-
-  form () Controls (((textBox) Add) ((button) Add)) apply
-
-  form
+    (
+      () Controls 
+      (
+        (
+          (
+            RichTextBox
+            (
+              ((true) Multiline)
+              ((DockStyle () Fill) Dock)
+            ) 
+            create
+          )
+          break
+          Add
+        ) 
+        (
+          (
+            Button
+            (
+              ((DockStyle () Top) Dock)
+              (("Press") Text)
+            ) 
+            create
+          )
+          Add
+        )
+      ) 
+      apply
+    )
+  )
+  create
 )
 (new-main-form) set
 

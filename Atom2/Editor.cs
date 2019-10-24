@@ -214,7 +214,7 @@ namespace Atom2
       foreach (CallEnvironment currentCallEnvironment in callEnvironments)
       {
         ListItem newListItem = new ListItem();
-        newListItem.Text = currentCallEnvironment.CurrentItem.ToString();
+        newListItem.Text = currentCallEnvironment.CurrentItem == null? "(null)" : currentCallEnvironment.CurrentItem.ToString();
         newListItem.Tag = currentCallEnvironment;
         callStackListBox.Items.Add(newListItem);
       }
