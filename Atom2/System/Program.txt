@@ -3,11 +3,21 @@
 (
   Form () new |form|
 
-  RichTextBox (((true) Multiline) ((DockStyle () Fill) Dock)) create |textBox|
+  RichTextBox
+  (
+    ((true) Multiline)
+    ((DockStyle () Fill) Dock)
+  ) create |textBox|
 
-  Button (((DockStyle () Top) Dock) (("Press") Text) ((textBox) (drop2 textBox ("Hello World!") Text) addClickHandler)) create |button|
+  Button
+  (
+    ((DockStyle () Top) Dock)
+    (("Press") Text)
+    ((textBox) (drop2 textBox ("Hello World!") Text) addClickHandler)
+  ) create |button|
 
   form () Controls (((textBox) Add) ((button) Add)) apply
+
   form
 )
 (new-main-form) set

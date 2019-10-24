@@ -27,15 +27,15 @@ namespace Atom2
     private const char RightAngle = '>';
     private const char RightParenthesis = ')';
     private const char Whitespace = char.MaxValue;
-    private readonly Name apostropheName = new Name {Value = Apostrophe.ToString()};
+    private readonly Name apostropheName = new Name { Value = Apostrophe.ToString() };
     private readonly NameHashSet blockBeginTokens;
     private readonly NameHashSet blockEndTokens;
-    private readonly Name executeName = new Name {Value = "execute"};
-    private readonly Name pipeName = new Name {Value = Pipe.ToString()};
+    private readonly Name executeName = new Name { Value = "execute" };
+    private readonly Name pipeName = new Name { Value = Pipe.ToString() };
     private readonly Words putWords = new Words();
     private readonly Words setWords = new Words();
-    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe};
+    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe };
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
     public Stack Stack { get; } = new Stack();
     private static string BaseDirectory { get; set; }
@@ -48,41 +48,41 @@ namespace Atom2
       blockBeginTokens = NewNameHashSet(LeftParenthesis, LeftAngle, Pipe, Apostrophe);
       blockEndTokens = NewNameHashSet(RightParenthesis, RightAngle);
       BaseDirectory = baseDirectory;
-      setWords.Add(new Name {Value = "trace"}, new Action(Trace));
-      setWords.Add(new Name {Value = "break"}, new Action(Break));
-      setWords.Add(new Name {Value = ")"}, new Action(DoNothing));
-      setWords.Add(new Name {Value = ">"}, new Action(Execute));
-      setWords.Add(new Name {Value = "execute"}, new Action(Execute));
-      setWords.Add(new Name {Value = "|"}, new Action(Put));
-      setWords.Add(new Name {Value = "\'"}, new Action(DoNothing));
-      setWords.Add(new Name {Value = "ones-complement"}, UnaryAction(ExpressionType.OnesComplement));
-      setWords.Add(new Name {Value = "equal"}, BinaryAction(ExpressionType.Equal));
-      setWords.Add(new Name {Value = "not-equal"}, BinaryAction(ExpressionType.NotEqual));
-      setWords.Add(new Name {Value = "less-or-equal"}, BinaryAction(ExpressionType.LessThanOrEqual));
-      setWords.Add(new Name {Value = "less"}, BinaryAction(ExpressionType.LessThan));
-      setWords.Add(new Name {Value = "greater-or-equal"}, BinaryAction(ExpressionType.GreaterThanOrEqual));
-      setWords.Add(new Name {Value = "greater"}, BinaryAction(ExpressionType.GreaterThan));
-      setWords.Add(new Name {Value = "add"}, BinaryAction(ExpressionType.Add));
-      setWords.Add(new Name {Value = "subtract"}, BinaryAction(ExpressionType.Subtract));
-      setWords.Add(new Name {Value = "multiply"}, BinaryAction(ExpressionType.Multiply));
-      setWords.Add(new Name {Value = "divide"}, BinaryAction(ExpressionType.Divide));
-      setWords.Add(new Name {Value = "put"}, new Action(Put));
-      setWords.Add(new Name {Value = "set"}, new Action(Set));
-      setWords.Add(new Name {Value = "get"}, new Action(Get));
-      setWords.Add(new Name {Value = "if"}, new Action(If));
-      setWords.Add(new Name {Value = "while"}, new Action(While));
-      setWords.Add(new Name {Value = "evaluate"}, new Action(Evaluate));
-      setWords.Add(new Name {Value = "length"}, new Action(Length));
-      setWords.Add(new Name {Value = "split"}, new Action(Split));
-      setWords.Add(new Name {Value = "evaluate-and-split"}, new Action(EvaluateAndSplit));
-      setWords.Add(new Name {Value = "join"}, new Action(Join));
-      setWords.Add(new Name {Value = "cast"}, new Action(Cast));
-      setWords.Add(new Name {Value = "create-event-handler"}, new Action(CreateEventHandler));
-      setWords.Add(new Name {Value = "Runtime"}, typeof(Runtime));
-      setWords.Add(new Name {Value = "runtime"}, this);
-      setWords.Add(new Name {Value = "show"}, new Action(Show));
-      setWords.Add(new Name {Value = "hello"}, new Action(Hello));
-      setWords.Add(new Name {Value = "to-name"}, new Action(ToName));
+      setWords.Add(new Name { Value = "trace" }, new Action(Trace));
+      setWords.Add(new Name { Value = "break" }, new Action(Break));
+      setWords.Add(new Name { Value = ")" }, new Action(DoNothing));
+      setWords.Add(new Name { Value = ">" }, new Action(Execute));
+      setWords.Add(new Name { Value = "execute" }, new Action(Execute));
+      setWords.Add(new Name { Value = "|" }, new Action(Put));
+      setWords.Add(new Name { Value = "\'" }, new Action(DoNothing));
+      setWords.Add(new Name { Value = "ones-complement" }, UnaryAction(ExpressionType.OnesComplement));
+      setWords.Add(new Name { Value = "equal" }, BinaryAction(ExpressionType.Equal));
+      setWords.Add(new Name { Value = "not-equal" }, BinaryAction(ExpressionType.NotEqual));
+      setWords.Add(new Name { Value = "less-or-equal" }, BinaryAction(ExpressionType.LessThanOrEqual));
+      setWords.Add(new Name { Value = "less" }, BinaryAction(ExpressionType.LessThan));
+      setWords.Add(new Name { Value = "greater-or-equal" }, BinaryAction(ExpressionType.GreaterThanOrEqual));
+      setWords.Add(new Name { Value = "greater" }, BinaryAction(ExpressionType.GreaterThan));
+      setWords.Add(new Name { Value = "add" }, BinaryAction(ExpressionType.Add));
+      setWords.Add(new Name { Value = "subtract" }, BinaryAction(ExpressionType.Subtract));
+      setWords.Add(new Name { Value = "multiply" }, BinaryAction(ExpressionType.Multiply));
+      setWords.Add(new Name { Value = "divide" }, BinaryAction(ExpressionType.Divide));
+      setWords.Add(new Name { Value = "put" }, new Action(Put));
+      setWords.Add(new Name { Value = "set" }, new Action(Set));
+      setWords.Add(new Name { Value = "get" }, new Action(Get));
+      setWords.Add(new Name { Value = "if" }, new Action(If));
+      setWords.Add(new Name { Value = "while" }, new Action(While));
+      setWords.Add(new Name { Value = "evaluate" }, new Action(Evaluate));
+      setWords.Add(new Name { Value = "length" }, new Action(Length));
+      setWords.Add(new Name { Value = "split" }, new Action(Split));
+      setWords.Add(new Name { Value = "evaluate-and-split" }, new Action(EvaluateAndSplit));
+      setWords.Add(new Name { Value = "join" }, new Action(Join));
+      setWords.Add(new Name { Value = "cast" }, new Action(Cast));
+      setWords.Add(new Name { Value = "create-event-handler" }, new Action(CreateEventHandler));
+      setWords.Add(new Name { Value = "Runtime" }, typeof(Runtime));
+      setWords.Add(new Name { Value = "runtime" }, this);
+      setWords.Add(new Name { Value = "show" }, new Action(Show));
+      setWords.Add(new Name { Value = "hello" }, new Action(Hello));
+      setWords.Add(new Name { Value = "to-name" }, new Action(ToName));
     }
 
     public static string Code(string codeOrFilename)
@@ -91,13 +91,13 @@ namespace Atom2
       return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
     }
 
-    public bool Run(string codeOrPath, out Exception result, bool referenceAssemblies = false)
+    public Exception Run(string codeOrPath, bool referenceAssemblies = false)
     {
       try
       {
         if (referenceAssemblies)
         {
-          setWords[new Name {Value = "new"}] = new Items {"new", executeName};
+          setWords[new Name { Value = "new" }] = new Items { "new", executeName };
           Push("mscorlib, Version=4.0.0.0, Culture=neutral");
           Push("System.Reflection");
           Reference();
@@ -106,16 +106,14 @@ namespace Atom2
           Reference();
         }
         CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)), out _);
-        CallEnvironments.Push(new CallEnvironment {Items = CurrentRootItems, Scope = putWords.CurrentScope});
+        CallEnvironments.Push(new CallEnvironment { Items = CurrentRootItems, Scope = putWords.CurrentScope });
         Evaluate(CurrentRootItems);
         CallEnvironments.Pop();
-        result = null;
-        return true;
+        return null;
       }
       catch (Exception exception)
       {
-        result = exception;
-        return false;
+        return exception;
       }
     }
 
@@ -141,7 +139,7 @@ namespace Atom2
       NameHashSet result = new NameHashSet();
       foreach (object currentArgument in arguments)
       {
-        result.Add(new Name {Value = currentArgument.ToString()});
+        result.Add(new Name { Value = currentArgument.ToString() });
       }
       return result;
     }
@@ -162,7 +160,7 @@ namespace Atom2
       {
         return doubleValue;
       }
-      return new Name {Value = token.ToString()};
+      return new Name { Value = token.ToString() };
     }
 
     private Action BinaryAction(ExpressionType expressionType)
@@ -171,7 +169,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -181,7 +179,6 @@ namespace Atom2
 
     private void Break()
     {
-      // Debugger.Break();
       Breaking?.Invoke();
     }
 
@@ -199,56 +196,64 @@ namespace Atom2
       Push(action);
     }
 
-    private void DoExecute()
+    private Exception DoExecute()
     {
-      string memberName = (string) Pop();
-      EvaluateAndSplit();
-      int argumentsCount = (int) Pop();
-      object[] arguments = Pop(argumentsCount).ToArray();
-      object typeOrTarget = Pop();
-      bool isType = typeOrTarget is Type;
-      Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
-      object target = isType ? null : typeOrTarget;
-      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
-      bool hasReturnValue = false;
-      switch (memberName)
+      try
       {
-        case "new":
-          memberName = "";
-          hasReturnValue = true;
-          bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;
-          break;
-        default:
-          bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
-          MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
-          if (member != null)
-          {
-            switch (member)
+        string memberName = (string) Pop();
+        EvaluateAndSplit();
+        int argumentsCount = (int) Pop();
+        object[] arguments = Pop(argumentsCount).ToArray();
+        object typeOrTarget = Pop();
+        bool isType = typeOrTarget is Type;
+        Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
+        object target = isType ? null : typeOrTarget;
+        BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
+        bool hasReturnValue = false;
+        switch (memberName)
+        {
+          case "new":
+            memberName = "";
+            hasReturnValue = true;
+            bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;
+            break;
+          default:
+            bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
+            MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
+            if (member != null)
             {
-              case MethodInfo methodInfo:
-                hasReturnValue = methodInfo.ReturnType != typeof(void);
-                bindingFlags |= BindingFlags.InvokeMethod;
-                break;
-              case FieldInfo _:
-                hasReturnValue = arguments.Length == 0;
-                bindingFlags |= (hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField);
-                break;
-              case PropertyInfo _:
-                hasReturnValue = arguments.Length == 0;
-                bindingFlags |= (hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty);
-                break;
-              case EventInfo eventInfo:
-                memberName = eventInfo.AddMethod.Name;
-                bindingFlags |= BindingFlags.InvokeMethod;
-                break;
+              switch (member)
+              {
+                case MethodInfo methodInfo:
+                  hasReturnValue = methodInfo.ReturnType != typeof(void);
+                  bindingFlags |= BindingFlags.InvokeMethod;
+                  break;
+                case FieldInfo _:
+                  hasReturnValue = arguments.Length == 0;
+                  bindingFlags |= (hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField);
+                  break;
+                case PropertyInfo _:
+                  hasReturnValue = arguments.Length == 0;
+                  bindingFlags |= (hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty);
+                  break;
+                case EventInfo eventInfo:
+                  memberName = eventInfo.AddMethod.Name;
+                  bindingFlags |= BindingFlags.InvokeMethod;
+                  break;
+              }
             }
-          }
-          break;
+            break;
+        }
+        object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
+        if (hasReturnValue)
+        {
+          Push(invokeResult);
+        }
+        return null;
       }
-      object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
-      if (hasReturnValue)
+      catch (Exception exception)
       {
-        Push(invokeResult);
+        return exception;
       }
     }
 
@@ -300,7 +305,10 @@ namespace Atom2
 
     private void Execute()
     {
-      Application.Invoke(DoExecute);
+      if (Application.Invoke(DoExecute) is Exception exception)
+      {
+        throw exception;
+      }
     }
 
     private void Get()
@@ -385,7 +393,7 @@ namespace Atom2
       switch (pragma)
       {
         case LoadFilePragma:
-          if (!Run(((Name) tokens.Dequeue()).Value, out Exception exception))
+          if (Run(((Name) tokens.Dequeue()).Value) is Exception exception)
           {
             throw exception;
           }
@@ -476,7 +484,7 @@ namespace Atom2
               return;
             case Items items:
               putWords.EnterScope();
-              CallEnvironments.Push(new CallEnvironment {Items = items, Scope = putWords.CurrentScope});
+              CallEnvironments.Push(new CallEnvironment { Items = items, Scope = putWords.CurrentScope });
               Evaluate(items);
               CallEnvironments.Pop();
               putWords.LeaveScope();
@@ -516,7 +524,7 @@ namespace Atom2
       {
         if (currentType.Namespace == requestedNamespace)
         {
-          setWords[new Name {Value = currentType.Name}] = currentType;
+          setWords[new Name { Value = currentType.Name }] = currentType;
           foreach (MemberInfo currentMember in currentType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
           {
             bool accept = false;
@@ -541,10 +549,10 @@ namespace Atom2
       }
       foreach (string currentName in names)
       {
-        Name newName = new Name {Value = currentName};
+        Name newName = new Name { Value = currentName };
         if (!setWords.ContainsKey(newName))
         {
-          setWords.Add(newName, new Items {currentName, executeName});
+          setWords.Add(newName, new Items { currentName, executeName });
         }
       }
     }
@@ -575,7 +583,7 @@ namespace Atom2
 
     private void ToName()
     {
-      Push(new Name {Value = Pop().ToString()});
+      Push(new Name { Value = Pop().ToString() });
     }
 
     private void Trace()
@@ -605,7 +613,7 @@ namespace Atom2
       Type objectType = typeof(object);
       ParameterExpression parameter = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = {argumentInfo};
+      CSharpArgumentInfo[] argumentInfos = { argumentInfo };
       CallSiteBinder binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameter);
       LambdaExpression lambda = Expression.Lambda(expression, parameter);

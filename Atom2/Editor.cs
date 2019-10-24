@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Eto.Drawing;
 using Eto.Forms;
 
@@ -142,9 +143,9 @@ namespace Atom2
       return result;
     }
 
-    private void DoRun(object code)
+    private Exception DoRun(object code)
     {
-      runtime.Run((string) code, out _, true);
+      return runtime.Run((string) code, true);
     }
 
     private void OnBreaking()
@@ -171,11 +172,16 @@ namespace Atom2
       stepCommand.Enabled = paused;
     }
 
-    private void OnRun(object sender, EventArgs arguments)
+    private async void OnRun(object sender, EventArgs arguments)
     {
       running = true;
-      Thread thread = new Thread(DoRun);
-      thread.Start(codeTextArea.Text);
+      Exception exception = await Task<Exception>.Factory.StartNew(DoRun, codeTextArea.Text);
+      running = false;
+      if (exception != null)
+      {
+        outputTextArea.Append(exception.Message + Environment.NewLine);
+        UpdatePauseUI();
+      }
     }
 
     private void OnStep(object sender, EventArgs e)
