@@ -17,8 +17,7 @@
   (array) get () GetEnumerator
   (enumerator) put
   (
-    (enumerator) get () Current
-    (body) get evaluate
+    (enumerator) get () Current (body) get evaluate
   )
   ((enumerator) get () MoveNext)
   while
@@ -30,18 +29,7 @@
   (bodies) get () GetEnumerator
   (enumerator) put
   (
-    (value) get
-    (enumerator) get () Current
-    (enumerator) get () MoveNext drop
-    (enumerator) get () Current (current-block-kind) put
-    (
-      (current-block-kind) get 2 join evaluate
-    )
-    (
-      evaluate
-    )
-    ((current-block-kind) get to-string ">" equal)
-    if-else    
+    (value) get (enumerator) get () Current evaluate
   )
   ((enumerator) get () MoveNext)
   while
@@ -52,18 +40,7 @@
   (bodies) get () GetEnumerator
   (enumerator) put
   (
-    (value) get
-    (enumerator) get () Current
-    (enumerator) get () MoveNext drop
-    (enumerator) get () Current (current-block-kind) put
-    (
-      (current-block-kind) get 2 join evaluate
-    )
-    (
-      evaluate
-    )
-    ((current-block-kind) get to-string ">" equal)
-    if-else    
+    (value) get (enumerator) get () Current evaluate 
   )
   ((enumerator) get () MoveNext)
   while

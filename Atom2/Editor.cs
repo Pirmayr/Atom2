@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Eto.Drawing;
@@ -17,7 +18,6 @@ namespace Atom2
     private readonly TreeGridView codeTreeGridView;
     private readonly Command continueCommand;
     private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
-    // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
     private readonly TextArea outputTextArea;
     private readonly Command runCommand;
     private readonly Runtime runtime;
@@ -34,6 +34,7 @@ namespace Atom2
       runtime = new Runtime(Application, arguments[0]);
       runtime.Breaking += OnBreaking;
       runtime.Stepping += OnStepping;
+      runtime.Outputting += OnOutput;
 
       // Menu:
       Title = "Atom2";
@@ -79,13 +80,8 @@ namespace Atom2
       callStackListBox = new ListBox();
       callStackListBox.Height = 250;
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
-      codeTreeGridView = NewTreeGridView("Value", "Type");
-      codeTreeGridView.Columns[0].AutoSize = false;
-      codeTreeGridView.Columns[0].Resizable = false;
-      codeTreeGridView.Columns[0].Width = StandardWidth / 2 - 1;
-      codeTreeGridView.Columns[1].AutoSize = false;
-      codeTreeGridView.Columns[1].Resizable = false;
-      codeTreeGridView.Columns[1].Width = StandardWidth / 2 - 1;
+      codeTreeGridView = NewTreeGridView();
+      codeTreeGridView.ShowHeader = false;
       codeTreeGridView.Width = StandardWidth;
       TableLayout rightColumnLayout = new TableLayout(callStackListBox, codeTreeGridView);
 
@@ -106,18 +102,22 @@ namespace Atom2
       timer.Start();
     }
 
+    private void OnOutput(object sender, string message)
+    {
+      outputTextArea.Append(message + Environment.NewLine);
+    }
+
     public static void Run(string[] arguments)
     {
       Application.Run(new Editor(arguments));
     }
 
-    private static TreeGridItemCollection GetCodeTree(IEnumerable<object> rootItems, object executingItem, ref TreeGridItem executingTreeGridViewItem, int indentation = 0)
+    private static TreeGridItemCollection GetCodeTree(IEnumerable<object> rootItems, object executingItem, ref TreeGridItem executingTreeGridViewItem)
     {
       TreeGridItemCollection result = new TreeGridItemCollection();
-      string indentationPrefix = new string(' ', indentation * 2);
       foreach (object currentItem in rootItems)
       {
-        TreeGridItem newTreeViewItem = currentItem is Items currentItems ? new TreeGridItem(GetCodeTree(currentItems, executingItem, ref executingTreeGridViewItem, indentation + 1), "(Block)") : new TreeGridItem(indentationPrefix + currentItem);
+        TreeGridItem newTreeViewItem = currentItem is Items currentItems ? new TreeGridItem(GetCodeTree(currentItems, executingItem, ref executingTreeGridViewItem), "(Items)") : new TreeGridItem(currentItem.ToInformation());
         newTreeViewItem.Expanded = true;
         result.Add(newTreeViewItem);
         if (currentItem == executingItem)
@@ -128,17 +128,13 @@ namespace Atom2
       return result;
     }
 
-    private static TreeGridView NewTreeGridView(params string[] headers)
+    private static TreeGridView NewTreeGridView()
     {
       TreeGridView result = new TreeGridView();
-      for (int i = 0; i < headers.Length; ++i)
-      {
-        GridColumn currentGridColumn = new GridColumn();
-        currentGridColumn.HeaderText = headers[i];
-        currentGridColumn.Editable = true;
-        currentGridColumn.DataCell = new TextBoxCell(i);
-        result.Columns.Add(currentGridColumn);
-      }
+      GridColumn currentGridColumn = new GridColumn();
+      currentGridColumn.Editable = true;
+      currentGridColumn.DataCell = new TextBoxCell(0);
+      result.Columns.Add(currentGridColumn);
       result.Width = 300;
       return result;
     }
@@ -214,7 +210,7 @@ namespace Atom2
       foreach (CallEnvironment currentCallEnvironment in callEnvironments)
       {
         ListItem newListItem = new ListItem();
-        newListItem.Text = currentCallEnvironment.CurrentItem == null? "(null)" : currentCallEnvironment.CurrentItem.ToString();
+        newListItem.Text = currentCallEnvironment.CurrentItem == null? "(null)" : currentCallEnvironment.CurrentItem.ToInformation();
         newListItem.Tag = currentCallEnvironment;
         callStackListBox.Items.Add(newListItem);
       }
@@ -232,7 +228,7 @@ namespace Atom2
       stackListBox.Items.Clear();
       foreach (object currentValue in runtime.Stack)
       {
-        stackListBox.Items.Add(currentValue.ToString());
+        stackListBox.Items.Add(currentValue.GetType().Name);
       }
     }
 

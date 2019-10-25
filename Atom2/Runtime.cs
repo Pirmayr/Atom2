@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -15,6 +15,8 @@ using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace Atom2
 {
+  public delegate void OutputEventHandler(object sender, string message);
+
   public sealed class Runtime
   {
     private const char Apostrophe = '\'';
@@ -107,9 +109,7 @@ namespace Atom2
           Reference();
         }
         CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)), out _);
-        CallEnvironments.Push(new CallEnvironment {Items = CurrentRootItems, Scope = putWords.CurrentScope});
         Evaluate(CurrentRootItems);
-        CallEnvironments.Pop();
         return null;
       }
       catch (Exception exception)
@@ -187,7 +187,6 @@ namespace Atom2
 
     private void Break()
     {
-      Debugger.Break();
       Breaking?.Invoke();
     }
 
@@ -276,20 +275,18 @@ namespace Atom2
 
     private void DoTrace()
     {
-      object item = Stack.Peek();
-      MessageBox.Show(item == null ? "(empty)" : $"{item} ({item.GetType().Name})");
+      Outputting?.Invoke(this, Stack.Peek().ToInformation());
     }
 
     private void Evaluate(object item)
     {
-      if (!(item is Items items))
-      {
-        items = new Items(item);
-      }
-      CallEnvironments.Push(new CallEnvironment {Items = items, Scope = putWords.CurrentScope});
+
+      Items items = item.ToItems();
+      CallEnvironments.Push(new CallEnvironment { Items = items, Scope = putWords.CurrentScope });
       foreach (object currentItem in items)
       {
         CallEnvironments.Peek().CurrentItem = currentItem;
+        Stepping?.Invoke();
         Process(currentItem);
       }
       CallEnvironments.Pop();
@@ -343,7 +340,7 @@ namespace Atom2
         {
           OnBlockBegin(currentToken);
           result.Add(GetItems(tokens, out object currentLastToken));
-          result.Add(currentLastToken);
+          // result.Add(currentLastToken);
         }
         else if (blockEndTokens.Contains(currentToken))
         {
@@ -485,7 +482,6 @@ namespace Atom2
 
     private void Process(object item)
     {
-      Stepping?.Invoke();
       switch (TryGetWord(item, out object word))
       {
         case WordKind.Set:
@@ -645,5 +641,6 @@ namespace Atom2
 
     public event Action Breaking;
     public event Action Stepping;
+    public event OutputEventHandler Outputting;
   }
 }

@@ -73,6 +73,7 @@
     <Compile Include="Types.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="CallEnvironment.cs" />
+    <Compile Include="Extensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="System\System.txt" />
