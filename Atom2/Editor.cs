@@ -10,7 +10,7 @@ namespace Atom2
 {
   public sealed class Editor : Form
   {
-    private const int StandardWidth = 300;
+    private const int StandardDimension = 300;
     private static readonly Application Application = new Application();
     private static readonly Font StandardFont = new Font("Helvetica", 12);
     private readonly ListBox callStackListBox;
@@ -55,43 +55,22 @@ namespace Atom2
       menuBar.Items.Add(fileMenuItem);
       Menu = menuBar;
 
-      // Code:
-      codeTextArea = new TextArea();
-      codeTextArea.Font = StandardFont;
-      codeTextArea.Text = Runtime.Code(arguments[1]);
-      TableCell codeTableCell = new TableCell(codeTextArea, true);
-      TableRow codeTableRow = new TableRow(codeTableCell);
-      codeTableRow.ScaleHeight = true;
-
-      // Output:
-      outputTextArea = new TextArea();
-      TableRow outputTableRow = new TableRow(outputTextArea);
-      outputTextArea.Height = 250;
-
-      // Central column:
-      TableLayout centerTableLayout = new TableLayout(codeTableRow, outputTableRow);
-      TableCell centerTableCell = new TableCell(centerTableLayout, true);
-
-      // Left column:
-      stackListBox = new ListBox();
-      stackListBox.Width = StandardWidth;
-
-      // Right column:
-      callStackListBox = new ListBox();
-      callStackListBox.Height = 250;
-      callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
+      codeTextArea = new TextArea { Font = StandardFont, Text = Runtime.Code(arguments[1]) };
       codeTreeGridView = NewTreeGridView();
-      codeTreeGridView.ShowHeader = false;
-      codeTreeGridView.Width = StandardWidth;
-      TableLayout rightColumnLayout = new TableLayout(callStackListBox, codeTreeGridView);
+      callStackListBox = new ListBox { Width = StandardDimension };
+      stackListBox = new ListBox { Width = StandardDimension };
+      outputTextArea = new TextArea { Height = StandardDimension };
 
-      // Table row:
-      TableRow tableRow = new TableRow(stackListBox, centerTableCell, rightColumnLayout);
+      TabControl codeTabControl = new TabControl();
+      codeTabControl.Pages.Add(new TabPage(codeTextArea) { Text = "Code" });
+      codeTabControl.Pages.Add(new TabPage(codeTreeGridView) { Text = "Tree" });
 
-      // Layout
       TableLayout layout = new TableLayout();
-      layout.Rows.Add(tableRow);
+      layout.Rows.Add(new TableRow(stackListBox, new TableCell(new TableLayout(new TableRow(codeTabControl) { ScaleHeight = true }, new TableRow(outputTextArea)), true), callStackListBox));
+
       Content = layout;
+
+      callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
 
       // Other initializations:
       runtime = new Runtime(Application, arguments[0]);
@@ -135,7 +114,8 @@ namespace Atom2
       currentGridColumn.Editable = true;
       currentGridColumn.DataCell = new TextBoxCell(0);
       result.Columns.Add(currentGridColumn);
-      result.Width = 300;
+      result.ShowHeader = false;
+      result.Width = StandardDimension;
       return result;
     }
 
@@ -210,7 +190,7 @@ namespace Atom2
       foreach (CallEnvironment currentCallEnvironment in callEnvironments)
       {
         ListItem newListItem = new ListItem();
-        newListItem.Text = currentCallEnvironment.CurrentItem == null? "(null)" : currentCallEnvironment.CurrentItem.ToInformation();
+        newListItem.Text = currentCallEnvironment.CurrentItem == null ? "(null)" : currentCallEnvironment.CurrentItem.ToInformation();
         newListItem.Tag = currentCallEnvironment;
         callStackListBox.Items.Add(newListItem);
       }
