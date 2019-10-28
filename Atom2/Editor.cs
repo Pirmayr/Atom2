@@ -10,7 +10,7 @@ namespace Atom2
 {
   public sealed class Editor : Form
   {
-    private const int StandardDimension = 300;
+    private const int StandardDimension = 350;
     private static readonly Application Application = new Application();
     private static readonly Font StandardFont = new Font("Helvetica", 12);
     private readonly ListBox callStackListBox;
