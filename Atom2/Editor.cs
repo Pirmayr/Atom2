@@ -12,7 +12,7 @@ namespace Atom2
   {
     private const int StandardDimension = 350;
     private static readonly Application Application = new Application();
-    private static readonly Font StandardFont = new Font("Helvetica", 12);
+    private static readonly Font StandardFont = new Font("Arial", 8);
     private readonly ListBox callStackListBox;
     private readonly TextArea codeTextArea;
     private readonly TreeGridView codeTreeGridView;
