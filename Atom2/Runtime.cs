@@ -212,7 +212,6 @@ namespace Atom2
       try
       {
         memberName = (string) Pop();
-        EvaluateAndSplit();
         int argumentsCount = (int) Pop();
         arguments = Pop(argumentsCount).ToArray();
         object typeOrTarget = Pop();
@@ -314,6 +313,9 @@ namespace Atom2
 
     private void Execute()
     {
+      object memberName = Pop();
+      EvaluateAndSplit();
+      Push(memberName);
       if (Application.Invoke(DoExecute) is Exception exception)
       {
         throw exception;
@@ -340,7 +342,6 @@ namespace Atom2
         {
           OnBlockBegin(currentToken);
           result.Add(GetItems(tokens, out object currentLastToken));
-          // result.Add(currentLastToken);
         }
         else if (blockEndTokens.Contains(currentToken))
         {

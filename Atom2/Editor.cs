@@ -62,8 +62,8 @@ namespace Atom2
       outputTextArea = new TextArea { Height = StandardDimension };
 
       TabControl codeTabControl = new TabControl();
-      codeTabControl.Pages.Add(new TabPage(codeTextArea) { Text = "Code" });
       codeTabControl.Pages.Add(new TabPage(codeTreeGridView) { Text = "Tree" });
+      codeTabControl.Pages.Add(new TabPage(codeTextArea) { Text = "Code" });
 
       TableLayout layout = new TableLayout();
       layout.Rows.Add(new TableRow(stackListBox, new TableCell(new TableLayout(new TableRow(codeTabControl) { ScaleHeight = true }, new TableRow(outputTextArea)), true), callStackListBox));
@@ -190,7 +190,7 @@ namespace Atom2
       foreach (CallEnvironment currentCallEnvironment in callEnvironments)
       {
         ListItem newListItem = new ListItem();
-        newListItem.Text = currentCallEnvironment.CurrentItem == null ? "(null)" : currentCallEnvironment.CurrentItem.ToInformation();
+        newListItem.Text = currentCallEnvironment.CurrentItem == null ? "(null)" : currentCallEnvironment.CurrentItem.ToString();
         newListItem.Tag = currentCallEnvironment;
         callStackListBox.Items.Add(newListItem);
       }
