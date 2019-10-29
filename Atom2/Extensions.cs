@@ -1,6 +1,6 @@
 ﻿namespace Atom2
 {
-  static public class Extensions
+  public static class Extensions
   {
     public static Items ToItems(this object value)
     {

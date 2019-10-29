@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Eto.Drawing;
@@ -54,22 +53,17 @@ namespace Atom2
       MenuBar menuBar = new MenuBar();
       menuBar.Items.Add(fileMenuItem);
       Menu = menuBar;
-
-      codeTextArea = new TextArea { Font = StandardFont, Text = Runtime.Code(arguments[1]) };
+      codeTextArea = new TextArea {Font = StandardFont, Text = Runtime.Code(arguments[1])};
       codeTreeGridView = NewTreeGridView();
-      callStackListBox = new ListBox { Width = StandardDimension };
-      stackListBox = new ListBox { Width = StandardDimension };
-      outputTextArea = new TextArea { Height = StandardDimension };
-
+      callStackListBox = new ListBox {Width = StandardDimension};
+      stackListBox = new ListBox {Width = StandardDimension};
+      outputTextArea = new TextArea {Height = StandardDimension};
       TabControl codeTabControl = new TabControl();
-      codeTabControl.Pages.Add(new TabPage(codeTreeGridView) { Text = "Tree" });
-      codeTabControl.Pages.Add(new TabPage(codeTextArea) { Text = "Code" });
-
+      codeTabControl.Pages.Add(new TabPage(codeTreeGridView) {Text = "Tree"});
+      codeTabControl.Pages.Add(new TabPage(codeTextArea) {Text = "Code"});
       TableLayout layout = new TableLayout();
-      layout.Rows.Add(new TableRow(stackListBox, new TableCell(new TableLayout(new TableRow(codeTabControl) { ScaleHeight = true }, new TableRow(outputTextArea)), true), callStackListBox));
-
+      layout.Rows.Add(new TableRow(stackListBox, new TableCell(new TableLayout(new TableRow(codeTabControl) {ScaleHeight = true}, new TableRow(outputTextArea)), true), callStackListBox));
       Content = layout;
-
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
 
       // Other initializations:
@@ -79,11 +73,6 @@ namespace Atom2
       timer.Interval = 0.3;
       timer.Elapsed += OnElapsed;
       timer.Start();
-    }
-
-    private void OnOutput(object sender, string message)
-    {
-      outputTextArea.Append(message + Environment.NewLine);
     }
 
     public static void Run(string[] arguments)
@@ -146,6 +135,11 @@ namespace Atom2
       runCommand.Enabled = !running;
       continueCommand.Enabled = paused;
       stepCommand.Enabled = paused;
+    }
+
+    private void OnOutput(object sender, string message)
+    {
+      outputTextArea.Append(message + Environment.NewLine);
     }
 
     private async void OnRun(object sender, EventArgs arguments)

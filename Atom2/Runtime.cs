@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -108,7 +107,7 @@ namespace Atom2
           Push("System.Windows.Forms");
           Reference();
         }
-        CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)), out _);
+        CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)));
         Evaluate(CurrentRootItems);
         return null;
       }
@@ -279,14 +278,37 @@ namespace Atom2
 
     private void Evaluate(object item)
     {
-
       Items items = item.ToItems();
-      CallEnvironments.Push(new CallEnvironment { Items = items, Scope = putWords.CurrentScope });
+      CallEnvironments.Push(new CallEnvironment {Items = items, Scope = putWords.CurrentScope});
       foreach (object currentItem in items)
       {
         CallEnvironments.Peek().CurrentItem = currentItem;
         Stepping?.Invoke();
-        Process(currentItem);
+        switch (TryGetWord(currentItem, out object word))
+        {
+          case WordKind.Set:
+            switch (word)
+            {
+              case Action actionValue:
+                actionValue.Invoke();
+                break;
+              case Items itemsValue:
+                putWords.EnterScope();
+                Evaluate(itemsValue);
+                putWords.LeaveScope();
+                break;
+              default:
+                Evaluate(word);
+                break;
+            }
+            break;
+          case WordKind.Put:
+            Push(word);
+            break;
+          default:
+            Push(currentItem);
+            break;
+        }
       }
       CallEnvironments.Pop();
     }
@@ -330,18 +352,16 @@ namespace Atom2
       }
     }
 
-    private Items GetItems(Tokens tokens, out object lastToken)
+    private Items GetItems(Tokens tokens)
     {
-      lastToken = "";
       Items result = new Items();
       while (0 < tokens.Count)
       {
         object currentToken = tokens.Dequeue();
-        lastToken = currentToken;
         if (blockBeginTokens.Contains(currentToken))
         {
           OnBlockBegin(currentToken);
-          result.Add(GetItems(tokens, out object currentLastToken));
+          result.Add(GetItems(tokens));
         }
         else if (blockEndTokens.Contains(currentToken))
         {
@@ -481,34 +501,6 @@ namespace Atom2
       return Stack.Pop();
     }
 
-    private void Process(object item)
-    {
-      switch (TryGetWord(item, out object word))
-      {
-        case WordKind.Set:
-          switch (word)
-          {
-            case Action action:
-              action.Invoke();
-              return;
-            case Items items:
-              putWords.EnterScope();
-              Evaluate(items);
-              putWords.LeaveScope();
-              return;
-            default:
-              Evaluate(word);
-              return;
-          }
-        case WordKind.Put:
-          Push(word);
-          return;
-        default:
-          Push(item);
-          return;
-      }
-    }
-
     private void Push(object item)
     {
       Stack.Push(item);
@@ -641,7 +633,7 @@ namespace Atom2
     }
 
     public event Action Breaking;
-    public event Action Stepping;
     public event OutputEventHandler Outputting;
+    public event Action Stepping;
   }
 }
