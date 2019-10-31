@@ -9,7 +9,7 @@ namespace Atom2
 {
   public sealed class Editor : Form
   {
-    private const int StandardDimension = 350;
+    private const int StandardDimension = 300;
     private static readonly Application Application = new Application();
     private static readonly Font StandardFont = new Font("Arial", 8);
     private readonly ListBox callStackListBox;
@@ -29,12 +29,6 @@ namespace Atom2
 
     private Editor(params string[] arguments)
     {
-      // Runtime:
-      runtime = new Runtime(Application, arguments[0]);
-      runtime.Breaking += OnBreaking;
-      runtime.Stepping += OnStepping;
-      runtime.Outputting += OnOutput;
-
       // Menu:
       Title = "Atom2";
       WindowState = WindowState.Maximized;
@@ -69,10 +63,22 @@ namespace Atom2
       // Other initializations:
       runtime = new Runtime(Application, arguments[0]);
       runtime.Breaking += OnBreaking;
+      runtime.Outputting += OnOutputting;
       runtime.Stepping += OnStepping;
+      runtime.Terminating += OnTerminating;
       timer.Interval = 0.3;
       timer.Elapsed += OnElapsed;
       timer.Start();
+    }
+
+    private void OnTerminating(object sender, Exception exception)
+    {
+      running = false;
+      if (exception != null)
+      {
+        outputTextArea.Append(exception.Message + Environment.NewLine);
+        UpdatePauseUI();
+      }
     }
 
     public static void Run(string[] arguments)
@@ -137,21 +143,15 @@ namespace Atom2
       stepCommand.Enabled = paused;
     }
 
-    private void OnOutput(object sender, string message)
+    private void OnOutputting(object sender, string message)
     {
       outputTextArea.Append(message + Environment.NewLine);
     }
 
-    private async void OnRun(object sender, EventArgs arguments)
+    private void OnRun(object sender, EventArgs arguments)
     {
       running = true;
-      Exception exception = await Task<Exception>.Factory.StartNew(DoRun, codeTextArea.Text);
-      running = false;
-      if (exception != null)
-      {
-        outputTextArea.Append(exception.Message + Environment.NewLine);
-        UpdatePauseUI();
-      }
+      Task<Exception>.Factory.StartNew(DoRun, codeTextArea.Text);
     }
 
     private void OnStep(object sender, EventArgs e)

@@ -1,4 +1,4 @@
-﻿load-file System.txt pragma
+load-file System.txt pragma
 
 Form new
 : Controls

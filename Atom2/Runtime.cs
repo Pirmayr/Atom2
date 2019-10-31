@@ -14,7 +14,8 @@ using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace Atom2
 {
-  public delegate void OutputEventHandler(object sender, string message);
+  public delegate void OutputtingEventHandler(object sender, string message);
+  public delegate void TerminatingEventHandler(object sender, Exception exception);
 
   public sealed class Runtime
   {
@@ -85,6 +86,14 @@ namespace Atom2
       setWords.Add(new Name {Value = "show"}, new Action(Show));
       setWords.Add(new Name {Value = "hello"}, new Action(Hello));
       setWords.Add(new Name {Value = "to-name"}, new Action(ToName));
+
+      setWords[new Name { Value = "new" }] = new Items { "new", executeName };
+      Push("mscorlib, Version=4.0.0.0, Culture=neutral");
+      Push("System.Reflection");
+      Reference();
+      Push("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
+      Push("System.Windows.Forms");
+      Reference();
     }
 
     public static string Code(string codeOrFilename)
@@ -93,28 +102,36 @@ namespace Atom2
       return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
     }
 
-    public Exception Run(string codeOrPath, bool referenceAssemblies = false)
+    public Exception Run(string codeOrPath, bool terminating = false)
     {
       try
       {
-        if (referenceAssemblies)
-        {
-          setWords[new Name {Value = "new"}] = new Items {"new", executeName};
-          Push("mscorlib, Version=4.0.0.0, Culture=neutral");
-          Push("System.Reflection");
-          Reference();
-          Push("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
-          Push("System.Windows.Forms");
-          Reference();
-        }
         CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)));
         Evaluate(CurrentRootItems);
+        if (terminating)
+        {
+          InvokeTerminating(null);
+        }
         return null;
       }
       catch (Exception exception)
       {
+        if (terminating)
+        {
+          InvokeTerminating(exception);
+        }
         return exception;
       }
+    }
+
+    void InvokeTerminating(Exception exception)
+    {
+      Application.Invoke(() => DoInvokeTerminating(exception));
+    }
+
+    void DoInvokeTerminating(Exception exception)
+    {
+      Terminating?.Invoke(this, exception);
     }
 
     private static void DoNothing() { }
@@ -640,7 +657,8 @@ namespace Atom2
     }
 
     public event Action Breaking;
-    public event OutputEventHandler Outputting;
+    public event OutputtingEventHandler Outputting;
     public event Action Stepping;
+    public event TerminatingEventHandler Terminating;
   }
 }
