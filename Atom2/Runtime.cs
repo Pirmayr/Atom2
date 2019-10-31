@@ -336,7 +336,14 @@ namespace Atom2
     private void Execute()
     {
       object memberName = Pop();
-      EvaluateAndSplit();
+      if (Stack.Peek() is Items)
+      {
+        EvaluateAndSplit();
+      }
+      else
+      {
+        Push(0);
+      }
       Push(memberName);
       if (Application.Invoke(DoExecute) is Exception exception)
       {

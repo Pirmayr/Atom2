@@ -1,7 +1,12 @@
 ﻿load-file System.txt pragma
 
-(
-  Form ((() Controls (((RichTextBox (((true) Multiline) ((DockStyle () Fill) Dock)) create) break Add) ((Button (((DockStyle () Top) Dock) (("Press") Text)) create) Add)) apply)) create
-) (new-main-form) set
-
-new-main-form () ShowDialog
+Form new
+: Controls
+  : (RichTextBox new 
+    : (DockStyle Fill) Dock) 
+    Add
+    (Button new 
+    : ("Press") Text
+    : (DockStyle Top) Dock) 
+    Add
+ShowDialog
