@@ -1,12 +1,30 @@
 load-file System.txt pragma
 
+reference "System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Windows.Forms" pragma
+reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" "System.Drawing" pragma
+
+1 10 range (show) map
+
 Form new
-: Controls
-  : (RichTextBox new 
-    : (DockStyle Fill) Dock) 
-    Add
-    (Button new 
-    : ("Press") Text
-    : (DockStyle Top) Dock) 
-    Add
+: TextBox new
+  : (textBox) put
+  : (true) Multiline
+  : (Color LightGreen) BackColor
+  : (DockStyle Fill) Dock
+  addControl
+: Button new 
+  : ("Press") Text
+  : (DockStyle Top) Dock
+  : (textBox) (textBox ("Hello World") AppendText) (Click) addEventHandler 
+  addControl
+: MenuStrip new 
+  : Items ("File") Add
+    : "New" empty ("New" show) addMenuItem
+    : "Open" empty ("Open" show) addMenuItem
+      "Close" empty ("Close" show) addMenuItem
+  : Items ("Edit") Add
+    : "Cut" empty ("Cut" show) addMenuItem
+    : "Copy" empty ("Copy" show) addMenuItem
+      "Paste" empty ("Paste" show) addMenuItem
+  addControl
 ShowDialog

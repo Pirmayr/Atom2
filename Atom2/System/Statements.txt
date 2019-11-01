@@ -12,17 +12,7 @@
 )
 (for) set
 
-(
-  (array body) put
-  (array) get () GetEnumerator
-  (enumerator) put
-  (
-    (enumerator) get () Current (body) get evaluate
-  )
-  ((enumerator) get () MoveNext)
-  while
-)
-(map) set
+((body) put empty GetEnumerator (enumerator) put (enumerator Current body evaluate) (enumerator MoveNext) while) (map) set
 
 (
   (value bodies) put
@@ -33,16 +23,16 @@
   )
   ((enumerator) get () MoveNext)
   while
-) (apply) set
+)
+(apply) set
 
 (
-  (value bodies) put
-  (bodies) get () GetEnumerator
-  (enumerator) put
+  (from to) put
+  empty
   (
-    (value) get (enumerator) get () Current evaluate 
+    from add from 1 add (from) put
   )
-  ((enumerator) get () MoveNext)
-  while
-  (value) get
-) (initialize) set
+  (from to less-or-equal)
+  while  
+)
+(range) set

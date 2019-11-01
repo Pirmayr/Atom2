@@ -1,1 +1,13 @@
-﻿(1 add) (increment) set
+﻿ExpressionType Increment make-unary-action (increment) set
+ExpressionType Decrement make-unary-action (decrement) set
+
+ExpressionType Equal make-binary-action (equal) set
+ExpressionType NotEqual make-binary-action (not-equal) set
+ExpressionType LessThanOrEqual make-binary-action (less-or-equal) set
+ExpressionType LessThan make-binary-action (less) set
+ExpressionType GreaterThanOrEqual make-binary-action (greater-or-equal) set
+ExpressionType GreaterThan make-binary-action (greater) set
+ExpressionType Add make-binary-action (add) set
+ExpressionType Subtract make-binary-action (subtract) set
+ExpressionType Multiply make-binary-action (multiply) set
+ExpressionType Divide make-binary-action (divide) set

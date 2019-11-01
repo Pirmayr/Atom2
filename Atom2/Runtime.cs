@@ -14,9 +14,6 @@ using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace Atom2
 {
-  public delegate void OutputtingEventHandler(object sender, string message);
-  public delegate void TerminatingEventHandler(object sender, Exception exception);
-
   public sealed class Runtime
   {
     private const char Apostrophe = '\'';
@@ -24,6 +21,7 @@ namespace Atom2
     private const char LeftAngle = '<';
     private const char LeftParenthesis = '(';
     private const string LoadFilePragma = "load-file";
+    private const string ReferencePragma = "reference";
     private const char Pipe = '|';
     private const string PragmaToken = "pragma";
     private const char Quote = '"';
@@ -37,13 +35,14 @@ namespace Atom2
     private readonly Name pipeName = new Name {Value = Pipe.ToString()};
     private readonly Words putWords = new Words();
     private readonly Words setWords = new Words();
+    private readonly StringHashSet pragmas = new StringHashSet { LoadFilePragma, ReferencePragma };
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
     private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe};
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
     public Stack Stack { get; } = new Stack();
     private static string BaseDirectory { get; set; }
     private Application Application { get; set; }
-    private Items CurrentRootItems { get; set; }
+    public Items CurrentRootItems { get; set; }
 
     public Runtime(Application application, string baseDirectory)
     {
@@ -53,29 +52,14 @@ namespace Atom2
       BaseDirectory = baseDirectory;
       setWords.Add(new Name {Value = "trace"}, new Action(Trace));
       setWords.Add(new Name {Value = "break"}, new Action(Break));
-      setWords.Add(new Name {Value = ")"}, new Action(DoNothing));
-      setWords.Add(new Name {Value = ">"}, new Action(Execute));
       setWords.Add(new Name {Value = "execute"}, new Action(Execute));
-      setWords.Add(new Name {Value = "|"}, new Action(Put));
-      setWords.Add(new Name {Value = "\'"}, new Action(DoNothing));
-      setWords.Add(new Name {Value = "ones-complement"}, UnaryAction(ExpressionType.OnesComplement));
-      setWords.Add(new Name {Value = "equal"}, BinaryAction(ExpressionType.Equal));
-      setWords.Add(new Name {Value = "not-equal"}, BinaryAction(ExpressionType.NotEqual));
-      setWords.Add(new Name {Value = "less-or-equal"}, BinaryAction(ExpressionType.LessThanOrEqual));
-      setWords.Add(new Name {Value = "less"}, BinaryAction(ExpressionType.LessThan));
-      setWords.Add(new Name {Value = "greater-or-equal"}, BinaryAction(ExpressionType.GreaterThanOrEqual));
-      setWords.Add(new Name {Value = "greater"}, BinaryAction(ExpressionType.GreaterThan));
-      setWords.Add(new Name {Value = "add"}, BinaryAction(ExpressionType.Add));
-      setWords.Add(new Name {Value = "subtract"}, BinaryAction(ExpressionType.Subtract));
-      setWords.Add(new Name {Value = "multiply"}, BinaryAction(ExpressionType.Multiply));
-      setWords.Add(new Name {Value = "divide"}, BinaryAction(ExpressionType.Divide));
       setWords.Add(new Name {Value = "put"}, new Action(Put));
       setWords.Add(new Name {Value = "set"}, new Action(Set));
       setWords.Add(new Name {Value = "get"}, new Action(Get));
       setWords.Add(new Name {Value = "if"}, new Action(If));
       setWords.Add(new Name {Value = "while"}, new Action(While));
-      setWords.Add(new Name {Value = "evaluate"}, new Action(Evaluate));
       setWords.Add(new Name {Value = "length"}, new Action(Length));
+      setWords.Add(new Name {Value = "evaluate"}, new Action(Evaluate));
       setWords.Add(new Name {Value = "split"}, new Action(Split));
       setWords.Add(new Name {Value = "evaluate-and-split"}, new Action(EvaluateAndSplit));
       setWords.Add(new Name {Value = "join"}, new Action(Join));
@@ -86,14 +70,23 @@ namespace Atom2
       setWords.Add(new Name {Value = "show"}, new Action(Show));
       setWords.Add(new Name {Value = "hello"}, new Action(Hello));
       setWords.Add(new Name {Value = "to-name"}, new Action(ToName));
+      setWords.Add(new Name { Value = "make-binary-action" }, new Action(MakeBinaryAction));
+      setWords.Add(new Name { Value = "make-unary-action" }, new Action(MakeUnaryAction));
 
       setWords[new Name { Value = "new" }] = new Items { "new", executeName };
-      Push("mscorlib, Version=4.0.0.0, Culture=neutral");
-      Push("System.Reflection");
-      Reference();
-      Push("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
-      Push("System.Windows.Forms");
-      Reference();
+
+      Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System.Reflection");
+      Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
+    }
+
+    private void MakeUnaryAction()
+    {
+      Push(UnaryAction((ExpressionType) Pop()));
+    }
+
+    private void MakeBinaryAction()
+    {
+      Push(BinaryAction((ExpressionType) Pop()));
     }
 
     public static string Code(string codeOrFilename)
@@ -102,13 +95,21 @@ namespace Atom2
       return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
     }
 
-    public Exception Run(string codeOrPath, bool terminating = false)
+    public Exception Run(string codeOrPath, bool evaluate, bool isOutermostRun)
     {
       try
       {
         CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)));
-        Evaluate(CurrentRootItems);
-        if (terminating)
+        if (evaluate)
+        {
+          if (isOutermostRun)
+          {
+            Stack.Clear();
+            CallEnvironments.Clear();
+          }
+          Evaluate(CurrentRootItems);
+        }
+        if (isOutermostRun)
         {
           InvokeTerminating(null);
         }
@@ -116,7 +117,7 @@ namespace Atom2
       }
       catch (Exception exception)
       {
-        if (terminating)
+        if (isOutermostRun)
         {
           InvokeTerminating(exception);
         }
@@ -403,6 +404,8 @@ namespace Atom2
     private Tokens GetTokens(string code)
     {
       Tokens result = new Tokens();
+      Tokens currentPragmaTokens = new Tokens();
+      Tokens currentTokens = result;
       Characters characters = new Characters(code.ToCharArray());
       for (char nextCharacter = NextCharacter(characters); nextCharacter != Eof; nextCharacter = NextCharacter(characters))
       {
@@ -413,7 +416,7 @@ namespace Atom2
             break;
           case Quote:
             characters.Dequeue();
-            result.Enqueue(GetToken(characters, stringStopCharacters));
+            currentTokens.Enqueue(GetToken(characters, stringStopCharacters));
             characters.Dequeue();
             break;
           case LeftParenthesis:
@@ -423,17 +426,24 @@ namespace Atom2
           case Pipe:
           case Apostrophe:
             characters.Dequeue();
-            result.Enqueue(ToObject(nextCharacter));
+            currentTokens.Enqueue(ToObject(nextCharacter));
             break;
           default:
             string currentToken = GetToken(characters, tokenStopCharacters);
-            if (currentToken == PragmaToken)
+            if (pragmas.Contains(currentToken))
             {
-              HandlePragma(result);
+              currentTokens = currentPragmaTokens;
+              currentTokens.Enqueue(ToObject(currentToken));
+            }
+            else if (currentToken == PragmaToken)
+            {
+              currentTokens = result;
+              HandlePragma(currentPragmaTokens);
+              currentPragmaTokens.Clear();
             }
             else
             {
-              result.Enqueue(ToObject(currentToken));
+              currentTokens.Enqueue(ToObject(currentToken));
             }
             break;
         }
@@ -447,10 +457,13 @@ namespace Atom2
       switch (pragma)
       {
         case LoadFilePragma:
-          if (Run(((Name) tokens.Dequeue()).Value) is Exception exception)
+          if (Run(((Name) tokens.Dequeue()).Value, true, false) is Exception exception)
           {
             throw exception;
           }
+          break;
+        case ReferencePragma:
+          Reference((string) tokens.Dequeue(), (string) tokens.Dequeue());
           break;
       }
     }
@@ -538,11 +551,9 @@ namespace Atom2
       }
     }
 
-    private void Reference()
+    private void Reference(string assemblyName, string requestedNamespace)
     {
       HashSet<string> names = new HashSet<string>();
-      string requestedNamespace = (string) Pop();
-      string assemblyName = (string) Pop();
       foreach (Type currentType in Assembly.Load(assemblyName).GetTypes())
       {
         if (currentType.Namespace == requestedNamespace)

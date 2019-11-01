@@ -6,6 +6,7 @@
 (verbatim) "'" to-name 1 join set
 (split 1 add join) (prepend) set
 (duplicate) (:) set
+(0 join) (empty) set
 
 (() ToString) (to-string) set
 
@@ -15,4 +16,4 @@
 
 ((type initializations) put (type) get () new (initializations) get initialize) (create) set
 
-(|arguments code| arguments evaluate-and-split join 'evaluate' arguments 'put' code split 4 add join) (lambda) set
+((arguments code) put arguments evaluate-and-split join (evaluate) verbatim arguments (put) verbatim code split 4 add join) (lambda) set

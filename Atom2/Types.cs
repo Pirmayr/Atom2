@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Atom2
 {
@@ -8,6 +9,8 @@ namespace Atom2
   }
 
   public sealed class CharHashSet : HashSet<char> { }
+
+  public sealed class StringHashSet : HashSet<string> { }
 
   public sealed class Items : List<object>
   {
@@ -20,6 +23,17 @@ namespace Atom2
       return "(" + string.Join(" ", ToArray()) + ")";
     }
 
+    public static Items operator +(Items a, object b)
+    {
+      a.Add(b);
+      return a;
+    }
+
+    public static Items operator +(object a, Items b)
+    {
+      b.Insert(0, a);
+      return b;
+    }
   }
 
   public sealed class NameHashSet : HashSet<Name> { }
@@ -31,4 +45,7 @@ namespace Atom2
   public sealed class Words : ScopedDictionary<Name, object> { }
 
   public sealed class CallEnvironments : Stack<CallEnvironment> { }
+
+  public delegate void OutputtingEventHandler(object sender, string message);
+  public delegate void TerminatingEventHandler(object sender, Exception exception);
 }

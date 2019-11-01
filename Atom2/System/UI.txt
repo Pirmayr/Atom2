@@ -1,8 +1,7 @@
-﻿(lambda create-event-handler) (createEventHandler) set
-('createEventHandler' 3 join Click) (addClickHandler) set
+﻿((control) put Controls control 1 join Add) (addControl) set
 
-( 
-  |menuItem menuText context clickHandler|
-  menuItem () DropDownItems (menuText) Add context clickHandler addClickHandler
-)
-(addMenuItem) set
+((code) put (sender arguments) (put) verbatim code split 2 add join lambda create-event-handler) (createEventHandler) set
+((event) put (createEventHandler) verbatim 3 join event verbatim evaluate) (addEventHandler) set
+((Click) addEventHandler) (addClickHandler) set
+
+((menuItem menuText context clickHandler) put menuItem DropDownItems (menuText) Add context clickHandler addClickHandler) (addMenuItem) set
