@@ -12,7 +12,14 @@
 )
 (for) set
 
-((body) put empty GetEnumerator (enumerator) put (enumerator Current body evaluate) (enumerator MoveNext) while) (map) set
+(
+  (body) put empty GetEnumerator (enumerator) put
+  (
+    enumerator Current body evaluate
+  )
+  (enumerator MoveNext) while
+)
+(map) set
 
 (
   (value bodies) put
@@ -36,3 +43,26 @@
   while  
 )
 (range) set
+
+(
+  (condition) put empty GetEnumerator (enumerator) put
+  true (result) put
+  (
+    enumerator Current condition evaluate (result) put 
+  )
+  (result enumerator MoveNext and) while
+  result
+)
+(all) set
+
+(
+  (condition) put empty GetEnumerator (enumerator) put
+  false (result) put
+  (
+    enumerator Current condition evaluate (result) put 
+  )
+  (result not enumerator MoveNext and) while
+  result
+)
+(any) set
+

@@ -5,3 +5,5 @@
 ((Click) addEventHandler) (addClickHandler) set
 
 ((menuItem menuText context clickHandler) put menuItem DropDownItems (menuText) Add context clickHandler addClickHandler) (addMenuItem) set
+
+(ShowDialog drop) (showDialog) set

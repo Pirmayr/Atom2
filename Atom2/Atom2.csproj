@@ -74,6 +74,8 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="CallEnvironment.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Items.cs" />
+    <Compile Include="Characters.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="System\System.txt" />

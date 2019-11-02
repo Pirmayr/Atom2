@@ -6,6 +6,7 @@
 (verbatim) "'" to-name 1 join set
 (split 1 add join) (prepend) set
 (duplicate) (:) set
+(drop) (.) set
 (0 join) (empty) set
 
 (() ToString) (to-string) set
