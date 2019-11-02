@@ -3,7 +3,6 @@ load-file System.txt pragma
 reference "System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Windows.Forms" pragma
 reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" "System.Drawing" pragma
 
-(
 (1 10 range (show) map) (newAction) set
 
 Form new
@@ -28,13 +27,10 @@ Form new
     : "Copy" empty ("Copy" show) addMenuItem
       "Paste" empty ("Paste" show) addMenuItem
   addControl
-(ShowDialog)
-
+ShowDialog
 
 ((number) put 2 number decrement range (number swap modulo 0 not-equal) all) (isPrime) set
 
 67 isPrime show
-)
-drop
 
 5.5 Int32 cast show

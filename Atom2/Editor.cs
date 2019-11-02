@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Eto.Drawing;
 using Eto.Forms;
 
 namespace Atom2
@@ -11,10 +10,10 @@ namespace Atom2
   {
     private const int StandardDimension = 300;
     private static readonly Application Application = new Application();
-    private static readonly Font StandardFont = new Font("Arial", 8);
     private readonly ListBox callStackListBox;
     private readonly TreeGridView codeTreeGridView;
     private readonly Command continueCommand;
+    private readonly string currentCode;
     private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
     private readonly TextArea outputTextArea;
     private readonly Command runCommand;
@@ -25,7 +24,6 @@ namespace Atom2
     private bool paused;
     private bool running;
     private bool stepMode;
-    private readonly string currentCode; 
 
     private Editor(params string[] arguments)
     {
@@ -67,18 +65,7 @@ namespace Atom2
       timer.Interval = 0.3;
       timer.Elapsed += OnElapsed;
       timer.Start();
-
       runtime.Run(currentCode, false, true);
-      UpdatePauseUI();
-    }
-
-    private void OnTerminating(object sender, Exception exception)
-    {
-      running = false;
-      if (exception != null)
-      {
-        outputTextArea.Append(exception.Message + Environment.NewLine);
-      }
       UpdatePauseUI();
     }
 
@@ -169,6 +156,16 @@ namespace Atom2
         stepMode = false;
         Pause();
       }
+    }
+
+    private void OnTerminating(object sender, Exception exception)
+    {
+      running = false;
+      if (exception != null)
+      {
+        outputTextArea.Append(exception.Message + Environment.NewLine);
+      }
+      UpdatePauseUI();
     }
 
     private void Pause()

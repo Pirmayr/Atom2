@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -21,28 +22,28 @@ namespace Atom2
     private const char LeftAngle = '<';
     private const char LeftParenthesis = '(';
     private const string LoadFilePragma = "load-file";
-    private const string ReferencePragma = "reference";
     private const char Pipe = '|';
     private const string PragmaToken = "pragma";
     private const char Quote = '"';
+    private const string ReferencePragma = "reference";
     private const char RightAngle = '>';
     private const char RightParenthesis = ')';
     private const char Whitespace = char.MaxValue;
-    private readonly Name apostropheName = new Name { Value = Apostrophe.ToString() };
+    private readonly Name apostropheName = new Name {Value = Apostrophe.ToString()};
     private readonly NameHashSet blockBeginTokens;
     private readonly NameHashSet blockEndTokens;
-    private readonly Name executeName = new Name { Value = "execute" };
-    private readonly Name pipeName = new Name { Value = Pipe.ToString() };
+    private readonly Name executeName = new Name {Value = "execute"};
+    private readonly Name pipeName = new Name {Value = Pipe.ToString()};
+    private readonly StringHashSet pragmas = new StringHashSet {LoadFilePragma, ReferencePragma};
     private readonly Words putWords = new Words();
     private readonly Words setWords = new Words();
-    private readonly StringHashSet pragmas = new StringHashSet { LoadFilePragma, ReferencePragma };
-    private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote };
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe };
+    private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe};
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
+    public Items CurrentRootItems { get; private set; }
     public Stack Stack { get; } = new Stack();
     private static string BaseDirectory { get; set; }
     private Application Application { get; set; }
-    public Items CurrentRootItems { get; set; }
 
     public Runtime(Application application, string baseDirectory)
     {
@@ -50,44 +51,32 @@ namespace Atom2
       blockBeginTokens = NewNameHashSet(LeftParenthesis, LeftAngle, Pipe, Apostrophe);
       blockEndTokens = NewNameHashSet(RightParenthesis, RightAngle);
       BaseDirectory = baseDirectory;
-      setWords.Add(new Name { Value = "trace" }, new Action(Trace));
-      setWords.Add(new Name { Value = "break" }, new Action(Break));
-      setWords.Add(new Name { Value = "execute" }, new Action(Execute));
-      setWords.Add(new Name { Value = "put" }, new Action(Put));
-      setWords.Add(new Name { Value = "set" }, new Action(Set));
-      setWords.Add(new Name { Value = "get" }, new Action(Get));
-      setWords.Add(new Name { Value = "if" }, new Action(If));
-      setWords.Add(new Name { Value = "while" }, new Action(While));
-      setWords.Add(new Name { Value = "length" }, new Action(Length));
-      setWords.Add(new Name { Value = "evaluate" }, new Action(Evaluate));
-      setWords.Add(new Name { Value = "split" }, new Action(Split));
-      setWords.Add(new Name { Value = "evaluate-and-split" }, new Action(EvaluateAndSplit));
-      setWords.Add(new Name { Value = "join" }, new Action(Join));
-      setWords.Add(new Name { Value = "cast" }, new Action(Cast));
-      setWords.Add(new Name { Value = "create-event-handler" }, new Action(CreateEventHandler));
-      setWords.Add(new Name { Value = "Runtime" }, typeof(Runtime));
-      setWords.Add(new Name { Value = "runtime" }, this);
-      setWords.Add(new Name { Value = "show" }, new Action(Show));
-      setWords.Add(new Name { Value = "hello" }, new Action(Hello));
-      setWords.Add(new Name { Value = "to-name" }, new Action(ToName));
-      setWords.Add(new Name { Value = "make-binary-action" }, new Action(MakeBinaryAction));
-      setWords.Add(new Name { Value = "make-unary-action" }, new Action(MakeUnaryAction));
-
-      setWords[new Name { Value = "new" }] = new Items { "new", executeName };
-
+      setWords.Add(new Name {Value = "trace"}, new Action(Trace));
+      setWords.Add(new Name {Value = "break"}, new Action(Break));
+      setWords.Add(new Name {Value = "execute"}, new Action(Execute));
+      setWords.Add(new Name {Value = "put"}, new Action(Put));
+      setWords.Add(new Name {Value = "set"}, new Action(Set));
+      setWords.Add(new Name {Value = "get"}, new Action(Get));
+      setWords.Add(new Name {Value = "if"}, new Action(If));
+      setWords.Add(new Name {Value = "while"}, new Action(While));
+      setWords.Add(new Name {Value = "length"}, new Action(Length));
+      setWords.Add(new Name {Value = "evaluate"}, new Action(Evaluate));
+      setWords.Add(new Name {Value = "split"}, new Action(Split));
+      setWords.Add(new Name {Value = "evaluate-and-split"}, new Action(EvaluateAndSplit));
+      setWords.Add(new Name {Value = "join"}, new Action(Join));
+      setWords.Add(new Name {Value = "cast"}, new Action(Cast));
+      setWords.Add(new Name {Value = "create-event-handler"}, new Action(CreateEventHandler));
+      setWords.Add(new Name {Value = "Runtime"}, typeof(Runtime));
+      setWords.Add(new Name {Value = "runtime"}, this);
+      setWords.Add(new Name {Value = "show"}, new Action(Show));
+      setWords.Add(new Name {Value = "hello"}, new Action(Hello));
+      setWords.Add(new Name {Value = "to-name"}, new Action(ToName));
+      setWords.Add(new Name {Value = "make-binary-action"}, new Action(MakeBinaryAction));
+      setWords.Add(new Name {Value = "make-unary-action"}, new Action(MakeUnaryAction));
+      setWords[new Name {Value = "new"}] = new Items {"new", executeName};
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System.Reflection");
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System");
       Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
-    }
-
-    private void MakeUnaryAction()
-    {
-      Push(UnaryAction((ExpressionType) Pop()));
-    }
-
-    private void MakeBinaryAction()
-    {
-      Push(BinaryAction((ExpressionType) Pop()));
     }
 
     public static string Code(string codeOrFilename)
@@ -126,18 +115,6 @@ namespace Atom2
       }
     }
 
-    void InvokeTerminating(Exception exception)
-    {
-      Application.Invoke(() => DoInvokeTerminating(exception));
-    }
-
-    void DoInvokeTerminating(Exception exception)
-    {
-      Terminating?.Invoke(this, exception);
-    }
-
-    private static void DoNothing() { }
-
     private static string GetCall(Type type, string memberName, object[] arguments)
     {
       string typeName = type == null ? "" : type.Name;
@@ -165,7 +142,7 @@ namespace Atom2
       NameHashSet result = new NameHashSet();
       foreach (object currentArgument in arguments)
       {
-        result.Add(new Name { Value = currentArgument.ToString() });
+        result.Add(new Name {Value = currentArgument.ToString()});
       }
       return result;
     }
@@ -182,11 +159,11 @@ namespace Atom2
       {
         return intValue;
       }
-      if (double.TryParse(token.ToString(), out double doubleValue))
+      if (double.TryParse(token.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double doubleValue))
       {
         return doubleValue;
       }
-      return new Name { Value = token.ToString() };
+      return new Name {Value = token.ToString()};
     }
 
     private Action BinaryAction(ExpressionType expressionType)
@@ -195,7 +172,7 @@ namespace Atom2
       ParameterExpression parameterA = Expression.Parameter(objectType);
       ParameterExpression parameterB = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = { argumentInfo, argumentInfo };
+      CSharpArgumentInfo[] argumentInfos = {argumentInfo, argumentInfo};
       CallSiteBinder binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
@@ -285,6 +262,11 @@ namespace Atom2
       }
     }
 
+    private void DoInvokeTerminating(Exception exception)
+    {
+      Terminating?.Invoke(this, exception);
+    }
+
     private void DoShow()
     {
       MessageBox.Show(Pop().ToString());
@@ -298,7 +280,7 @@ namespace Atom2
     private void Evaluate(object item)
     {
       Items items = item.ToItems();
-      CallEnvironments.Push(new CallEnvironment { Items = items, Scope = putWords.CurrentScope });
+      CallEnvironments.Push(new CallEnvironment {Items = items, Scope = putWords.CurrentScope});
       foreach (object currentItem in items)
       {
         CallEnvironments.Peek().CurrentItem = currentItem;
@@ -480,6 +462,11 @@ namespace Atom2
       }
     }
 
+    private void InvokeTerminating(Exception exception)
+    {
+      Application.Invoke(() => DoInvokeTerminating(exception));
+    }
+
     private void Join()
     {
       Push(new Items(Pop((int) Pop())));
@@ -488,6 +475,16 @@ namespace Atom2
     private void Length()
     {
       Push(((Items) Pop()).Count);
+    }
+
+    private void MakeBinaryAction()
+    {
+      Push(BinaryAction((ExpressionType) Pop()));
+    }
+
+    private void MakeUnaryAction()
+    {
+      Push(UnaryAction((ExpressionType) Pop()));
     }
 
     private void OnBlockBegin(object token)
@@ -559,7 +556,7 @@ namespace Atom2
       {
         if (currentType.Namespace == requestedNamespace)
         {
-          setWords[new Name { Value = currentType.Name }] = currentType;
+          setWords[new Name {Value = currentType.Name}] = currentType;
           foreach (MemberInfo currentMember in currentType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
           {
             bool accept = false;
@@ -584,10 +581,10 @@ namespace Atom2
       }
       foreach (string currentName in names)
       {
-        Name newName = new Name { Value = currentName };
+        Name newName = new Name {Value = currentName};
         if (!setWords.ContainsKey(newName))
         {
-          setWords.Add(newName, new Items { currentName, executeName });
+          setWords.Add(newName, new Items {currentName, executeName});
         }
       }
     }
@@ -618,7 +615,7 @@ namespace Atom2
 
     private void ToName()
     {
-      Push(new Name { Value = Pop().ToString() });
+      Push(new Name {Value = Pop().ToString()});
     }
 
     private void Trace()
@@ -648,7 +645,7 @@ namespace Atom2
       Type objectType = typeof(object);
       ParameterExpression parameter = Expression.Parameter(objectType);
       CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-      CSharpArgumentInfo[] argumentInfos = { argumentInfo };
+      CSharpArgumentInfo[] argumentInfos = {argumentInfo};
       CallSiteBinder binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, objectType, argumentInfos);
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameter);
       LambdaExpression lambda = Expression.Lambda(expression, parameter);
