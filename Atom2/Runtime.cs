@@ -22,6 +22,7 @@ namespace Atom2
     private const char LeftAngle = '<';
     private const char LeftParenthesis = '(';
     private const string LoadFilePragma = "load-file";
+    private const string MemberNameNew = "new";
     private const char Pipe = '|';
     private const string PragmaToken = "pragma";
     private const char Quote = '"';
@@ -51,7 +52,9 @@ namespace Atom2
       blockBeginTokens = NewNameHashSet(LeftParenthesis, LeftAngle, Pipe, Apostrophe);
       blockEndTokens = NewNameHashSet(RightParenthesis, RightAngle);
       BaseDirectory = baseDirectory;
-      setWords.Add(new Name {Value = "trace"}, new Action(Trace));
+      setWords.Add(new Name { Value = "trace" }, new Action(Trace));
+      setWords.Add(new Name { Value = "output" }, new Action(Output));
+      setWords.Add(new Name {Value = "show"}, new Action(Show));
       setWords.Add(new Name {Value = "break"}, new Action(Break));
       setWords.Add(new Name {Value = "execute"}, new Action(Execute));
       setWords.Add(new Name {Value = "put"}, new Action(Put));
@@ -59,7 +62,6 @@ namespace Atom2
       setWords.Add(new Name {Value = "get"}, new Action(Get));
       setWords.Add(new Name {Value = "if"}, new Action(If));
       setWords.Add(new Name {Value = "while"}, new Action(While));
-      setWords.Add(new Name {Value = "length"}, new Action(Length));
       setWords.Add(new Name {Value = "evaluate"}, new Action(Evaluate));
       setWords.Add(new Name {Value = "split"}, new Action(Split));
       setWords.Add(new Name {Value = "evaluate-and-split"}, new Action(EvaluateAndSplit));
@@ -68,15 +70,22 @@ namespace Atom2
       setWords.Add(new Name {Value = "create-event-handler"}, new Action(CreateEventHandler));
       setWords.Add(new Name {Value = "Runtime"}, typeof(Runtime));
       setWords.Add(new Name {Value = "runtime"}, this);
-      setWords.Add(new Name {Value = "show"}, new Action(Show));
-      setWords.Add(new Name {Value = "hello"}, new Action(Hello));
       setWords.Add(new Name {Value = "to-name"}, new Action(ToName));
       setWords.Add(new Name {Value = "make-binary-action"}, new Action(MakeBinaryAction));
       setWords.Add(new Name {Value = "make-unary-action"}, new Action(MakeUnaryAction));
-      setWords[new Name {Value = "new"}] = new Items {"new", executeName};
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System.Reflection");
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System");
       Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
+    }
+
+    private void Output()
+    {
+      Application.Invoke(DoOutput);
+    }
+
+    private void DoOutput()
+    {
+      Outputting.Invoke(this, Pop().ToString());
     }
 
     public static string Code(string codeOrFilename)
@@ -132,11 +141,6 @@ namespace Atom2
       return result;
     }
 
-    private static void Hello()
-    {
-      MessageBox.Show("Hello!");
-    }
-
     private static NameHashSet NewNameHashSet(params object[] arguments)
     {
       NameHashSet result = new NameHashSet();
@@ -177,12 +181,7 @@ namespace Atom2
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
       Delegate function = lambda.Compile();
-      return delegate
-      {
-        var valueA = Pop();
-        var valueB = Pop();
-        Push(function.DynamicInvoke(valueA, valueB));
-      };
+      return delegate { Push(function.DynamicInvoke(Pop(), Pop())); };
     }
 
     private void Break()
@@ -222,7 +221,7 @@ namespace Atom2
         bool hasReturnValue = false;
         switch (memberName)
         {
-          case "new":
+          case MemberNameNew:
             memberName = "";
             hasReturnValue = true;
             bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;

@@ -5,6 +5,9 @@ reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f
 
 (1 10 range (show) map) (newAction) set
 
+((number) put 2 number squareRoot toInt range (number swap modulo 0 not-equal) all) (isPrime) set
+(range ((n) put (n output) (n isPrime) if) map) (dumpPrimes) set
+
 Form new
 : TextBox new
   : (textBox) put
@@ -19,16 +22,11 @@ Form new
   addControl
 : MenuStrip new 
   : Items ("File") Add
-    : "New" empty (newAction) addMenuItem
+    : "New" empty ("New" show) addMenuItem
     : "Open" empty ("Open" show) addMenuItem
       "Close" empty ("Close" show) addMenuItem
-  : Items ("Edit") Add
-    : "Cut" empty ("Cut" show) addMenuItem
-    : "Copy" empty ("Copy" show) addMenuItem
-      "Paste" empty ("Paste" show) addMenuItem
+  : Items ("Test") Add
+    : "New Action" empty (newAction) addMenuItem
+      "Dump Primes" empty (2 100 dumpPrimes) addMenuItem
   addControl
-ShowDialog
-
-((number) put 2 number squareRoot toInt range (number swap modulo 0 not-equal) all) (isPrime) set
-
-2 100 range ((n) put (n trace drop) (n isPrime) if) map
+ShowDialog .
