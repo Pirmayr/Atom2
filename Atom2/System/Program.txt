@@ -29,8 +29,6 @@ Form new
   addControl
 ShowDialog
 
-((number) put 2 number decrement range (number swap modulo 0 not-equal) all) (isPrime) set
+((number) put 2 number squareRoot toInt range (number swap modulo 0 not-equal) all) (isPrime) set
 
-67 isPrime show
-
-5.5 Int32 cast show
+2 100 range ((n) put (n trace drop) (n isPrime) if) map

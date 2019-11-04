@@ -16,3 +16,6 @@ ExpressionType Subtract make-binary-action (subtract) set
 ExpressionType Multiply make-binary-action (multiply) set
 ExpressionType Divide make-binary-action (divide) set
 ExpressionType Modulo make-binary-action (modulo) set
+
+((a b) put Math (a toDouble b toDouble) Pow) (power) set
+(toDouble 0.5 power) (squareRoot) set

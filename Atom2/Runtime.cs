@@ -177,7 +177,12 @@ namespace Atom2
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
       Delegate function = lambda.Compile();
-      return delegate { Push(function.DynamicInvoke(Pop(), Pop())); };
+      return delegate
+      {
+        var valueA = Pop();
+        var valueB = Pop();
+        Push(function.DynamicInvoke(valueA, valueB));
+      };
     }
 
     private void Break()
