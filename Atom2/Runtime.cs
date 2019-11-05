@@ -17,29 +17,23 @@ namespace Atom2
 {
   public sealed class Runtime
   {
-    private const char Apostrophe = '\'';
     private const char Eof = char.MinValue;
-    private const char LeftAngle = '<';
     private const char LeftParenthesis = '(';
     private const string LoadFilePragma = "load-file";
-    private const string MemberNameNew = "new";
-    private const char Pipe = '|';
+    private const string NewMemberName = "new";
     private const string PragmaToken = "pragma";
     private const char Quote = '"';
     private const string ReferencePragma = "reference";
-    private const char RightAngle = '>';
     private const char RightParenthesis = ')';
     private const char Whitespace = char.MaxValue;
-    private readonly Name apostropheName = new Name {Value = Apostrophe.ToString()};
     private readonly NameHashSet blockBeginTokens;
     private readonly NameHashSet blockEndTokens;
     private readonly Name executeName = new Name {Value = "execute"};
-    private readonly Name pipeName = new Name {Value = Pipe.ToString()};
     private readonly StringHashSet pragmas = new StringHashSet {LoadFilePragma, ReferencePragma};
     private readonly Words putWords = new Words();
     private readonly Words setWords = new Words();
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis, LeftAngle, RightAngle, Pipe, Apostrophe};
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis };
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
     public Items CurrentRootItems { get; private set; }
     public Stack Stack { get; } = new Stack();
@@ -49,9 +43,9 @@ namespace Atom2
     public Runtime(Application application, string baseDirectory)
     {
       Application = application;
-      blockBeginTokens = NewNameHashSet(LeftParenthesis, LeftAngle, Pipe, Apostrophe);
-      blockEndTokens = NewNameHashSet(RightParenthesis, RightAngle);
       BaseDirectory = baseDirectory;
+      blockBeginTokens = NewNameHashSet(LeftParenthesis);
+      blockEndTokens = NewNameHashSet(RightParenthesis);
       setWords.Add(new Name { Value = "trace" }, new Action(Trace));
       setWords.Add(new Name { Value = "output" }, new Action(Output));
       setWords.Add(new Name {Value = "show"}, new Action(Show));
@@ -221,7 +215,7 @@ namespace Atom2
         bool hasReturnValue = false;
         switch (memberName)
         {
-          case MemberNameNew:
+          case NewMemberName:
             memberName = "";
             hasReturnValue = true;
             bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;
@@ -372,12 +366,10 @@ namespace Atom2
         object currentToken = tokens.Dequeue();
         if (blockBeginTokens.Contains(currentToken))
         {
-          OnBlockBegin(currentToken);
           result.Add(GetItems(tokens));
         }
         else if (blockEndTokens.Contains(currentToken))
         {
-          OnBlockEnd(currentToken);
           break;
         }
         else
@@ -408,10 +400,6 @@ namespace Atom2
             break;
           case LeftParenthesis:
           case RightParenthesis:
-          case LeftAngle:
-          case RightAngle:
-          case Pipe:
-          case Apostrophe:
             characters.Dequeue();
             currentTokens.Enqueue(ToObject(nextCharacter));
             break;
@@ -489,40 +477,6 @@ namespace Atom2
     private void MakeUnaryAction()
     {
       Push(UnaryAction((ExpressionType) Pop()));
-    }
-
-    private void OnBlockBegin(object token)
-    {
-      if (token is Name name)
-      {
-        if (name.Equals(pipeName))
-        {
-          blockBeginTokens.Remove(pipeName);
-          blockEndTokens.Add(pipeName);
-        }
-        else if (name.Equals(apostropheName))
-        {
-          blockBeginTokens.Remove(apostropheName);
-          blockEndTokens.Add(apostropheName);
-        }
-      }
-    }
-
-    private void OnBlockEnd(object token)
-    {
-      if (token is Name name)
-      {
-        if (name.Equals(pipeName))
-        {
-          blockEndTokens.Remove(pipeName);
-          blockBeginTokens.Add(pipeName);
-        }
-        else if (name.Equals(apostropheName))
-        {
-          blockEndTokens.Remove(apostropheName);
-          blockBeginTokens.Add(apostropheName);
-        }
-      }
     }
 
     private IEnumerable<object> Pop(int count)

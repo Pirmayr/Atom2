@@ -3,10 +3,9 @@ load-file System.txt pragma
 reference "System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Windows.Forms" pragma
 reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" "System.Drawing" pragma
 
-(1 10 range (show) map) (newAction) set
-
-((number) put 2 number squareRoot toInt range (number swap modulo 0 not-equal) all) (isPrime) set
-(range ((n) put (n output) (n isPrime) if) map) (dumpPrimes) set
+(1 10 range (i show) (i) map) (newAction) set
+(range ((a output) (2 a squareRoot toInt range (a b modulo 0 notEqual) (b) all) if) (a) map) (dumpPrimes) set
+("Hello World!" output) (helloWorld) set
 
 Form new
 : TextBox new
@@ -27,6 +26,7 @@ Form new
       "Close" empty ("Close" show) addMenuItem
   : Items ("Test") Add
     : "New Action" empty (newAction) addMenuItem
-      "Dump Primes" empty (2 100 dumpPrimes) addMenuItem
+    : "Dump Primes" empty (2 1000 dumpPrimes) addMenuItem
+      "Hello World" empty (helloWorld) addMenuItem
   addControl
 ShowDialog .

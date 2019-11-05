@@ -2,7 +2,7 @@
 ExpressionType Decrement make-unary-action (decrement) set
 
 ExpressionType Equal make-binary-action (equal) set
-ExpressionType NotEqual make-binary-action (not-equal) set
+ExpressionType NotEqual make-binary-action (notEqual) set
 ExpressionType LessThanOrEqual make-binary-action (less-or-equal) set
 ExpressionType LessThan make-binary-action (less) set
 ExpressionType GreaterThanOrEqual make-binary-action (greater-or-equal) set

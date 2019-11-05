@@ -13,9 +13,9 @@
 (for) set
 
 (
-  (body) put empty GetEnumerator (enumerator) put
+  (body name) put empty GetEnumerator (enumerator) put
   (
-    enumerator Current body evaluate
+    enumerator Current name put body evaluate
   )
   (enumerator MoveNext) while
 )
@@ -45,10 +45,10 @@
 (range) set
 
 (
-  (condition) put empty GetEnumerator (enumerator) put
+  (condition name) put empty GetEnumerator (enumerator) put
   true (result) put
   (
-    enumerator Current condition evaluate (result) put 
+    enumerator Current name put condition evaluate (result) put 
   )
   (result enumerator MoveNext and) while
   result
@@ -56,10 +56,10 @@
 (all) set
 
 (
-  (condition) put empty GetEnumerator (enumerator) put
+  (condition name) put empty GetEnumerator (enumerator) put
   false (result) put
   (
-    enumerator Current condition evaluate (result) put 
+    enumerator Current name put condition evaluate (result) put 
   )
   (result not enumerator MoveNext and) while
   result
