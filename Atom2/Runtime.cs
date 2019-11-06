@@ -33,7 +33,7 @@ namespace Atom2
     private readonly Words putWords = new Words();
     private readonly Words setWords = new Words();
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
-    private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis };
+    private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis};
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
     public Items CurrentRootItems { get; private set; }
     public Stack Stack { get; } = new Stack();
@@ -46,8 +46,8 @@ namespace Atom2
       BaseDirectory = baseDirectory;
       blockBeginTokens = NewNameHashSet(LeftParenthesis);
       blockEndTokens = NewNameHashSet(RightParenthesis);
-      setWords.Add(new Name { Value = "trace" }, new Action(Trace));
-      setWords.Add(new Name { Value = "output" }, new Action(Output));
+      setWords.Add(new Name {Value = "trace"}, new Action(Trace));
+      setWords.Add(new Name {Value = "output"}, new Action(Output));
       setWords.Add(new Name {Value = "show"}, new Action(Show));
       setWords.Add(new Name {Value = "break"}, new Action(Break));
       setWords.Add(new Name {Value = "execute"}, new Action(Execute));
@@ -70,16 +70,6 @@ namespace Atom2
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System.Reflection");
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System");
       Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
-    }
-
-    private void Output()
-    {
-      Application.Invoke(DoOutput);
-    }
-
-    private void DoOutput()
-    {
-      Outputting.Invoke(this, Pop().ToString());
     }
 
     public static string Code(string codeOrFilename)
@@ -153,6 +143,7 @@ namespace Atom2
 
     private static object ToObject(object token)
     {
+      /*
       if (int.TryParse(token.ToString(), out int intValue))
       {
         return intValue;
@@ -161,6 +152,13 @@ namespace Atom2
       {
         return doubleValue;
       }
+      */
+
+      if (decimal.TryParse(token.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal decimalValue))
+      {
+        return decimalValue;
+      }
+
       return new Name {Value = token.ToString()};
     }
 
@@ -175,7 +173,12 @@ namespace Atom2
       DynamicExpression expression = Expression.Dynamic(binder, objectType, parameterB, parameterA);
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
       Delegate function = lambda.Compile();
-      return delegate { Push(function.DynamicInvoke(Pop(), Pop())); };
+      return delegate
+      {
+        object a = Pop();
+        object b = Pop();
+        Push(function.DynamicInvoke(a, b));
+      };
     }
 
     private void Break()
@@ -263,6 +266,11 @@ namespace Atom2
     private void DoInvokeTerminating(Exception exception)
     {
       Terminating?.Invoke(this, exception);
+    }
+
+    private void DoOutput()
+    {
+      Outputting?.Invoke(this, Pop().ToString());
     }
 
     private void DoShow()
@@ -461,12 +469,7 @@ namespace Atom2
 
     private void Join()
     {
-      Push(new Items(Pop((int) Pop())));
-    }
-
-    private void Length()
-    {
-      Push(((Items) Pop()).Count);
+      Push(new Items(Pop(Convert.ToInt32(Pop()))));
     }
 
     private void MakeBinaryAction()
@@ -477,6 +480,11 @@ namespace Atom2
     private void MakeUnaryAction()
     {
       Push(UnaryAction((ExpressionType) Pop()));
+    }
+
+    private void Output()
+    {
+      Application.Invoke(DoOutput);
     }
 
     private IEnumerable<object> Pop(int count)

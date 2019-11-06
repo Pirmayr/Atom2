@@ -19,3 +19,5 @@ ExpressionType Modulo make-binary-action (modulo) set
 
 ((a b) put Math (a toDouble b toDouble) Pow) (power) set
 (toDouble 0.5 power) (squareRoot) set
+
+((n) put (1) (n n decrement factorial multiply) n 1 equal if-else) (factorial) set
