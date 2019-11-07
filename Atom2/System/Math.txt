@@ -18,8 +18,8 @@ ExpressionType Divide make-binary-action (divide) set
 ExpressionType Modulo make-binary-action (modulo) set
 
 ((a b) put Math (a toDouble b toDouble) Pow) (power) set
-(toDouble 0.5 power) (squareRoot) set
+(0.5 power) (squareRoot) set
 
-(range ((a output) (2 a squareRoot toInt range (a b modulo 0 notEqual) (b) all) if) (a) map) (dumpPrimes) set
+(range ((a " " add output) (2 a squareRoot toInt range (a b modulo 0 notEqual) (b) all) if) (a) map) (dumpPrimes) set
 
 ((n) put (1) (n n decrement factorial multiply) n 1 equal if-else) (factorial) set

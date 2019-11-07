@@ -9,9 +9,6 @@ using System.Runtime.CompilerServices;
 using Eto.Forms;
 using Microsoft.CSharp.RuntimeBinder;
 using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
-using MessageBox = System.Windows.Forms.MessageBox;
-
-#pragma warning disable 618
 
 namespace Atom2
 {
@@ -26,6 +23,7 @@ namespace Atom2
     private const string ReferencePragma = "reference";
     private const char RightParenthesis = ')';
     private const char Whitespace = char.MaxValue;
+
     private readonly NameHashSet blockBeginTokens;
     private readonly NameHashSet blockEndTokens;
     private readonly Name executeName = new Name {Value = "execute"};
@@ -34,18 +32,23 @@ namespace Atom2
     private readonly Words setWords = new Words();
     private readonly CharHashSet stringStopCharacters = new CharHashSet {Eof, Quote};
     private readonly CharHashSet tokenStopCharacters = new CharHashSet {Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis};
+
+    private bool isInEvaluationMode;
+
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
     public Items CurrentRootItems { get; private set; }
     public Stack Stack { get; } = new Stack();
-    private static string BaseDirectory { get; set; }
+    private string BaseDirectory { get; set; }
     private Application Application { get; set; }
 
     public Runtime(Application application, string baseDirectory)
     {
       Application = application;
       BaseDirectory = baseDirectory;
+
       blockBeginTokens = NewNameHashSet(LeftParenthesis);
       blockEndTokens = NewNameHashSet(RightParenthesis);
+
       setWords.Add(new Name {Value = "trace"}, new Action(Trace));
       setWords.Add(new Name {Value = "output"}, new Action(Output));
       setWords.Add(new Name {Value = "show"}, new Action(Show));
@@ -67,12 +70,13 @@ namespace Atom2
       setWords.Add(new Name {Value = "to-name"}, new Action(ToName));
       setWords.Add(new Name {Value = "make-binary-action"}, new Action(MakeBinaryAction));
       setWords.Add(new Name {Value = "make-unary-action"}, new Action(MakeUnaryAction));
+
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System.Reflection");
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System");
       Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
     }
 
-    public static string Code(string codeOrFilename)
+    public string Code(string codeOrFilename)
     {
       string path = BaseDirectory + "/" + codeOrFilename;
       return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
@@ -82,8 +86,9 @@ namespace Atom2
     {
       try
       {
+        isInEvaluationMode = evaluate;
         CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)));
-        if (evaluate)
+        if (isInEvaluationMode)
         {
           if (isOutermostRun)
           {
@@ -91,10 +96,10 @@ namespace Atom2
             CallEnvironments.Clear();
           }
           Evaluate(CurrentRootItems);
-        }
-        if (isOutermostRun)
-        {
-          InvokeTerminating(null);
+          if (isOutermostRun)
+          {
+            InvokeTerminating(null);
+          }
         }
         return null;
       }
@@ -433,7 +438,7 @@ namespace Atom2
       switch (pragma)
       {
         case LoadFilePragma:
-          if (Run(((Name) tokens.Dequeue()).Value, true, false) is Exception exception)
+          if (Run(((Name) tokens.Dequeue()).Value, isInEvaluationMode, false) is Exception exception)
           {
             throw exception;
           }

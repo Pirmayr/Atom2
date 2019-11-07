@@ -21,7 +21,6 @@ namespace Atom2
     private readonly ListBox stackListBox;
     private readonly Command stepCommand;
     private readonly UITimer timer = new UITimer();
-    private readonly UITimer runTimer = new UITimer();
     private bool paused;
     private bool running;
     private bool stepMode;
@@ -29,7 +28,7 @@ namespace Atom2
     private Editor(params string[] arguments)
     {
       runtime = new Runtime(Application, arguments[0]);
-      currentCode = Runtime.Code(arguments[1]);
+      currentCode = runtime.Code(arguments[1]);
 
       // Menu:
       Title = "Atom2";
@@ -68,16 +67,6 @@ namespace Atom2
       timer.Start();
       runtime.Run(currentCode, false, true);
       UpdatePauseUI();
-      runTimer.Interval = 0.1;
-      runTimer.Elapsed += OnRunElapsed;
-      runTimer.Start();
-    }
-
-    private void OnRunElapsed(object sender, EventArgs e)
-    {
-      runTimer.Stop();
-      running = true;
-      Task<Exception>.Factory.StartNew(DoRun, currentCode);
     }
 
     public static void Run(string[] arguments)
@@ -145,7 +134,7 @@ namespace Atom2
 
     private void OnOutputting(object sender, string message)
     {
-      outputTextArea.Append(message + Environment.NewLine);
+      outputTextArea.Append(message);
     }
 
     private void OnRun(object sender, EventArgs arguments)

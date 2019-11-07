@@ -4,12 +4,12 @@ reference "System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToke
 reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" "System.Drawing" pragma
 
 (1 10 range (i show) (i) map) (mapTest) set
-(2 100000 dumpPrimes) (primesTest) set
+(2 1000 dumpPrimes "done" output) (primesTest) set
 (20.0 factorial show) (factorialTest) set
 ("Hello World!" output) (outputTest) set
 (1 show 100000 newArray (array) put (array (true i) SetValue) (i) 0 99999 1 for 2 show) (arrayTest) set
 
-(Form new
+Form new
 : TextBox new
   : (textBox) put
   : (true) Multiline
@@ -27,12 +27,10 @@ reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f
     : "Open" empty ("Open" show) addMenuItem
       "Close" empty ("Close" show) addMenuItem
   : Items ("Test") Add
-    : "New Action" empty (mapTest) addMenuItem
+    : "Map Test" empty (mapTest) addMenuItem
     : "Dump Primes" empty (primesTest) addMenuItem
     : "Factorial Test" empty (factorialTest) addMenuItem
     : "Hello World" empty (outputTest) addMenuItem
       "Array Test" empty (arrayTest) addMenuItem
   addControl
-ShowDialog) .
-
-primesTest
+ShowDialog .
