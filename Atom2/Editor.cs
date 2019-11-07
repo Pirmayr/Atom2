@@ -21,6 +21,7 @@ namespace Atom2
     private readonly ListBox stackListBox;
     private readonly Command stepCommand;
     private readonly UITimer timer = new UITimer();
+    private readonly UITimer runTimer = new UITimer();
     private bool paused;
     private bool running;
     private bool stepMode;
@@ -67,6 +68,16 @@ namespace Atom2
       timer.Start();
       runtime.Run(currentCode, false, true);
       UpdatePauseUI();
+      runTimer.Interval = 0.1;
+      runTimer.Elapsed += OnRunElapsed;
+      runTimer.Start();
+    }
+
+    private void OnRunElapsed(object sender, EventArgs e)
+    {
+      runTimer.Stop();
+      running = true;
+      Task<Exception>.Factory.StartNew(DoRun, currentCode);
     }
 
     public static void Run(string[] arguments)
