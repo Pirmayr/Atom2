@@ -143,7 +143,6 @@ namespace Atom2
 
     private static object ToObject(object token)
     {
-      /*
       if (int.TryParse(token.ToString(), out int intValue))
       {
         return intValue;
@@ -151,12 +150,6 @@ namespace Atom2
       if (double.TryParse(token.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double doubleValue))
       {
         return doubleValue;
-      }
-      */
-
-      if (decimal.TryParse(token.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal decimalValue))
-      {
-        return decimalValue;
       }
 
       return new Name {Value = token.ToString()};
