@@ -33,7 +33,6 @@ namespace Atom2
           return true;
         }
       }
-
       return false;
     }
 
@@ -56,7 +55,6 @@ namespace Atom2
           return true;
         }
       }
-
       value = default;
       return false;
     }

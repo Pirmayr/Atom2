@@ -88,7 +88,6 @@
           executingTreeGridViewItem = newTreeViewItem;
         }
       }
-
       return result;
     }
 
@@ -167,7 +166,6 @@
       {
         outputTextArea.Append(exception.Message + Environment.NewLine);
       }
-
       UpdatePauseUI();
     }
 

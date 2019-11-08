@@ -8,8 +8,11 @@ namespace Atom2
   using System.Linq.Expressions;
   using System.Reflection;
   using System.Runtime.CompilerServices;
+
   using Eto.Forms;
+
   using Microsoft.CSharp.RuntimeBinder;
+
   using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 
   public sealed class Runtime
@@ -103,14 +106,12 @@ namespace Atom2
             Stack.Clear();
             CallEnvironments.Clear();
           }
-
           Evaluate(CurrentRootItems);
           if (isOutermostRun)
           {
             InvokeTerminating(null);
           }
         }
-
         return null;
       }
       catch (Exception exception)
@@ -119,7 +120,6 @@ namespace Atom2
         {
           InvokeTerminating(exception);
         }
-
         return exception;
       }
     }
@@ -138,7 +138,6 @@ namespace Atom2
       {
         result += characters.Dequeue();
       }
-
       return result;
     }
 
@@ -149,7 +148,6 @@ namespace Atom2
       {
         result.Add(new Name { Value = currentArgument.ToString() });
       }
-
       return result;
     }
 
@@ -165,12 +163,10 @@ namespace Atom2
       {
         return intValue;
       }
-
       if (double.TryParse(token.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double doubleValue))
       {
         return doubleValue;
       }
-
       return new Name { Value = token.ToString() };
     }
 
@@ -260,7 +256,6 @@ namespace Atom2
                   break;
               }
             }
-
             break;
         }
         object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
@@ -268,7 +263,6 @@ namespace Atom2
         {
           Push(invokeResult);
         }
-
         return null;
       }
       catch (Exception exception)
@@ -331,7 +325,6 @@ namespace Atom2
             break;
         }
       }
-
       CallEnvironments.Pop();
     }
 
@@ -366,7 +359,6 @@ namespace Atom2
       {
         Push(0);
       }
-
       Push(memberName);
       if (Invoke(DoExecute) is Exception exception)
       {
@@ -401,7 +393,6 @@ namespace Atom2
           result.Add(currentToken);
         }
       }
-
       return result;
     }
 
@@ -445,11 +436,9 @@ namespace Atom2
             {
               currentTokens.Enqueue(ToObject(currentToken));
             }
-
             break;
         }
       }
-
       return result;
     }
 
@@ -463,7 +452,6 @@ namespace Atom2
           {
             throw exception;
           }
-
           break;
         case ReferencePragma:
           Reference((string)tokens.Dequeue(), (string)tokens.Dequeue());
@@ -524,7 +512,6 @@ namespace Atom2
       {
         result[i] = Stack.Pop();
       }
-
       return result;
     }
 
@@ -577,7 +564,6 @@ namespace Atom2
           }
         }
       }
-
       foreach (string currentName in names)
       {
         Name newName = new Name { Value = currentName };
@@ -609,7 +595,6 @@ namespace Atom2
       {
         Push(currentItem);
       }
-
       Push(items.Count);
     }
 
@@ -631,13 +616,11 @@ namespace Atom2
         {
           return WordKind.Put;
         }
-
         if (setWords.TryGetValue(key, out word))
         {
           return WordKind.Set;
         }
       }
-
       word = null;
       return WordKind.None;
     }
