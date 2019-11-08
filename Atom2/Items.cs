@@ -1,17 +1,21 @@
-﻿using System.Collections.Generic;
-
-namespace Atom2
+﻿namespace Atom2
 {
+  using System.Collections.Generic;
+
   public sealed class Items : List<object>
   {
-    public Items() { }
+    public Items()
+    {
+    }
 
     public Items(object instance)
     {
       Add(instance);
     }
 
-    public Items(IEnumerable<object> collection) : base(collection) { }
+    public Items(IEnumerable<object> collection) : base(collection)
+    {
+    }
 
     public static Items operator +(Items a, object b)
     {

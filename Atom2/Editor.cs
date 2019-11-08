@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Eto.Forms;
-
-namespace Atom2
+﻿namespace Atom2
 {
+  using System;
+  using System.Collections.Generic;
+  using System.Threading;
+  using System.Threading.Tasks;
+
+  using Eto.Forms;
+
   public sealed class Editor : Form
   {
     private const int StandardDimension = 300;
@@ -49,11 +50,11 @@ namespace Atom2
       menuBar.Items.Add(fileMenuItem);
       Menu = menuBar;
       codeTreeGridView = NewTreeGridView();
-      callStackListBox = new ListBox {Width = StandardDimension};
-      stackListBox = new ListBox {Width = StandardDimension};
-      outputTextArea = new TextArea {Height = StandardDimension};
+      callStackListBox = new ListBox { Width = StandardDimension };
+      stackListBox = new ListBox { Width = StandardDimension };
+      outputTextArea = new TextArea { Height = StandardDimension };
       TableLayout layout = new TableLayout();
-      layout.Rows.Add(new TableRow(stackListBox, new TableCell(new TableLayout(new TableRow(codeTreeGridView) {ScaleHeight = true}, new TableRow(outputTextArea)), true), callStackListBox));
+      layout.Rows.Add(new TableRow(stackListBox, new TableCell(new TableLayout(new TableRow(codeTreeGridView) { ScaleHeight = true }, new TableRow(outputTextArea)), true), callStackListBox));
       Content = layout;
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
 
@@ -87,6 +88,7 @@ namespace Atom2
           executingTreeGridViewItem = newTreeViewItem;
         }
       }
+
       return result;
     }
 
@@ -105,7 +107,7 @@ namespace Atom2
 
     private Exception DoRun(object code)
     {
-      return runtime.Run((string) code, true, true);
+      return runtime.Run((string)code, true, true);
     }
 
     private void OnBreaking()
@@ -115,8 +117,8 @@ namespace Atom2
 
     private void OnCallStackListBoxSelectedIndexChanged(object sender, EventArgs e)
     {
-      ListItem selectedItem = (ListItem) callStackListBox.Items[callStackListBox.SelectedIndex];
-      CallEnvironment callEnvironment = (CallEnvironment) selectedItem.Tag;
+      ListItem selectedItem = (ListItem)callStackListBox.Items[callStackListBox.SelectedIndex];
+      CallEnvironment callEnvironment = (CallEnvironment)selectedItem.Tag;
       RebuildCodeTreeView(callEnvironment.Items, callEnvironment.CurrentItem);
     }
 
@@ -165,6 +167,7 @@ namespace Atom2
       {
         outputTextArea.Append(exception.Message + Environment.NewLine);
       }
+
       UpdatePauseUI();
     }
 

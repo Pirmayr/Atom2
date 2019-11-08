@@ -6,12 +6,12 @@
 
     public override bool Equals(object obj)
     {
-      return obj is Name name && Value == name.Value;
+      return obj is Name name && this.Value == name.Value;
     }
 
     public override int GetHashCode()
     {
-      return (Value != null ? Value.GetHashCode() : 0);
+      return Value != null ? Value.GetHashCode() : 0;
     }
 
     public override string ToString()

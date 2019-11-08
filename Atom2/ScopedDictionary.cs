@@ -1,22 +1,22 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-#pragma warning disable 618
+﻿#pragma warning disable 618
 
 namespace Atom2
 {
+  using System.Collections.Generic;
+
   public class ScopedDictionary<TK, TV>
   {
-    public sealed class Scope : Dictionary<TK, TV> { }
-
-    private sealed class Scopes : Stack<Scope> { }
-
     private readonly Scopes scopes = new Scopes();
-    public Scope CurrentScope => scopes.Peek();
 
     protected ScopedDictionary()
     {
       EnterScope();
+    }
+
+    public TV this[TK key]
+    {
+      get => TryGetValue(key, out TV result) ? result : default;
+      set => scopes.Peek()[key] = value;
     }
 
     public void Add(TK key, TV value)
@@ -33,6 +33,7 @@ namespace Atom2
           return true;
         }
       }
+
       return false;
     }
 
@@ -46,11 +47,6 @@ namespace Atom2
       scopes.Pop();
     }
 
-    public List<KeyValuePair<TK, TV>> ToList()
-    {
-      return scopes.Peek().ToList();
-    }
-
     public bool TryGetValue(TK key, out TV value)
     {
       foreach (Scope currentScope in scopes)
@@ -60,14 +56,17 @@ namespace Atom2
           return true;
         }
       }
+
       value = default;
       return false;
     }
 
-    public TV this[TK key]
+    private sealed class Scope : Dictionary<TK, TV>
     {
-      get => TryGetValue(key, out TV result) ? result : default;
-      set => scopes.Peek()[key] = value;
+    }
+
+    private sealed class Scopes : Stack<Scope>
+    {
     }
   }
 }

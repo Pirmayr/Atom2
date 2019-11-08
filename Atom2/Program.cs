@@ -1,7 +1,7 @@
-﻿using System;
-
-namespace Atom2
+﻿namespace Atom2
 {
+  using System;
+
   public static class Program
   {
     [STAThread]
