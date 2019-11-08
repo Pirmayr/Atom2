@@ -71,8 +71,7 @@ namespace Atom2
       setWords.Add(new Name {Value = "make-binary-action"}, new Action(MakeBinaryAction));
       setWords.Add(new Name {Value = "make-unary-action"}, new Action(MakeUnaryAction));
 
-      Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System.Reflection");
-      Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System");
+      Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Reflection");
       Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
     }
 
@@ -350,7 +349,7 @@ namespace Atom2
         Push(0);
       }
       Push(memberName);
-      if (Application.Invoke(DoExecute) is Exception exception)
+      if (Invoke(DoExecute) is Exception exception)
       {
         throw exception;
       }
@@ -460,9 +459,19 @@ namespace Atom2
       }
     }
 
+    private void Invoke(Action action)
+    {
+      Application.Invoke(action);
+    }
+
+    private T Invoke<T>(Func<T> function)
+    {
+      return Application.Invoke(function);
+    }
+
     private void InvokeTerminating(Exception exception)
     {
-      Application.Invoke(() => DoInvokeTerminating(exception));
+      Invoke(() => DoInvokeTerminating(exception));
     }
 
     private void Join()
@@ -482,7 +491,7 @@ namespace Atom2
 
     private void Output()
     {
-      Application.Invoke(DoOutput);
+      Invoke(DoOutput);
     }
 
     private IEnumerable<object> Pop(int count)
@@ -513,12 +522,13 @@ namespace Atom2
       }
     }
 
-    private void Reference(string assemblyName, string requestedNamespace)
+    private void Reference(string assemblyName, params string[] requestedNamespace)
     {
       HashSet<string> names = new HashSet<string>();
       foreach (Type currentType in Assembly.Load(assemblyName).GetTypes())
       {
-        if (currentType.Namespace == requestedNamespace)
+        // if (currentType.Namespace == requestedNamespace)
+        if (requestedNamespace.Any(currentNamespace => currentNamespace == currentType.Namespace))
         {
           setWords[new Name {Value = currentType.Name}] = currentType;
           foreach (MemberInfo currentMember in currentType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
@@ -563,7 +573,7 @@ namespace Atom2
 
     private void Show()
     {
-      Application.Invoke(DoShow);
+      Invoke(DoShow);
     }
 
     private void Split()
@@ -584,7 +594,7 @@ namespace Atom2
 
     private void Trace()
     {
-      Application.Invoke(DoTrace);
+      Invoke(DoTrace);
     }
 
     private WordKind TryGetWord(object item, out object word)
