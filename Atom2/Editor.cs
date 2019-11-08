@@ -10,6 +10,11 @@
   public sealed class Editor : Form
   {
     private const int StandardDimension = 300;
+    private const string RunText = "Run";
+    private const string ContinueText = "Continue";
+    private const string StepText = "Step";
+    private const string FileText = "File";
+    private const string TitleText = "Atom 2";
     private static readonly Application Application = new Application();
     private readonly ListBox callStackListBox;
     private readonly TreeGridView codeTreeGridView;
@@ -21,10 +26,14 @@
     private readonly Runtime runtime;
     private readonly ListBox stackListBox;
     private readonly Command stepCommand;
+    private readonly Button runButton;
+    private readonly Button continueButton;
+    private readonly Button stepButton;
     private readonly UITimer timer = new UITimer();
     private bool paused;
     private bool running;
     private bool stepMode;
+    private bool firstElapsed = true;
 
     private Editor(params string[] arguments)
     {
@@ -32,30 +41,34 @@
       currentCode = runtime.Code(arguments[1]);
 
       // Menu:
-      Title = "Atom2";
+      Title = TitleText;
       WindowState = WindowState.Maximized;
       runCommand = new Command(OnRun);
-      runCommand.MenuText = "&Run";
+      runCommand.MenuText = RunText;
       continueCommand = new Command(OnContinue);
-      continueCommand.MenuText = "&Continue";
+      continueCommand.MenuText = ContinueText;
       stepCommand = new Command(OnStep);
-      stepCommand.MenuText = "&Step";
+      stepCommand.MenuText = StepText;
       stepCommand.Shortcut = Keys.F10;
       ButtonMenuItem fileMenuItem = new ButtonMenuItem();
-      fileMenuItem.Text = "&File";
+      fileMenuItem.Text = FileText;
       fileMenuItem.Items.Add(runCommand);
       fileMenuItem.Items.Add(continueCommand);
       fileMenuItem.Items.Add(stepCommand);
       MenuBar menuBar = new MenuBar();
       menuBar.Items.Add(fileMenuItem);
       Menu = menuBar;
-      codeTreeGridView = NewTreeGridView();
-      callStackListBox = new ListBox { Width = StandardDimension };
+      runButton = new Button() { Command = runCommand, Text = RunText  };
+      continueButton = new Button(OnContinue) { Text = ContinueText };
+      stepButton = new Button(OnStep) { Text = StepText };
       stackListBox = new ListBox { Width = StandardDimension };
+      callStackListBox = new ListBox { Width = StandardDimension };
+      codeTreeGridView = NewTreeGridView();
       outputTextArea = new TextArea { Height = StandardDimension };
-      TableLayout layout = new TableLayout();
-      layout.Rows.Add(new TableRow(stackListBox, new TableCell(new TableLayout(new TableRow(codeTreeGridView) { ScaleHeight = true }, new TableRow(outputTextArea)), true), callStackListBox));
-      Content = layout;
+      TableLayout buttonLayout = TableLayout.Horizontal(runButton, continueButton, stepButton, new Panel());
+      TableRow codeTableRow = new TableRow(codeTreeGridView) { ScaleHeight = true };
+      TableCell middleCell = new TableCell(new TableLayout(buttonLayout, codeTableRow, outputTextArea)) { ScaleWidth = true };
+      Content = new TableRow(stackListBox, middleCell, callStackListBox);
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
 
       // Other initializations:
@@ -63,11 +76,10 @@
       runtime.Outputting += OnOutputting;
       runtime.Stepping += OnStepping;
       runtime.Terminating += OnTerminating;
-      timer.Interval = 0.3;
+      timer.Interval = 0;
       timer.Elapsed += OnElapsed;
       timer.Start();
       runtime.Run(currentCode, false, true);
-      UpdatePauseUI();
     }
 
     public static void Run(string[] arguments)
@@ -80,7 +92,7 @@
       TreeGridItemCollection result = new TreeGridItemCollection();
       foreach (object currentItem in rootItems)
       {
-        TreeGridItem newTreeViewItem = currentItem is Items currentItems ? new TreeGridItem(GetCodeTree(currentItems, executingItem, ref executingTreeGridViewItem), "(Items)") : new TreeGridItem(currentItem.ToInformation());
+        TreeGridItem newTreeViewItem = currentItem is Items currentItems ? new TreeGridItem(GetCodeTree(currentItems, executingItem, ref executingTreeGridViewItem), "(Items)") : new TreeGridItem(currentItem.ToString(), currentItem.GetType().Name);
         newTreeViewItem.Expanded = true;
         result.Add(newTreeViewItem);
         if (currentItem == executingItem)
@@ -94,13 +106,19 @@
     private static TreeGridView NewTreeGridView()
     {
       TreeGridView result = new TreeGridView();
-      result.ShowHeader = true;
-      GridColumn currentGridColumn = new GridColumn();
-      currentGridColumn.Editable = false;
-      currentGridColumn.DataCell = new TextBoxCell(0);
-      currentGridColumn.Resizable = false;
-      currentGridColumn.HeaderText = "Code";
-      result.Columns.Add(currentGridColumn);
+      result.ShowHeader = false;
+      GridColumn codeGridColumn = new GridColumn();
+      codeGridColumn.Editable = false;
+      codeGridColumn.DataCell = new TextBoxCell(0);
+      codeGridColumn.Resizable = false;
+      codeGridColumn.HeaderText = "Code";
+      result.Columns.Add(codeGridColumn);
+      GridColumn typeGridColumn = new GridColumn();
+      typeGridColumn.Editable = false;
+      typeGridColumn.DataCell = new TextBoxCell(1);
+      typeGridColumn.Resizable = false;
+      typeGridColumn.HeaderText = "Type";
+      result.Columns.Add(typeGridColumn);
       return result;
     }
 
@@ -131,6 +149,13 @@
       runCommand.Enabled = !running;
       continueCommand.Enabled = paused;
       stepCommand.Enabled = paused;
+
+      if (firstElapsed)
+      {
+        firstElapsed = false;
+        timer.Interval = 0.25;
+        UpdatePauseUI();
+      }
     }
 
     private void OnOutputting(object sender, string message)

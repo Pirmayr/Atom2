@@ -33,4 +33,4 @@ Form new
     : "Hello World" empty (outputTest) addMenuItem
       "Array Test" empty (arrayTest) addMenuItem
   addControl
-ShowDialog .
+ShowDialog
