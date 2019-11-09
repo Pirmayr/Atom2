@@ -6,7 +6,7 @@
 
     public override bool Equals(object obj)
     {
-      return obj is Name name && this.Value == name.Value;
+      return obj is Name name && Value == name.Value;
     }
 
     public override int GetHashCode()

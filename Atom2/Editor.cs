@@ -37,6 +37,13 @@
 
     private Editor(params string[] arguments)
     {
+      if (arguments.Length != 2)
+      {
+        arguments = new string[2];
+        arguments[0] = "/Users/pic/Projects/Atom2/Atom2/System";
+        arguments[1] = "Program.txt";
+      }
+
       runtime = new Runtime(Application, arguments[0]);
       currentCode = runtime.Code(arguments[1]);
 
@@ -59,8 +66,8 @@
       menuBar.Items.Add(fileMenuItem);
       Menu = menuBar;
       runButton = new Button() { Command = runCommand, Text = RunText  };
-      continueButton = new Button(OnContinue) { Text = ContinueText };
-      stepButton = new Button(OnStep) { Text = StepText };
+      continueButton = new Button() { Command = continueCommand, Text = ContinueText };
+      stepButton = new Button() { Command = stepCommand, Text = StepText };
       stackListBox = new ListBox { Width = StandardDimension };
       callStackListBox = new ListBox { Width = StandardDimension };
       codeTreeGridView = NewTreeGridView();
@@ -70,6 +77,16 @@
       TableCell middleCell = new TableCell(new TableLayout(buttonLayout, codeTableRow, outputTextArea)) { ScaleWidth = true };
       Content = new TableRow(stackListBox, middleCell, callStackListBox);
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
+
+      ToolBar = new ToolBar
+      {
+        Items =
+        {
+          new ButtonToolItem { Text = "Run" },
+          new ButtonToolItem { Text = "Go" },
+          new ButtonToolItem { Text = "Step" }
+        }
+      };
 
       // Other initializations:
       runtime.Breaking += OnBreaking;
@@ -134,13 +151,18 @@
 
     private void OnCallStackListBoxSelectedIndexChanged(object sender, EventArgs e)
     {
-      ListItem selectedItem = (ListItem)callStackListBox.Items[callStackListBox.SelectedIndex];
-      CallEnvironment callEnvironment = (CallEnvironment)selectedItem.Tag;
-      RebuildCodeTreeView(callEnvironment.Items, callEnvironment.CurrentItem);
+      int index = callStackListBox.SelectedIndex;
+      if (0 <= index && index < callStackListBox.Items.Count)
+      {
+        ListItem selectedItem = (ListItem)callStackListBox.Items[index];
+        CallEnvironment callEnvironment = (CallEnvironment)selectedItem.Tag;
+        RebuildCodeTreeView(callEnvironment.Items, callEnvironment.CurrentItem);
+      }
     }
 
     private void OnContinue(object sender, EventArgs e)
     {
+      callStackListBox.Items.Clear();
       manualResetEvent.Set();
     }
 
@@ -171,6 +193,7 @@
 
     private void OnStep(object sender, EventArgs e)
     {
+      callStackListBox.Items.Clear();
       stepMode = true;
       manualResetEvent.Set();
     }

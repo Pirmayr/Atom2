@@ -29,7 +29,7 @@ Form new
   : Items ("Test") Add
     : "Map Test" empty (mapTest) addMenuItem
     : "Dump Primes" empty (primesTest) addMenuItem
-    : "Factorial Test" empty (factorialTest) addMenuItem
+    : "Factorial Test" empty (factorialTest) addMenuItem break
     : "Hello World" empty (outputTest) addMenuItem
       "Array Test" empty (arrayTest) addMenuItem
   addControl
