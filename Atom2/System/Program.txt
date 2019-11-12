@@ -10,6 +10,7 @@ reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f
 (1 show 100000 newArray (array) put (array (true i) SetValue) (i) 0 99999 1 for 2 show) (arrayTest) set
 
 Form new
+: (form) put
 : TextBox new
   : (textBox) put
   : (true) Multiline
@@ -22,15 +23,15 @@ Form new
   : (textBox) (textBox ("Hello World") AppendText) (Click) addEventHandler 
   addControl
 : MenuStrip new 
-  : Items ("File") Add
-    : "New" empty ("New" show) addMenuItem
-    : "Open" empty ("Open" show) addMenuItem
-      "Close" empty ("Close" show) addMenuItem
-  : Items ("Test") Add
+  : ToolStripMenuItem ("File") new
+    :  "Quit" (form) (form Close) addMenuItem
+    addToolStripItem
+  : ToolStripMenuItem ("Test") new
     : "Map Test" empty (mapTest) addMenuItem
     : "Dump Primes" empty (primesTest) addMenuItem
-    : "Factorial Test" empty (factorialTest) addMenuItem break
+    : "Factorial Test" empty (factorialTest) addMenuItem
     : "Hello World" empty (outputTest) addMenuItem
-      "Array Test" empty (arrayTest) addMenuItem
+    : "Array Test" empty (arrayTest) addMenuItem
+    addToolStripItem
   addControl
-ShowDialog
+ShowDialog .

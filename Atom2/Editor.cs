@@ -63,6 +63,7 @@
       fileMenuItem.Items.Add(continueCommand);
       fileMenuItem.Items.Add(stepCommand);
       MenuBar menuBar = new MenuBar();
+      menuBar.IncludeSystemItems = MenuBarSystemItems.Quit;
       menuBar.Items.Add(fileMenuItem);
       Menu = menuBar;
       runButton = new Button() { Command = runCommand, Text = RunText  };
@@ -77,16 +78,6 @@
       TableCell middleCell = new TableCell(new TableLayout(buttonLayout, codeTableRow, outputTextArea)) { ScaleWidth = true };
       Content = new TableRow(stackListBox, middleCell, callStackListBox);
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
-
-      ToolBar = new ToolBar
-      {
-        Items =
-        {
-          new ButtonToolItem { Text = "Run" },
-          new ButtonToolItem { Text = "Go" },
-          new ButtonToolItem { Text = "Step" }
-        }
-      };
 
       // Other initializations:
       runtime.Breaking += OnBreaking;

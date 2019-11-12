@@ -1,4 +1,5 @@
 ﻿((control) put Controls control 1 join Add) (addControl) set
+((toolStripItem) put Items toolStripItem 1 join Add drop) (addToolStripItem) set
 
 ((code) put (sender arguments) (put) verbatim code split 2 add join lambda create-event-handler) (createEventHandler) set
 ((event) put (createEventHandler) verbatim 3 join event verbatim evaluate) (addEventHandler) set
