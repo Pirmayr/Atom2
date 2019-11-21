@@ -1,18 +1,66 @@
-﻿(duplicate-second set) (set-sticky) set
-(get set) (set-by-word) set 
-(duplicate get increment swap set) (increment-word) set
-(over get swap get add swap set) (increment-word-by-word) set
-(split drop) (verbatim) set
-(split 1 add join) (prepend) set
-(duplicate) (:) set
-(drop) (.) set
-(0 join) (empty) set
-(ToString) (toString) set
-(0 0 equal) (true) set
-(0 0 notEqual) (false) set
-((false) (true) rotate if-else) (not) set
-((arguments code) put arguments evaluate-and-split join (evaluate) verbatim arguments (put) verbatim code split 4 add join) (lambda) set
-(Double cast) (toDouble) set
-(Int32 cast) (toInt) set
-("new" execute) (new) set
-((length) put Array (Object length) CreateInstance) (newArray) set
+﻿(verbatim) "pushes list-item on top of stack"
+(
+  split drop
+)
+word
+
+(prepend) "adds element to front of list"
+(
+  split 1 add join
+)
+word
+
+(empty) "creates empty list"
+(
+  0 join
+)
+word
+
+(splitHalve) "splits list into halves"
+(
+  split
+  (itemsCount) put
+  itemsCount 2 divide (itemsCount1) put
+  itemsCount itemsCount1 subtract (itemsCount2) put
+  itemsCount1 join (result1) put
+  itemsCount2 join
+  result1
+)
+word 
+
+(:) "duplicates top of stack"
+(
+  duplicate
+)
+word
+
+(.) "drops top of stack"
+(
+  drop
+)
+word
+
+(getType) "gets type-object of object on top of stack"
+(
+  true () GetType
+)
+word
+
+(isSubclassOf) "true, if type of object top of stack - 1 is subclass of type on top of stack, false otherwise"
+(
+  (object type) put
+  object getType true type 1 join IsSubclassOf
+)
+word
+
+(empty Count) (count) "object" "gets the Count-property of an object" define
+(empty ToString) (toString) "object" "calls the ToString-function of an object" define
+("new" execute) (new) "object" "creates an instance of a class" define
+((length) put Array (Object length) CreateInstance) (newArray) "object" "creates an array" define
+
+(0 0 equal) (true) "math" "the true-value" define
+(0 0 notEqual) (false) "math" "the false-value" define
+((false) (true) rotate if-else) (not) "math" "negates the truth-value on the top of stack" define
+
+(Double cast) (toDouble) "conversion" "converts object to Double" define
+(Int32 cast) (toInt) "conversion" "converts object to Int32" define

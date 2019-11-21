@@ -22,6 +22,18 @@
 (map) set
 
 (
+  (body name1 name2) put empty GetEnumerator (enumerator) put
+  (
+    enumerator Current name1 put
+    enumerator MoveNext drop
+    enumerator Current name2 put
+    body evaluate
+  )
+  (enumerator MoveNext) while
+)
+(pairMap) set
+
+(
   (value bodies) put
   (bodies) get () GetEnumerator
   (enumerator) put
@@ -34,10 +46,10 @@
 (apply) set
 
 (
-  (from to) put
+  (from to step) put
   empty
   (
-    from add from 1 add (from) put
+    from add from step add (from) put
   )
   (from to less-or-equal)
   while  
@@ -66,3 +78,14 @@
 )
 (any) set
 
+(
+  (value body) put body (case (selector toString value toString equal) if) (selector) (case) pairMap
+)
+(switch) set
+
+(
+  (value body) put body (case selector if) (selector) (case) pairMap
+)
+(select) set
+
+((arguments code) put arguments evaluate-and-split join (evaluate) verbatim arguments (put) verbatim code split 4 add join) (lambda) set

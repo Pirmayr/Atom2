@@ -3,11 +3,47 @@ load-file System.txt pragma
 reference "System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Windows.Forms" pragma
 reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" "System.Drawing" pragma
 
-(1 10 range (i show) (i) map) (mapTest) set
-(2 1000 dumpPrimes "done" output) (primesTest) set
-(20.0 factorial show) (factorialTest) set
+(1 10  2 range (i show) (i) map) (mapTest) set
+(1000 dumpPrimes "done" output) (primesTest) set
+
+(factorialTest) "computes and shows the factorial of 20"
+(
+  20.0 factorial show
+)
+word
+
 ("Hello World!" output) (outputTest) set
 (1 show 100000 newArray (array) put (array (true i) SetValue) (i) 0 99999 1 for 2 show) (arrayTest) set
+
+(test) "performs various tests"
+(
+  Form new (form) put
+
+  47
+  (
+    (value 11 greater)
+      ("hi" show)
+    (value 47 equal)
+      ("ho" show)
+    (form Object isSubclassOf)
+      ("form" show)
+  )
+  select
+
+  "hello"
+  (
+  1
+    (1 show)
+  "hello"
+    ("Hello World!" show)
+  9
+    (9 show)
+  )
+  switch
+
+  (1 2 3 5 6 7) splitHalve "hugo" swap prepend show show
+)
+word
 
 Form new
 : (form) put
@@ -32,6 +68,7 @@ Form new
     : "Factorial Test" empty (factorialTest) addMenuItem
     : "Hello World" empty (outputTest) addMenuItem
     : "Array Test" empty (arrayTest) addMenuItem
+    : "Test" empty (test) addMenuItem
     addToolStripItem
   addControl
 ShowDialog .

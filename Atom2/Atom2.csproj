@@ -79,13 +79,9 @@
     <None Include="System\Words.txt" />
     <None Include="System\Statements.txt" />
     <None Include="System\Math.txt" />
-    <None Include="System\Tests.txt" />
     <None Include="System\IO.txt" />
     <None Include="System\UI.txt" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="System\Comment.txt" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

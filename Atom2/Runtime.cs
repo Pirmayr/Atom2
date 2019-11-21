@@ -196,14 +196,14 @@ namespace Atom2
 
     private void Cast()
     {
-      Type type = (Type)Pop();
+      Type type = (Type) Pop();
       object instance = Pop();
       Push(Expression.Lambda(Expression.Convert(Expression.Constant(instance), type)).Compile().DynamicInvoke());
     }
 
     private void CreateEventHandler()
     {
-      Items items = (Items)Pop();
+      Items items = (Items) Pop();
       EventHandler action = (sender, eventArguments) => EventHandler(items, sender, eventArguments);
       Push(action);
     }
@@ -215,12 +215,22 @@ namespace Atom2
       Type type = null;
       try
       {
-        memberName = (string)Pop();
-        int argumentsCount = (int)Pop();
+        memberName = (string) Pop();
+        int argumentsCount = (int) Pop();
         arguments = Pop(argumentsCount).ToArray();
-        object typeOrTarget = Pop();
-        bool isType = typeOrTarget is Type;
-        type = isType ? (Type)typeOrTarget : typeOrTarget.GetType();
+        object typeOrTarget;
+        object typeOrTargetOrInstanceFlag = Pop();
+        if (typeOrTargetOrInstanceFlag is bool forceInstance)
+        {
+          typeOrTarget = Pop();
+        }
+        else
+        {
+          forceInstance = false;
+          typeOrTarget = typeOrTargetOrInstanceFlag;
+        }
+        bool isType = !forceInstance && (typeOrTarget is Type);
+        type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
         object target = isType ? null : typeOrTarget;
         BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
         bool hasReturnValue = false;
@@ -368,7 +378,7 @@ namespace Atom2
 
     private void Get()
     {
-      foreach (Name currentKey in ((Items)Pop()).Select(currentItem => (Name)currentItem))
+      foreach (Name currentKey in ((Items) Pop()).Select(currentItem => (Name) currentItem))
       {
         Push(putWords.ContainsKey(currentKey) ? putWords[currentKey] : setWords[currentKey]);
       }
@@ -444,17 +454,17 @@ namespace Atom2
 
     private void HandlePragma(Tokens tokens)
     {
-      string pragma = ((Name)tokens.Dequeue()).Value;
+      string pragma = ((Name) tokens.Dequeue()).Value;
       switch (pragma)
       {
         case LoadFilePragma:
-          if (Run(((Name)tokens.Dequeue()).Value, isInEvaluationMode, false) is Exception exception)
+          if (Run(((Name) tokens.Dequeue()).Value, isInEvaluationMode, false) is Exception exception)
           {
             throw exception;
           }
           break;
         case ReferencePragma:
-          Reference((string)tokens.Dequeue(), (string)tokens.Dequeue());
+          Reference((string) tokens.Dequeue(), (string) tokens.Dequeue());
           break;
       }
     }
@@ -464,7 +474,7 @@ namespace Atom2
       object condition = Pop();
       object body = Pop();
       Evaluate(condition);
-      if ((dynamic)Pop())
+      if ((dynamic) Pop())
       {
         Evaluate(body);
       }
@@ -492,12 +502,12 @@ namespace Atom2
 
     private void MakeBinaryAction()
     {
-      Push(BinaryAction((ExpressionType)Pop()));
+      Push(BinaryAction((ExpressionType) Pop()));
     }
 
     private void MakeUnaryAction()
     {
-      Push(UnaryAction((ExpressionType)Pop()));
+      Push(UnaryAction((ExpressionType) Pop()));
     }
 
     private void Output()
@@ -527,7 +537,7 @@ namespace Atom2
 
     private void Put()
     {
-      foreach (Name currentItem in Enumerable.Reverse((Items)Pop()))
+      foreach (Name currentItem in Enumerable.Reverse((Items) Pop()))
       {
         putWords[currentItem] = Pop();
       }
@@ -576,7 +586,7 @@ namespace Atom2
 
     private void Set()
     {
-      foreach (Name currentItem in Enumerable.Reverse((Items)Pop()))
+      foreach (Name currentItem in Enumerable.Reverse((Items) Pop()))
       {
         setWords[currentItem] = Pop();
       }
@@ -590,7 +600,7 @@ namespace Atom2
     private void Split()
     {
       object item = Pop();
-      Items items = (Items)item;
+      Items items = (Items) item;
       foreach (object currentItem in items)
       {
         Push(currentItem);
@@ -643,7 +653,7 @@ namespace Atom2
       object condition = Pop();
       object body = Pop();
       Evaluate(condition);
-      while ((dynamic)Pop())
+      while ((dynamic) Pop())
       {
         Evaluate(body);
         Evaluate(condition);
