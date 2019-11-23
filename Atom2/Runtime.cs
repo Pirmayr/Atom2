@@ -60,6 +60,7 @@ namespace Atom2
       setWords.Add(new Name { Value = "join" }, new Action(Join));
       setWords.Add(new Name { Value = "cast" }, new Action(Cast));
       setWords.Add(new Name { Value = "create-event-handler" }, new Action(CreateEventHandler));
+      setWords.Add(new Name { Value = "createDelegate" }, new Action(CreateDelegate));
       setWords.Add(new Name { Value = "Runtime" }, typeof(Runtime));
       setWords.Add(new Name { Value = "runtime" }, this);
       setWords.Add(new Name { Value = "to-name" }, new Action(ToName));
@@ -182,11 +183,56 @@ namespace Atom2
       LambdaExpression lambda = Expression.Lambda(expression, parameterA, parameterB);
       Delegate function = lambda.Compile();
       return delegate
-        {
-          object a = Pop();
-          object b = Pop();
-          Push(function.DynamicInvoke(a, b));
-        };
+      {
+        object a = Pop();
+        object b = Pop();
+        Push(function.DynamicInvoke(a, b));
+      };
+    }
+
+    private void CreateDelegate()
+    {
+      if (Peek() is Type)
+      {
+        Push(CreateDelegate((Type) Pop(), (Items) Pop()));
+        return;
+      }
+      EvaluateAndSplit();
+      Push(CreateDelegate(Pop((int) Pop()).Cast<Type>(), (Type) Pop(), (Items) Pop()));
+    }
+
+    private Delegate CreateDelegate(Type delegateType, Items code)
+    {
+      return CreateDelegate(delegateType, null, null, code);
+    }
+
+    private Delegate CreateDelegate(IEnumerable<Type> parameterTypes, Type returnType, Items code)
+    {
+      return CreateDelegate(typeof(void), parameterTypes, returnType, code);
+    }
+
+    private Delegate CreateDelegate(Type delegateType, IEnumerable<Type> parameterTypes, Type returnType, Items code)
+    {
+      if (delegateType != typeof(void))
+      {
+        MethodInfo invokeMethod = delegateType.GetMethod("Invoke");
+        parameterTypes = invokeMethod.GetParameters().Select(currentParameter => currentParameter.ParameterType).ToArray();
+        returnType = invokeMethod.ReturnType;
+      }
+      Expression codeConstant = Expression.Constant(code);
+      Expression thisConstant = Expression.Constant(this);
+      MethodInfo pushMethod = ((Action<object>) Push).Method;
+      MethodInfo popMethod = ((Func<object>) Pop).Method;
+      MethodInfo evaluateMethod = ((Action<object>) Evaluate).Method;
+      ParameterExpression[] parameters = parameterTypes.Select(currentType => Expression.Parameter(currentType)).ToArray();
+      List<Expression> statements = new List<Expression>();
+      statements.AddRange(parameters.Select(currentParameter => Expression.Call(thisConstant, pushMethod, Expression.Convert(currentParameter, typeof(object)))));
+      statements.Add(Expression.Call(thisConstant, evaluateMethod, codeConstant));
+      if (returnType != typeof(void))
+      {
+        statements.Add(Expression.Convert(Expression.Call(thisConstant, popMethod), returnType));
+      }
+      return (delegateType == typeof(void) ? Expression.Lambda(Expression.Block(statements), parameters) : Expression.Lambda(delegateType, Expression.Block(statements), parameters)).Compile();
     }
 
     private void Break()
@@ -513,6 +559,11 @@ namespace Atom2
     private void Output()
     {
       Invoke(DoOutput);
+    }
+
+    private object Peek()
+    {
+      return Stack.Peek();
     }
 
     private IEnumerable<object> Pop(int count)

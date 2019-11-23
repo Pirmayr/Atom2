@@ -17,6 +17,10 @@ word
 
 (test) "performs various tests"
 (
+  (show show) void (Int32 String) createDelegate (testDelegate) put
+
+  testDelegate (1234 "hello") Invoke 
+
   Form new (form) put
 
   47

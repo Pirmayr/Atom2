@@ -46,6 +46,12 @@ word
 )
 word
 
+(void) "pushes void-type"
+(
+  Type ("System.Void") GetType
+)
+word
+
 (isSubclassOf) "true, if type of object top of stack - 1 is subclass of type on top of stack, false otherwise"
 (
   (object type) put

@@ -17,7 +17,13 @@ ExpressionType Multiply make-binary-action (multiply) set
 ExpressionType Divide make-binary-action (divide) set
 ExpressionType Modulo make-binary-action (modulo) set
 
-((a b) put Math (a toDouble b toDouble) Pow) (power) set
+(power) "(base)(exponent) -> (power)"
+(
+  (a b) put
+  Math (a toDouble b toDouble) Pow
+)
+word
+
 (0.5 power) (squareRoot) set
 
 (3 swap 2 range ((a " " add output) (3 a squareRoot toInt 2 range (a b modulo 0 notEqual) (b) all) if) (a) map) (dumpPrimes) set
