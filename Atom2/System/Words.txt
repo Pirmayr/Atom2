@@ -22,7 +22,7 @@ word
 )
 word
 
-(evaluate-and-split) "(list) -> (list) count"
+(evaluateAndSplit) "(list) -> (list) count"
 (
   runtime () "EvaluateAndSplit" execute
 )
@@ -84,5 +84,4 @@ word
 
 (0 0 equal) (true) "math" "the true-value" define
 (0 0 notEqual) (false) "math" "the false-value" define
-((false) (true) rotate if-else) (not) "math" "negates the truth-value on the top of stack" define
-
+((false) (true) rotate ifElse) (not) "math" "negates the truth-value on the top of stack" define

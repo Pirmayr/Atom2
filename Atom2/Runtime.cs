@@ -19,7 +19,7 @@ namespace Atom2
   {
     private const char Eof = char.MinValue;
     private const char LeftParenthesis = '(';
-    private const string LoadFilePragma = "load-file";
+    private const string LoadFilePragma = "loadFile";
     private const string NewMemberName = "new";
     private const string PragmaToken = "pragma";
     private const char Quote = '"';

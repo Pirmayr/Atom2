@@ -1,6 +1,6 @@
-﻿load-file Stack.txt pragma
-load-file Words.txt pragma
-load-file Statements.txt pragma
-load-file Math.txt pragma
-load-file IO.txt pragma
-load-file UI.txt pragma
+﻿loadFile Stack.txt pragma
+loadFile Words.txt pragma
+loadFile Statements.txt pragma
+loadFile Math.txt pragma
+loadFile IO.txt pragma
+loadFile UI.txt pragma

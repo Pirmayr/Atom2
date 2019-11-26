@@ -34,4 +34,4 @@ word
 
 (3 swap 2 range ((a " " add output) (3 a squareRoot toInt 2 range (a b modulo 0 notEqual) (b) all) if) (a) map) (dumpPrimes) set
 
-((n) put (1) (n n decrement factorial multiply) n 1 equal if-else) (factorial) set
+((n) put (1) (n n decrement factorial multiply) n 1 equal ifElse) (factorial) set

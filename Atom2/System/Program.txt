@@ -1,11 +1,11 @@
-load-file System.txt pragma
+loadFile System.txt pragma
 
 reference "System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Windows.Forms" pragma
 reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" "System.Drawing" pragma
 
-(mapTest) "show numbers from 1 to 10 using range-statement and map-statement"
+(mapTest) "show odd numbers below 10 using range-statement and map-statement"
 (
-  1 10  2 range (i show) (i) map
+  1 10  2 range (i " " add output) (i) map
 )
 word
 
@@ -82,7 +82,7 @@ Form new
     : "Dump Primes" empty (primesTest) addMenuItem
     : "Factorial Test" empty (factorialTest) addMenuItem
     : "Hello World" empty (outputTest) addMenuItem
-    : "Array Test" empty (arrayTest) addMenuItem
+    : "Array Test" empty break (arrayTest) addMenuItem
     : "Test" empty (test) addMenuItem
     addToolStripItem
   addControl

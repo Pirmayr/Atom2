@@ -20,7 +20,7 @@
     private readonly TreeGridView codeTreeGridView;
     private readonly Command continueCommand;
     private readonly string currentCode;
-    private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
+    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(0);
     private readonly TextArea outputTextArea;
     private readonly Command runCommand;
     private readonly Runtime runtime;
@@ -34,6 +34,7 @@
     private bool running;
     private bool stepMode;
     private bool firstElapsed = true;
+    private readonly int mainThreadId;
 
     private Editor(params string[] arguments)
     {
@@ -80,6 +81,7 @@
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
 
       // Other initializations:
+      mainThreadId = Thread.CurrentThread.ManagedThreadId;
       runtime.Breaking += OnBreaking;
       runtime.Outputting += OnOutputting;
       runtime.Stepping += OnStepping;
@@ -154,7 +156,7 @@
     private void OnContinue(object sender, EventArgs e)
     {
       callStackListBox.Items.Clear();
-      manualResetEvent.Set();
+      semaphore.Release();
     }
 
     private void OnElapsed(object sender, EventArgs e)
@@ -186,7 +188,7 @@
     {
       callStackListBox.Items.Clear();
       stepMode = true;
-      manualResetEvent.Set();
+      semaphore.Release();
     }
 
     private void OnStepping()
@@ -210,10 +212,13 @@
 
     private void Pause()
     {
+      if (Thread.CurrentThread.ManagedThreadId == mainThreadId)
+      {
+        return;
+      }
       paused = true;
       Application.Invoke(UpdatePauseUI);
-      manualResetEvent.WaitOne();
-      manualResetEvent.Reset();
+      semaphore.Wait();
       paused = false;
     }
 
