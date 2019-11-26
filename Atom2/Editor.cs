@@ -9,32 +9,29 @@
 
   public sealed class Editor : Form
   {
-    private const int StandardDimension = 300;
-    private const string RunText = "Run";
     private const string ContinueText = "Continue";
-    private const string StepText = "Step";
     private const string FileText = "File";
+    private const string RunText = "Run";
+    private const int StandardDimension = 300;
+    private const string StepText = "Step";
     private const string TitleText = "Atom 2";
     private static readonly Application Application = new Application();
     private readonly ListBox callStackListBox;
     private readonly TreeGridView codeTreeGridView;
     private readonly Command continueCommand;
     private readonly string currentCode;
-    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(0);
+    private readonly int mainThreadId;
     private readonly TextArea outputTextArea;
     private readonly Command runCommand;
     private readonly Runtime runtime;
+    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(0);
     private readonly ListBox stackListBox;
     private readonly Command stepCommand;
-    private readonly Button runButton;
-    private readonly Button continueButton;
-    private readonly Button stepButton;
     private readonly UITimer timer = new UITimer();
+    private bool firstElapsed = true;
     private bool paused;
     private bool running;
     private bool stepMode;
-    private bool firstElapsed = true;
-    private readonly int mainThreadId;
 
     private Editor(params string[] arguments)
     {
@@ -44,7 +41,6 @@
         arguments[0] = "/Users/pic/Projects/Atom2/Atom2/System";
         arguments[1] = "Program.txt";
       }
-
       runtime = new Runtime(Application, arguments[0]);
       currentCode = runtime.Code(arguments[1]);
 
@@ -67,9 +63,9 @@
       menuBar.IncludeSystemItems = MenuBarSystemItems.Quit;
       menuBar.Items.Add(fileMenuItem);
       Menu = menuBar;
-      runButton = new Button() { Command = runCommand, Text = RunText  };
-      continueButton = new Button() { Command = continueCommand, Text = ContinueText };
-      stepButton = new Button() { Command = stepCommand, Text = StepText };
+      Button runButton = new Button { Command = runCommand, Text = RunText };
+      Button continueButton = new Button { Command = continueCommand, Text = ContinueText };
+      Button stepButton = new Button { Command = stepCommand, Text = StepText };
       stackListBox = new ListBox { Width = StandardDimension };
       callStackListBox = new ListBox { Width = StandardDimension };
       codeTreeGridView = NewTreeGridView();
@@ -86,7 +82,7 @@
       runtime.Outputting += OnOutputting;
       runtime.Stepping += OnStepping;
       runtime.Terminating += OnTerminating;
-      timer.Interval = 0;
+      timer.Interval = 0.01;
       timer.Elapsed += OnElapsed;
       timer.Start();
       runtime.Run(currentCode, false, true);
@@ -134,7 +130,7 @@
 
     private Exception DoRun(object code)
     {
-      return runtime.Run((string)code, true, true);
+      return runtime.Run((string) code, true, true);
     }
 
     private void OnBreaking()
@@ -147,8 +143,8 @@
       int index = callStackListBox.SelectedIndex;
       if (0 <= index && index < callStackListBox.Items.Count)
       {
-        ListItem selectedItem = (ListItem)callStackListBox.Items[index];
-        CallEnvironment callEnvironment = (CallEnvironment)selectedItem.Tag;
+        ListItem selectedItem = (ListItem) callStackListBox.Items[index];
+        CallEnvironment callEnvironment = (CallEnvironment) selectedItem.Tag;
         RebuildCodeTreeView(callEnvironment.Items, callEnvironment.CurrentItem);
       }
     }
@@ -164,7 +160,6 @@
       runCommand.Enabled = !running;
       continueCommand.Enabled = paused;
       stepCommand.Enabled = paused;
-
       if (firstElapsed)
       {
         firstElapsed = false;
@@ -228,7 +223,7 @@
       foreach (CallEnvironment currentCallEnvironment in callEnvironments)
       {
         ListItem newListItem = new ListItem();
-        newListItem.Text = currentCallEnvironment.CurrentItem == null ? "(null)" : currentCallEnvironment.CurrentItem.ToString();
+        newListItem.Text = currentCallEnvironment.CurrentItem?.ToString() ?? "(null)";
         newListItem.Tag = currentCallEnvironment;
         callStackListBox.Items.Add(newListItem);
       }

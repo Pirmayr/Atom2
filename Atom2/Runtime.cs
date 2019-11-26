@@ -2,6 +2,7 @@ namespace Atom2
 {
   using System;
   using System.Collections.Generic;
+  using System.Diagnostics.CodeAnalysis;
   using System.Globalization;
   using System.IO;
   using System.Linq;
@@ -26,7 +27,6 @@ namespace Atom2
     private const string ReferencePragma = "reference";
     private const char RightParenthesis = ')';
     private const char Whitespace = char.MaxValue;
-
     private readonly NameHashSet blockBeginTokens;
     private readonly NameHashSet blockEndTokens;
     private readonly Name executeName = new Name { Value = "execute" };
@@ -35,8 +35,12 @@ namespace Atom2
     private readonly Words setWords = new Words();
     private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote };
     private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis };
-
     private bool isInEvaluationMode;
+    public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
+    public Items CurrentRootItems { get; private set; }
+    public Stack Stack { get; } = new Stack();
+    private Application Application { get; set; }
+    private string BaseDirectory { get; set; }
 
     public Runtime(Application application, string baseDirectory)
     {
@@ -61,35 +65,6 @@ namespace Atom2
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Reflection");
       Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
     }
-
-    private void MakeOperation()
-    {
-      object targetTypeOrParametersCount = Pop();
-      if (targetTypeOrParametersCount is Type targetType)
-      {
-        Push(Operation(targetType));
-        return;
-      }
-      Push(Operation(Pop(), (int) targetTypeOrParametersCount));
-    }
-
-    public event Action Breaking;
-
-    public event OutputtingEventHandler Outputting;
-
-    public event Action Stepping;
-
-    public event TerminatingEventHandler Terminating;
-
-    public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
-
-    public Items CurrentRootItems { get; private set; }
-
-    public Stack Stack { get; } = new Stack();
-
-    private Application Application { get; set; }
-
-    private string BaseDirectory { get; set; }
 
     public string Code(string codeOrFilename)
     {
@@ -126,6 +101,18 @@ namespace Atom2
         }
         return exception;
       }
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public void Split()
+    {
+      object item = Pop();
+      Items items = (Items) item;
+      foreach (object currentItem in items)
+      {
+        Push(currentItem);
+      }
+      Push(items.Count);
     }
 
     private static string GetCall(Type type, string memberName, object[] arguments)
@@ -174,52 +161,9 @@ namespace Atom2
       return new Name { Value = token.ToString() };
     }
 
-    private Action Operation(object targetTypeOrExpressionType, int parametersCount = 0)
+    private void Break()
     {
-      static CSharpArgumentInfo[] GetParametersAndArgumentInfos(int count, out ParameterExpression[] parameters)
-      {
-        CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
-        parameters = new ParameterExpression[count];
-        CSharpArgumentInfo[] argumentInfos = new CSharpArgumentInfo[count];
-        for (int i = 0; i < count; ++i)
-        {
-          parameters[i] = Expression.Parameter(typeof(object));
-          argumentInfos[i] = argumentInfo;
-        }
-        return argumentInfos;
-      }
-
-      LambdaExpression lambdaExpression = null;
-      ParameterExpression[] parameters = null;
-      CallSiteBinder binder = null;
-      if (targetTypeOrExpressionType is Type targetType)
-      {
-        parametersCount = 1;
-        GetParametersAndArgumentInfos(parametersCount, out parameters);
-        binder = Binder.Convert(CSharpBinderFlags.ConvertExplicit, targetType, typeof(object));
-        DynamicExpression operation = Expression.Dynamic(binder, targetType, parameters);
-        lambdaExpression = Expression.Lambda(operation, parameters);
-      }
-      else
-      {
-        ExpressionType expressionType = (ExpressionType) targetTypeOrExpressionType;
-        switch (parametersCount) 
-        {
-          case 1:
-            binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, typeof(object), GetParametersAndArgumentInfos(parametersCount, out parameters));
-            break;
-          case 2:
-            binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, typeof(object), GetParametersAndArgumentInfos(parametersCount, out parameters));
-            break;
-        }
-        DynamicExpression operation = Expression.Dynamic(binder, typeof(object), parameters);
-        lambdaExpression = Expression.Lambda(operation, parameters);
-      }
-      Delegate function = lambdaExpression.Compile();
-      return delegate
-      {
-        Push(function.DynamicInvoke(Pop(parametersCount).ToArray()));
-      };
+      Breaking?.Invoke();
     }
 
     private void CreateDelegate()
@@ -243,6 +187,7 @@ namespace Atom2
       return CreateDelegate(typeof(void), parameterTypes, returnType, code);
     }
 
+    [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
     private Delegate CreateDelegate(Type delegateType, IEnumerable<Type> parameterTypes, Type returnType, Items code)
     {
       if (delegateType != typeof(void))
@@ -256,7 +201,7 @@ namespace Atom2
       MethodInfo pushMethod = ((Action<object>) Push).Method;
       MethodInfo popMethod = ((Func<object>) Pop).Method;
       MethodInfo evaluateMethod = ((Action<object>) Evaluate).Method;
-      ParameterExpression[] parameters = parameterTypes.Select(currentType => Expression.Parameter(currentType)).ToArray();
+      ParameterExpression[] parameters = parameterTypes.Select(Expression.Parameter).ToArray();
       List<Expression> statements = new List<Expression>();
       statements.AddRange(parameters.Select(currentParameter => Expression.Call(thisConstant, pushMethod, Expression.Convert(currentParameter, typeof(object)))));
       statements.Add(Expression.Call(thisConstant, evaluateMethod, codeConstant));
@@ -265,11 +210,6 @@ namespace Atom2
         statements.Add(Expression.Convert(Expression.Call(thisConstant, popMethod), returnType));
       }
       return (delegateType == typeof(void) ? Expression.Lambda(Expression.Block(statements), parameters) : Expression.Lambda(delegateType, Expression.Block(statements), parameters)).Compile();
-    }
-
-    private void Break()
-    {
-      Breaking?.Invoke();
     }
 
     private Exception DoExecute()
@@ -293,7 +233,7 @@ namespace Atom2
           forceInstance = false;
           typeOrTarget = typeOrTargetOrInstanceFlag;
         }
-        bool isType = !forceInstance && (typeOrTarget is Type);
+        bool isType = !forceInstance && typeOrTarget is Type;
         type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
         object target = isType ? null : typeOrTarget;
         BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
@@ -415,6 +355,7 @@ namespace Atom2
       Push(Stack.Count - stackLength);
     }
 
+    [SuppressMessage("ReSharper", "PatternAlwaysOfType")]
     private void Execute()
     {
       object memberName = Pop();
@@ -509,6 +450,7 @@ namespace Atom2
       return result;
     }
 
+    [SuppressMessage("ReSharper", "PatternAlwaysOfType")]
     private void HandlePragma(Tokens tokens)
     {
       string pragma = ((Name) tokens.Dequeue()).Value;
@@ -552,10 +494,69 @@ namespace Atom2
       Invoke(() => DoInvokeTerminating(exception));
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
+    [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private void Join()
     {
       Push(new Items(Pop(Convert.ToInt32(Pop()))));
+    }
+
+    private void MakeOperation()
+    {
+      object targetTypeOrParametersCount = Pop();
+      if (targetTypeOrParametersCount is Type targetType)
+      {
+        Push(Operation(targetType));
+        return;
+      }
+      Push(Operation(Pop(), (int) targetTypeOrParametersCount));
+    }
+
+    [SuppressMessage("ReSharper", "AssignNullToNotNullAttribute")]
+    [SuppressMessage("ReSharper", "CoVariantArrayConversion")]
+    private Action Operation(object targetTypeOrExpressionType, int parametersCount = 0)
+    {
+      CSharpArgumentInfo[] GetParametersAndArgumentInfos(int count, out ParameterExpression[] parameterExpressions)
+      {
+        CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
+        parameterExpressions = new ParameterExpression[count];
+        CSharpArgumentInfo[] argumentInfos = new CSharpArgumentInfo[count];
+        for (int i = 0; i < count; ++i)
+        {
+          parameterExpressions[i] = Expression.Parameter(typeof(object));
+          argumentInfos[i] = argumentInfo;
+        }
+        return argumentInfos;
+      }
+
+      LambdaExpression lambdaExpression;
+      ParameterExpression[] parameters = null;
+      CallSiteBinder binder = null;
+      if (targetTypeOrExpressionType is Type targetType)
+      {
+        parametersCount = 1;
+        GetParametersAndArgumentInfos(parametersCount, out parameters);
+        binder = Binder.Convert(CSharpBinderFlags.ConvertExplicit, targetType, typeof(object));
+        DynamicExpression operation = Expression.Dynamic(binder, targetType, parameters);
+        lambdaExpression = Expression.Lambda(operation, parameters);
+      }
+      else
+      {
+        ExpressionType expressionType = (ExpressionType) targetTypeOrExpressionType;
+        switch (parametersCount)
+        {
+          case 1:
+            binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, typeof(object), GetParametersAndArgumentInfos(parametersCount, out parameters));
+            break;
+          case 2:
+            binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, typeof(object), GetParametersAndArgumentInfos(parametersCount, out parameters));
+            break;
+        }
+        DynamicExpression operation = Expression.Dynamic(binder, typeof(object), parameters);
+        lambdaExpression = Expression.Lambda(operation, parameters);
+      }
+      Delegate function = lambdaExpression.Compile();
+      return () => Push(function.DynamicInvoke(Pop(parametersCount).ToArray()));
     }
 
     private void Output()
@@ -649,17 +650,6 @@ namespace Atom2
       Invoke(DoShow);
     }
 
-    public void Split()
-    {
-      object item = Pop();
-      Items items = (Items) item;
-      foreach (object currentItem in items)
-      {
-        Push(currentItem);
-      }
-      Push(items.Count);
-    }
-
     private void Trace()
     {
       Invoke(DoTrace);
@@ -693,5 +683,10 @@ namespace Atom2
         Evaluate(condition);
       }
     }
+
+    public event Action Breaking;
+    public event OutputtingEventHandler Outputting;
+    public event Action Stepping;
+    public event TerminatingEventHandler Terminating;
   }
 }
