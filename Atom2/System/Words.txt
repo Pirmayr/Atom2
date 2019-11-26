@@ -16,6 +16,24 @@ word
 )
 word
 
+(split) "(list) -> items count"
+(
+  runtime () "Split" execute
+)
+word
+
+(evaluate-and-split) "(list) -> (list) count"
+(
+  runtime () "EvaluateAndSplit" execute
+)
+word
+
+(join) "items count -> (list)"
+(
+  runtime () "Join" execute
+)
+word
+
 (splitHalve) "splits list into halves"
 (
   split
@@ -68,5 +86,3 @@ word
 (0 0 notEqual) (false) "math" "the false-value" define
 ((false) (true) rotate if-else) (not) "math" "negates the truth-value on the top of stack" define
 
-(Double cast) (toDouble) "conversion" "converts object to Double" define
-(Int32 cast) (toInt) "conversion" "converts object to Int32" define

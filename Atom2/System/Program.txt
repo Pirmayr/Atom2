@@ -3,8 +3,17 @@ load-file System.txt pragma
 reference "System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Windows.Forms" pragma
 reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" "System.Drawing" pragma
 
-(1 10  2 range (i show) (i) map) (mapTest) set
-(1000 dumpPrimes "done" output) (primesTest) set
+(mapTest) "show numbers from 1 to 10 using range-statement and map-statement"
+(
+  1 10  2 range (i show) (i) map
+)
+word
+
+(primesTest) "dumps all odd primes below 1000"
+(
+  1000 dumpPrimes
+)
+word
 
 (factorialTest) "computes and shows the factorial of 20"
 (
@@ -17,6 +26,8 @@ word
 
 (test) "performs various tests"
 (
+  3 4 power show
+
   (show show) void (Int32 String) createDelegate (testDelegate) put
 
   testDelegate (1234 "hello") Invoke 
