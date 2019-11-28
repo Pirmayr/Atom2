@@ -2,7 +2,6 @@
 {
   using System;
   using System.Collections.Generic;
-  using System.Threading;
   using System.Threading.Tasks;
 
   using Eto.Forms;
@@ -20,18 +19,13 @@
     private readonly TreeGridView codeTreeGridView;
     private readonly Command continueCommand;
     private readonly string currentCode;
-    private readonly int mainThreadId;
     private readonly TextArea outputTextArea;
     private readonly Command runCommand;
     private readonly Runtime runtime;
-    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(0);
     private readonly ListBox stackListBox;
     private readonly Command stepCommand;
     private readonly UITimer timer = new UITimer();
     private bool firstElapsed = true;
-    private bool paused;
-    private bool running;
-    private bool stepMode;
 
     private Editor(params string[] arguments)
     {
@@ -77,7 +71,6 @@
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
 
       // Other initializations:
-      mainThreadId = Thread.CurrentThread.ManagedThreadId;
       runtime.Breaking += OnBreaking;
       runtime.Outputting += OnOutputting;
       runtime.Stepping += OnStepping;
@@ -152,14 +145,14 @@
     private void OnContinue(object sender, EventArgs e)
     {
       callStackListBox.Items.Clear();
-      semaphore.Release();
+      runtime.Continue();
     }
 
     private void OnElapsed(object sender, EventArgs e)
     {
-      runCommand.Enabled = !running;
-      continueCommand.Enabled = paused;
-      stepCommand.Enabled = paused;
+      runCommand.Enabled = !runtime.GetRunning();
+      continueCommand.Enabled = runtime.GetPaused();
+      stepCommand.Enabled = runtime.GetPaused();
       if (firstElapsed)
       {
         firstElapsed = false;
@@ -175,29 +168,22 @@
 
     private void OnRun(object sender, EventArgs arguments)
     {
-      running = true;
       Task<Exception>.Factory.StartNew(DoRun, currentCode);
     }
 
     private void OnStep(object sender, EventArgs e)
     {
       callStackListBox.Items.Clear();
-      stepMode = true;
-      semaphore.Release();
+      runtime.Step();
     }
 
     private void OnStepping()
     {
-      if (stepMode)
-      {
-        stepMode = false;
-        Pause();
-      }
+      Pause();
     }
 
     private void OnTerminating(object sender, Exception exception)
     {
-      running = false;
       if (exception != null)
       {
         outputTextArea.Append(exception.Message + Environment.NewLine);
@@ -207,14 +193,7 @@
 
     private void Pause()
     {
-      if (Thread.CurrentThread.ManagedThreadId == mainThreadId)
-      {
-        return;
-      }
-      paused = true;
       Application.Invoke(UpdatePauseUI);
-      semaphore.Wait();
-      paused = false;
     }
 
     private void RebuildCallStackListBox(CallEnvironments callEnvironments)

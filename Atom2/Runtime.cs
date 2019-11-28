@@ -9,6 +9,7 @@ namespace Atom2
   using System.Linq.Expressions;
   using System.Reflection;
   using System.Runtime.CompilerServices;
+  using System.Threading;
 
   using Eto.Forms;
 
@@ -36,6 +37,13 @@ namespace Atom2
     private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote };
     private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis };
     private bool isInEvaluationMode;
+    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(0);
+    private bool paused;
+    private bool running;
+    private bool stepMode;
+
+
+
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
     public Items CurrentRootItems { get; private set; }
     public Stack Stack { get; } = new Stack();
@@ -74,8 +82,10 @@ namespace Atom2
 
     public Exception Run(string codeOrPath, bool evaluate, bool isOutermostRun)
     {
+      bool oldRunning = running;
       try
       {
+        running = true;
         isInEvaluationMode = evaluate;
         CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)));
         if (isInEvaluationMode)
@@ -88,7 +98,7 @@ namespace Atom2
           Evaluate(CurrentRootItems);
           if (isOutermostRun)
           {
-            InvokeTerminating(null);
+            DoTerminating(null);
           }
         }
         return null;
@@ -97,9 +107,13 @@ namespace Atom2
       {
         if (isOutermostRun)
         {
-          InvokeTerminating(exception);
+          DoTerminating(exception);
         }
         return exception;
+      }
+      finally
+      {
+        running = oldRunning;
       }
     }
 
@@ -162,6 +176,14 @@ namespace Atom2
     }
 
     private void Break()
+    {
+      paused = true;
+      Invoke(InvokeBreaking);
+      semaphore.Wait();
+      paused = false;
+    }
+
+    private void InvokeBreaking()
     {
       Breaking?.Invoke();
     }
@@ -285,7 +307,7 @@ namespace Atom2
       }
     }
 
-    private void DoInvokeTerminating(Exception exception)
+    private void InvokeTerminating(Exception exception)
     {
       Terminating?.Invoke(this, exception);
     }
@@ -312,7 +334,7 @@ namespace Atom2
       foreach (object currentItem in items)
       {
         CallEnvironments.Peek().CurrentItem = currentItem;
-        Stepping?.Invoke();
+        DoStepping();
         switch (TryGetWord(currentItem, out object word))
         {
           case WordKind.Set:
@@ -340,6 +362,23 @@ namespace Atom2
         }
       }
       CallEnvironments.Pop();
+    }
+
+    private void DoStepping()
+    {
+      if (stepMode)
+      {
+        stepMode = false;
+        paused = true;
+        Invoke(InvokeStepping);
+        semaphore.Wait();
+        paused = false;
+      }
+    }
+
+    private void InvokeStepping()
+    {
+      Stepping?.Invoke();
     }
 
     private void Evaluate()
@@ -489,9 +528,10 @@ namespace Atom2
       return Application.Invoke(function);
     }
 
-    private void InvokeTerminating(Exception exception)
+    private void DoTerminating(Exception exception)
     {
-      Invoke(() => DoInvokeTerminating(exception));
+      running = false;
+      Invoke(() => InvokeTerminating(exception));
     }
 
     [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
@@ -688,5 +728,26 @@ namespace Atom2
     public event OutputtingEventHandler Outputting;
     public event Action Stepping;
     public event TerminatingEventHandler Terminating;
+
+    public void Continue()
+    {
+      semaphore.Release();
+    }
+
+    public bool GetRunning()
+    {
+      return running;
+    }
+
+    public bool GetPaused()
+    {
+      return paused;
+    }
+
+    public void Step()
+    {
+      stepMode = true;
+      semaphore.Release();
+    }
   }
 }
