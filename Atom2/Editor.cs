@@ -2,7 +2,6 @@
 {
   using System;
   using System.Collections.Generic;
-  using System.Threading.Tasks;
 
   using Eto.Forms;
 
@@ -14,11 +13,10 @@
     private const int StandardDimension = 300;
     private const string StepText = "Step";
     private const string TitleText = "Atom 2";
-    private static readonly Application Application = new Application();
+    private readonly Application Application; // = new Application();
     private readonly ListBox callStackListBox;
     private readonly TreeGridView codeTreeGridView;
     private readonly Command continueCommand;
-    private readonly string currentCode;
     private readonly TextArea outputTextArea;
     private readonly Command runCommand;
     private readonly Runtime runtime;
@@ -27,17 +25,8 @@
     private readonly UITimer timer = new UITimer();
     private bool firstElapsed = true;
 
-    private Editor(params string[] arguments)
+    public Editor(Application application, string baseDirectory, string codeFilename)
     {
-      if (arguments.Length != 2)
-      {
-        arguments = new string[2];
-        arguments[0] = "/Users/pic/Projects/Atom2/Atom2/System";
-        arguments[1] = "Program.txt";
-      }
-      runtime = new Runtime(Application, arguments[0]);
-      currentCode = runtime.Code(arguments[1]);
-
       // Menu:
       Title = TitleText;
       WindowState = WindowState.Maximized;
@@ -71,19 +60,16 @@
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
 
       // Other initializations:
-      runtime.Breaking += OnBreaking;
+      Application = application;
+      runtime = new Runtime(Application, baseDirectory);
+      runtime.Breaking += UpdateUI;
       runtime.Outputting += OnOutputting;
-      runtime.Stepping += OnStepping;
+      runtime.Stepping += UpdateUI;
       runtime.Terminating += OnTerminating;
+      runtime.SetCode(codeFilename);
       timer.Interval = 0.01;
       timer.Elapsed += OnElapsed;
       timer.Start();
-      runtime.Run(currentCode, false, true);
-    }
-
-    public static void Run(string[] arguments)
-    {
-      Application.Run(new Editor(arguments));
     }
 
     private static TreeGridItemCollection GetCodeTree(IEnumerable<object> rootItems, object executingItem, ref TreeGridItem executingTreeGridViewItem)
@@ -121,16 +107,6 @@
       return result;
     }
 
-    private Exception DoRun(object code)
-    {
-      return runtime.Run((string) code, true, true);
-    }
-
-    private void OnBreaking()
-    {
-      Pause();
-    }
-
     private void OnCallStackListBoxSelectedIndexChanged(object sender, EventArgs e)
     {
       int index = callStackListBox.SelectedIndex;
@@ -157,7 +133,7 @@
       {
         firstElapsed = false;
         timer.Interval = 0.25;
-        UpdatePauseUI();
+        UpdateUI();
       }
     }
 
@@ -168,7 +144,7 @@
 
     private void OnRun(object sender, EventArgs arguments)
     {
-      Task<Exception>.Factory.StartNew(DoRun, currentCode);
+      runtime.Run();
     }
 
     private void OnStep(object sender, EventArgs e)
@@ -177,23 +153,13 @@
       runtime.Step();
     }
 
-    private void OnStepping()
-    {
-      Pause();
-    }
-
     private void OnTerminating(object sender, Exception exception)
     {
       if (exception != null)
       {
         outputTextArea.Append(exception.Message + Environment.NewLine);
       }
-      UpdatePauseUI();
-    }
-
-    private void Pause()
-    {
-      Application.Invoke(UpdatePauseUI);
+      UpdateUI();
     }
 
     private void RebuildCallStackListBox(CallEnvironments callEnvironments)
@@ -224,7 +190,7 @@
       }
     }
 
-    private void UpdatePauseUI()
+    private void UpdateUI()
     {
       CallEnvironments callEnvironments = runtime.CallEnvironments;
       RebuildCallStackListBox(callEnvironments);

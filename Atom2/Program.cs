@@ -1,6 +1,7 @@
 ﻿namespace Atom2
 {
   using System;
+  using Eto.Forms;
 
   public static class Program
   {
@@ -9,7 +10,15 @@
     {
       try
       {
-        Editor.Run(arguments);
+        string baseDirectory = "/Users/pic/Projects/Atom2/Atom2/System";
+        string codeFilename = "Program.txt";
+        if (arguments.Length == 2)
+        {
+          baseDirectory = arguments[0];
+          codeFilename = arguments[1];
+        }
+        Application application = new Application();
+        application.Run(new Editor(application, baseDirectory, codeFilename));
       }
       catch (Exception exception)
       {

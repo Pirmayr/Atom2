@@ -10,7 +10,7 @@ namespace Atom2
   using System.Reflection;
   using System.Runtime.CompilerServices;
   using System.Threading;
-
+  using System.Threading.Tasks;
   using Eto.Forms;
 
   using Microsoft.CSharp.RuntimeBinder;
@@ -41,19 +41,29 @@ namespace Atom2
     private bool paused;
     private bool running;
     private bool stepMode;
-
-
+    private string code;
+    private readonly Application application;
+    private readonly string baseDirectory;
 
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
     public Items CurrentRootItems { get; private set; }
     public Stack Stack { get; } = new Stack();
-    private Application Application { get; set; }
-    private string BaseDirectory { get; set; }
+
+    public string GetCode()
+    {
+      return code;
+    }
+
+    public void SetCode(string value)
+    {
+      code = value;
+      Run(code, false);
+    }
 
     public Runtime(Application application, string baseDirectory)
     {
-      Application = application;
-      BaseDirectory = baseDirectory;
+      this.application = application;
+      this.baseDirectory = baseDirectory;
       blockBeginTokens = NewNameHashSet(LeftParenthesis);
       blockEndTokens = NewNameHashSet(RightParenthesis);
       setWords.Add(new Name { Value = "trace" }, new Action(Trace));
@@ -74,41 +84,32 @@ namespace Atom2
       Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
     }
 
-    public string Code(string codeOrFilename)
+    public string GetCode(string codeOrFilename)
     {
-      string path = BaseDirectory + "/" + codeOrFilename;
+      string path = baseDirectory + "/" + codeOrFilename;
       return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
     }
 
-    public Exception Run(string codeOrPath, bool evaluate, bool isOutermostRun)
+    private Exception Run(string codeOrPath, bool evaluate)
     {
       bool oldRunning = running;
       try
       {
         running = true;
         isInEvaluationMode = evaluate;
-        CurrentRootItems = GetItems(GetTokens(Code(codeOrPath)));
+        CurrentRootItems = GetItems(GetTokens(GetCode(codeOrPath)));
         if (isInEvaluationMode)
         {
-          if (isOutermostRun)
-          {
-            Stack.Clear();
-            CallEnvironments.Clear();
-          }
+          Stack.Clear();
+          CallEnvironments.Clear();
           Evaluate(CurrentRootItems);
-          if (isOutermostRun)
-          {
-            DoTerminating(null);
-          }
+          DoTerminating(null);
         }
         return null;
       }
       catch (Exception exception)
       {
-        if (isOutermostRun)
-        {
-          DoTerminating(exception);
-        }
+        DoTerminating(exception);
         return exception;
       }
       finally
@@ -118,10 +119,10 @@ namespace Atom2
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public void Split()
+    [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
+    private void Split()
     {
-      object item = Pop();
-      Items items = (Items) item;
+      Items items = (Items) Pop();
       foreach (object currentItem in items)
       {
         Push(currentItem);
@@ -144,6 +145,16 @@ namespace Atom2
         result += characters.Dequeue();
       }
       return result;
+    }
+
+    public void Run()
+    {
+      Task.Factory.StartNew(Run, GetCode());
+    }
+
+    private Exception Run(object code)
+    {
+      return Run((string) code, true);
     }
 
     private static NameHashSet NewNameHashSet(params object[] arguments)
@@ -329,39 +340,42 @@ namespace Atom2
 
     private void Evaluate(object item)
     {
-      Items items = item.ToItems();
-      CallEnvironments.Push(new CallEnvironment { Items = items });
-      foreach (object currentItem in items)
+      if (isInEvaluationMode)
       {
-        CallEnvironments.Peek().CurrentItem = currentItem;
-        DoStepping();
-        switch (TryGetWord(currentItem, out object word))
+        Items items = item.ToItems();
+        CallEnvironments.Push(new CallEnvironment { Items = items });
+        foreach (object currentItem in items)
         {
-          case WordKind.Set:
-            switch (word)
-            {
-              case Action actionValue:
-                actionValue.Invoke();
-                break;
-              case Items itemsValue:
-                putWords.EnterScope();
-                Evaluate(itemsValue);
-                putWords.LeaveScope();
-                break;
-              default:
-                Evaluate(word);
-                break;
-            }
-            break;
-          case WordKind.Put:
-            Push(word);
-            break;
-          default:
-            Push(currentItem);
-            break;
+          CallEnvironments.Peek().CurrentItem = currentItem;
+          DoStepping();
+          switch (TryGetWord(currentItem, out object word))
+          {
+            case WordKind.Set:
+              switch (word)
+              {
+                case Action actionValue:
+                  actionValue.Invoke();
+                  break;
+                case Items itemsValue:
+                  putWords.EnterScope();
+                  Evaluate(itemsValue);
+                  putWords.LeaveScope();
+                  break;
+                default:
+                  Evaluate(word);
+                  break;
+              }
+              break;
+            case WordKind.Put:
+              Push(word);
+              break;
+            default:
+              Push(currentItem);
+              break;
+          }
         }
+        CallEnvironments.Pop();
       }
-      CallEnvironments.Pop();
     }
 
     private void DoStepping()
@@ -489,20 +503,21 @@ namespace Atom2
       return result;
     }
 
+    /// <summary>
+    /// Hugo
+    /// </summary>
+    /// <param name="pragmaTokens"></param>
     [SuppressMessage("ReSharper", "PatternAlwaysOfType")]
-    private void HandlePragma(Tokens tokens)
+    private void HandlePragma(Tokens pragmaTokens)
     {
-      string pragma = ((Name) tokens.Dequeue()).Value;
+      string pragma = ((Name) pragmaTokens.Dequeue()).Value;
       switch (pragma)
       {
         case LoadFilePragma:
-          if (Run(((Name) tokens.Dequeue()).Value, isInEvaluationMode, false) is Exception exception)
-          {
-            throw exception;
-          }
+          Evaluate(GetItems(GetTokens(GetCode(((Name) pragmaTokens.Dequeue()).Value))));
           break;
         case ReferencePragma:
-          Reference((string) tokens.Dequeue(), (string) tokens.Dequeue());
+          Reference((string) pragmaTokens.Dequeue(), (string) pragmaTokens.Dequeue());
           break;
       }
     }
@@ -520,12 +535,12 @@ namespace Atom2
 
     private void Invoke(Action action)
     {
-      Application.Invoke(action);
+      application.Invoke(action);
     }
 
     private T Invoke<T>(Func<T> function)
     {
-      return Application.Invoke(function);
+      return application.Invoke(function);
     }
 
     private void DoTerminating(Exception exception)
@@ -554,6 +569,7 @@ namespace Atom2
 
     [SuppressMessage("ReSharper", "AssignNullToNotNullAttribute")]
     [SuppressMessage("ReSharper", "CoVariantArrayConversion")]
+    [SuppressMessage("Style", "IDE0062:Make local function 'static'", Justification = "<Pending>")]
     private Action Operation(object targetTypeOrExpressionType, int parametersCount = 0)
     {
       CSharpArgumentInfo[] GetParametersAndArgumentInfos(int count, out ParameterExpression[] parameterExpressions)
@@ -569,7 +585,6 @@ namespace Atom2
         return argumentInfos;
       }
 
-      LambdaExpression lambdaExpression;
       ParameterExpression[] parameters = null;
       CallSiteBinder binder = null;
       if (targetTypeOrExpressionType is Type targetType)
@@ -577,11 +592,10 @@ namespace Atom2
         parametersCount = 1;
         GetParametersAndArgumentInfos(parametersCount, out parameters);
         binder = Binder.Convert(CSharpBinderFlags.ConvertExplicit, targetType, typeof(object));
-        DynamicExpression operation = Expression.Dynamic(binder, targetType, parameters);
-        lambdaExpression = Expression.Lambda(operation, parameters);
       }
       else
       {
+        targetType = typeof(object);
         ExpressionType expressionType = (ExpressionType) targetTypeOrExpressionType;
         switch (parametersCount)
         {
@@ -592,10 +606,8 @@ namespace Atom2
             binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, typeof(object), GetParametersAndArgumentInfos(parametersCount, out parameters));
             break;
         }
-        DynamicExpression operation = Expression.Dynamic(binder, typeof(object), parameters);
-        lambdaExpression = Expression.Lambda(operation, parameters);
       }
-      Delegate function = lambdaExpression.Compile();
+      Delegate function = Expression.Lambda(Expression.Dynamic(binder, targetType, parameters), parameters).Compile();
       return () => Push(function.DynamicInvoke(Pop(parametersCount).ToArray()));
     }
 

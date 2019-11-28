@@ -60,6 +60,8 @@ word
 )
 word
 
+1 0 divide
+
 Form new
 : (form) put
 : TextBox new
