@@ -9,12 +9,12 @@
   {
     private const string ContinueText = "Continue";
     private const string FileText = "File";
+    private const string HeaderTextCode = "Code";
+    private const string HeaderTextType = "Type";
     private const string RunText = "Run";
     private const int StandardDimension = 300;
     private const string StepText = "Step";
     private const string TitleText = "Mira";
-    private const string HeaderTextCode = "Code";
-    private const string HeaderTextType = "Type";
     private readonly ListBox callStackListBox;
     private readonly TreeGridView codeTreeGridView;
     private readonly Command continueCommand;

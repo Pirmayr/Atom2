@@ -11,6 +11,7 @@ namespace Mira
   using System.Runtime.CompilerServices;
   using System.Threading;
   using System.Threading.Tasks;
+
   using Eto.Forms;
 
   using Microsoft.CSharp.RuntimeBinder;
@@ -28,24 +29,21 @@ namespace Mira
     private const string ReferencePragma = "reference";
     private const char RightParenthesis = ')';
     private const char Whitespace = char.MaxValue;
+    private readonly Application application;
+    private readonly string baseDirectory;
     private readonly NameHashSet blockBeginTokens;
     private readonly NameHashSet blockEndTokens;
     private readonly Name executeName = new Name { Value = "execute" };
     private readonly StringHashSet pragmas = new StringHashSet { LoadFilePragma, ReferencePragma };
     private readonly Words putWords = new Words();
+    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(0);
     private readonly Words setWords = new Words();
     private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote };
     private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis };
-    private bool evaluating;
-    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(0);
-    private bool stepping;
     private string code;
-    private readonly Application application;
-    private readonly string baseDirectory;
-
+    private bool evaluating;
+    private bool stepping;
     public CallEnvironments CallEnvironments { get; } = new CallEnvironments();
-    public Items CurrentRootItems { get; private set; }
-    public Stack Stack { get; } = new Stack();
 
     public string Code
     {
@@ -56,6 +54,11 @@ namespace Mira
         Run(code, false);
       }
     }
+
+    public Items CurrentRootItems { get; private set; }
+    public bool Paused { get; private set; }
+    public bool Running { get; private set; }
+    public Stack Stack { get; } = new Stack();
 
     public Runtime(Application application, string baseDirectory)
     {
@@ -80,50 +83,20 @@ namespace Mira
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Reflection");
     }
 
-    public string GetCode(string codeOrFilename)
+    public void Continue()
     {
-      string path = baseDirectory + "/" + codeOrFilename;
-      return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
+      semaphore.Release();
     }
 
-    private Exception Run(string codeOrPath, bool evaluate)
+    public void Run()
     {
-      bool oldRunning = Running;
-      try
-      {
-        Running = true;
-        evaluating = evaluate;
-        CurrentRootItems = GetItems(GetTokens(GetCode(codeOrPath)));
-        if (evaluating)
-        {
-          Stack.Clear();
-          CallEnvironments.Clear();
-          Evaluate(CurrentRootItems);
-          DoTerminating(null);
-        }
-        return null;
-      }
-      catch (Exception exception)
-      {
-        DoTerminating(exception);
-        return exception;
-      }
-      finally
-      {
-        Running = oldRunning;
-      }
+      Task.Factory.StartNew(() => Run(Code, true));
     }
 
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
-    private void Split()
+    public void Step()
     {
-      Items items = (Items) Pop();
-      foreach (object currentItem in items)
-      {
-        Push(currentItem);
-      }
-      Push(items.Count);
+      stepping = true;
+      semaphore.Release();
     }
 
     private static string GetToken(Characters characters, CharHashSet stopCharacters)
@@ -134,16 +107,6 @@ namespace Mira
         result += characters.Dequeue();
       }
       return result;
-    }
-
-    public void Run()
-    {
-      Task.Factory.StartNew(Run, Code);
-    }
-
-    private Exception Run(object code)
-    {
-      return Run((string) code, true);
     }
 
     private static NameHashSet NewNameHashSet(params object[] arguments)
@@ -183,11 +146,6 @@ namespace Mira
       Paused = false;
     }
 
-    private void RaiseBreaking()
-    {
-      Breaking?.Invoke();
-    }
-
     private void CreateDelegate()
     {
       if (Peek() is Type)
@@ -199,18 +157,18 @@ namespace Mira
       Push(CreateDelegate(Pop((int) Pop()).Cast<Type>(), (Type) Pop(), (Items) Pop()));
     }
 
-    private Delegate CreateDelegate(Type delegateType, Items code)
+    private Delegate CreateDelegate(Type delegateType, Items delegateCode)
     {
-      return CreateDelegate(delegateType, null, null, code);
+      return CreateDelegate(delegateType, null, null, delegateCode);
     }
 
-    private Delegate CreateDelegate(IEnumerable<Type> parameterTypes, Type returnType, Items code)
+    private Delegate CreateDelegate(IEnumerable<Type> parameterTypes, Type returnType, Items delegateCode)
     {
-      return CreateDelegate(typeof(void), parameterTypes, returnType, code);
+      return CreateDelegate(typeof(void), parameterTypes, returnType, delegateCode);
     }
 
     [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
-    private Delegate CreateDelegate(Type delegateType, IEnumerable<Type> parameterTypes, Type returnType, Items code)
+    private Delegate CreateDelegate(Type delegateType, IEnumerable<Type> parameterTypes, Type returnType, Items delegateCode)
     {
       if (delegateType != typeof(void))
       {
@@ -218,7 +176,7 @@ namespace Mira
         parameterTypes = invokeMethod.GetParameters().Select(currentParameter => currentParameter.ParameterType).ToArray();
         returnType = invokeMethod.ReturnType;
       }
-      Expression codeConstant = Expression.Constant(code);
+      Expression codeConstant = Expression.Constant(delegateCode);
       Expression thisConstant = Expression.Constant(this);
       MethodInfo pushMethod = ((Action<object>) Push).Method;
       MethodInfo popMethod = ((Func<object>) Pop).Method;
@@ -251,19 +209,15 @@ namespace Mira
       }
     }
 
-    private void RaiseTerminating(Exception exception)
-    {
-      Terminating?.Invoke(this, exception);
-    }
-
-    private void RaiseOutputting()
-    {
-      Outputting?.Invoke(this, Pop().ToString());
-    }
-
     private void DoShow()
     {
       MessageBox.Show(Pop().ToString());
+    }
+
+    private void DoTerminating(Exception exception)
+    {
+      Running = false;
+      Invoke(() => RaiseTerminating(exception));
     }
 
     private void DoTrace()
@@ -309,23 +263,6 @@ namespace Mira
         }
         CallEnvironments.Pop();
       }
-    }
-
-    private void HandleStepping()
-    {
-      if (stepping)
-      {
-        stepping = false;
-        Paused = true;
-        Invoke(RaiseStepping);
-        semaphore.Wait();
-        Paused = false;
-      }
-    }
-
-    private void RaiseStepping()
-    {
-      Stepping?.Invoke();
     }
 
     private void Evaluate()
@@ -416,6 +353,12 @@ namespace Mira
       }
     }
 
+    private string GetCode(string codeOrFilename)
+    {
+      string path = baseDirectory + "/" + codeOrFilename;
+      return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
+    }
+
     private Items GetItems(Tokens tokens)
     {
       Items result = new Items();
@@ -438,12 +381,12 @@ namespace Mira
       return result;
     }
 
-    private Tokens GetTokens(string code)
+    private Tokens GetTokens(string input)
     {
       Tokens result = new Tokens();
       Tokens currentPragmaTokens = new Tokens();
       Tokens currentTokens = result;
-      Characters characters = new Characters(code.ToCharArray());
+      Characters characters = new Characters(input.ToCharArray());
       for (char nextCharacter = NextCharacter(characters); nextCharacter != Eof; nextCharacter = NextCharacter(characters))
       {
         switch (nextCharacter)
@@ -499,6 +442,18 @@ namespace Mira
       }
     }
 
+    private void HandleStepping()
+    {
+      if (stepping)
+      {
+        stepping = false;
+        Paused = true;
+        Invoke(RaiseStepping);
+        semaphore.Wait();
+        Paused = false;
+      }
+    }
+
     private void If()
     {
       object condition = Pop();
@@ -518,12 +473,6 @@ namespace Mira
     private T Invoke<T>(Func<T> function)
     {
       return application.Invoke(function);
-    }
-
-    private void DoTerminating(Exception exception)
-    {
-      Running = false;
-      Invoke(() => RaiseTerminating(exception));
     }
 
     [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
@@ -626,6 +575,26 @@ namespace Mira
       }
     }
 
+    private void RaiseBreaking()
+    {
+      Breaking?.Invoke();
+    }
+
+    private void RaiseOutputting()
+    {
+      Outputting?.Invoke(this, Pop().ToString());
+    }
+
+    private void RaiseStepping()
+    {
+      Stepping?.Invoke();
+    }
+
+    private void RaiseTerminating(Exception exception)
+    {
+      Terminating?.Invoke(this, exception);
+    }
+
     private void Reference(string assemblyName, params string[] requestedNamespaces)
     {
       HashSet<string> names = new HashSet<string>();
@@ -666,6 +635,34 @@ namespace Mira
       }
     }
 
+    private Exception Run(string codeOrPath, bool evaluate)
+    {
+      bool oldRunning = Running;
+      try
+      {
+        Running = true;
+        evaluating = evaluate;
+        CurrentRootItems = GetItems(GetTokens(GetCode(codeOrPath)));
+        if (evaluating)
+        {
+          Stack.Clear();
+          CallEnvironments.Clear();
+          Evaluate(CurrentRootItems);
+          DoTerminating(null);
+        }
+        return null;
+      }
+      catch (Exception exception)
+      {
+        DoTerminating(exception);
+        return exception;
+      }
+      finally
+      {
+        Running = oldRunning;
+      }
+    }
+
     private void Set()
     {
       foreach (Name currentItem in Enumerable.Reverse((Items) Pop()))
@@ -677,6 +674,18 @@ namespace Mira
     private void Show()
     {
       Invoke(DoShow);
+    }
+
+    [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private void Split()
+    {
+      Items items = (Items) Pop();
+      foreach (object currentItem in items)
+      {
+        Push(currentItem);
+      }
+      Push(items.Count);
     }
 
     private void Trace()
@@ -717,20 +726,5 @@ namespace Mira
     public event OutputtingEventHandler Outputting;
     public event Action Stepping;
     public event TerminatingEventHandler Terminating;
-
-    public void Continue()
-    {
-      semaphore.Release();
-    }
-
-    public bool Running { get; private set; }
-
-    public bool Paused { get; private set; }
-
-    public void Step()
-    {
-      stepping = true;
-      semaphore.Release();
-    }
   }
 }
