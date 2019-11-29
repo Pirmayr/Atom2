@@ -15,9 +15,9 @@ word
 )
 word
 
-(factorialTest) "computes and shows the factorial of 20"
+(factorialTest) "computes and shows the factorial of 1000"
 (
-  20.0 factorial show
+  1000 factorial output
 )
 word
 
@@ -60,8 +60,6 @@ word
 )
 word
 
-1 0 divide
-
 Form new
 : (form) put
 : TextBox new
@@ -84,7 +82,7 @@ Form new
     : "Dump Primes" empty (primesTest) addMenuItem
     : "Factorial Test" empty (factorialTest) addMenuItem
     : "Hello World" empty (outputTest) addMenuItem
-    : "Array Test" empty break (arrayTest) addMenuItem
+    : "Array Test" empty (arrayTest) addMenuItem
     : "Test" empty (test) addMenuItem
     addToolStripItem
   addControl

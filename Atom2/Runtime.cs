@@ -7,6 +7,7 @@ namespace Atom2
   using System.IO;
   using System.Linq;
   using System.Linq.Expressions;
+  using System.Numerics;
   using System.Reflection;
   using System.Runtime.CompilerServices;
   using System.Threading;
@@ -82,6 +83,7 @@ namespace Atom2
       setWords.Add(new Name { Value = "makeOperation" }, new Action(MakeOperation));
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Reflection");
       Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
+      Reference("System.Numerics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Numerics");
     }
 
     public string GetCode(string codeOrFilename)
@@ -649,12 +651,12 @@ namespace Atom2
       }
     }
 
-    private void Reference(string assemblyName, params string[] requestedNamespace)
+    private void Reference(string assemblyName, params string[] requestedNamespaces)
     {
       HashSet<string> names = new HashSet<string>();
       foreach (Type currentType in Assembly.Load(assemblyName).GetTypes())
       {
-        if (requestedNamespace.Any(currentNamespace => currentNamespace == currentType.Namespace))
+        if (requestedNamespaces.Any(currentNamespace => currentNamespace == currentType.Namespace))
         {
           setWords[new Name { Value = currentType.Name }] = currentType;
           foreach (MemberInfo currentMember in currentType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
