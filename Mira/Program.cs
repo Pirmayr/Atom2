@@ -10,7 +10,7 @@
     {
       try
       {
-        string baseDirectory = "/Users/pic/Projects/Atom2/Atom2/System";
+        string baseDirectory = "/Users/pic/Projects/Mira/Mira/System";
         string codeFilename = "Program.txt";
         if (arguments.Length == 2)
         {
