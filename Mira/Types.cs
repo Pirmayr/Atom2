@@ -1,4 +1,4 @@
-﻿namespace Atom2
+﻿namespace Mira
 {
   using System;
   using System.Collections.Generic;

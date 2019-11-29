@@ -1,4 +1,4 @@
-﻿namespace Atom2
+﻿namespace Mira
 {
   using System;
   using System.Collections.Generic;
@@ -12,8 +12,9 @@
     private const string RunText = "Run";
     private const int StandardDimension = 300;
     private const string StepText = "Step";
-    private const string TitleText = "Atom 2";
-    private readonly Application Application; // = new Application();
+    private const string TitleText = "Mira";
+    private const string HeaderTextCode = "Code";
+    private const string HeaderTextType = "Type";
     private readonly ListBox callStackListBox;
     private readonly TreeGridView codeTreeGridView;
     private readonly Command continueCommand;
@@ -60,13 +61,12 @@
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
 
       // Other initializations:
-      Application = application;
-      runtime = new Runtime(Application, baseDirectory);
+      runtime = new Runtime(application, baseDirectory);
       runtime.Breaking += UpdateUI;
       runtime.Outputting += OnOutputting;
       runtime.Stepping += UpdateUI;
       runtime.Terminating += OnTerminating;
-      runtime.SetCode(codeFilename);
+      runtime.Code = codeFilename;
       timer.Interval = 0.01;
       timer.Elapsed += OnElapsed;
       timer.Start();
@@ -96,13 +96,13 @@
       codeGridColumn.Editable = false;
       codeGridColumn.DataCell = new TextBoxCell(0);
       codeGridColumn.Resizable = false;
-      codeGridColumn.HeaderText = "Code";
+      codeGridColumn.HeaderText = HeaderTextCode;
       result.Columns.Add(codeGridColumn);
       GridColumn typeGridColumn = new GridColumn();
       typeGridColumn.Editable = false;
       typeGridColumn.DataCell = new TextBoxCell(1);
       typeGridColumn.Resizable = false;
-      typeGridColumn.HeaderText = "Type";
+      typeGridColumn.HeaderText = HeaderTextType;
       result.Columns.Add(typeGridColumn);
       return result;
     }
@@ -126,9 +126,9 @@
 
     private void OnElapsed(object sender, EventArgs e)
     {
-      runCommand.Enabled = !runtime.GetRunning();
-      continueCommand.Enabled = runtime.GetPaused();
-      stepCommand.Enabled = runtime.GetPaused();
+      runCommand.Enabled = !runtime.Running;
+      continueCommand.Enabled = runtime.Paused;
+      stepCommand.Enabled = runtime.Paused;
       if (firstElapsed)
       {
         firstElapsed = false;

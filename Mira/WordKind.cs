@@ -1,4 +1,4 @@
-﻿namespace Atom2
+﻿namespace Mira
 {
   public enum WordKind
   {

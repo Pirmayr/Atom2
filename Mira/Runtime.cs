@@ -1,4 +1,4 @@
-namespace Atom2
+namespace Mira
 {
   using System;
   using System.Collections.Generic;
@@ -36,11 +36,9 @@ namespace Atom2
     private readonly Words setWords = new Words();
     private readonly CharHashSet stringStopCharacters = new CharHashSet { Eof, Quote };
     private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis };
-    private bool isInEvaluationMode;
+    private bool evaluating;
     private readonly SemaphoreSlim semaphore = new SemaphoreSlim(0);
-    private bool paused;
-    private bool running;
-    private bool stepMode;
+    private bool stepping;
     private string code;
     private readonly Application application;
     private readonly string baseDirectory;
@@ -49,15 +47,14 @@ namespace Atom2
     public Items CurrentRootItems { get; private set; }
     public Stack Stack { get; } = new Stack();
 
-    public string GetCode()
+    public string Code
     {
-      return code;
-    }
-
-    public void SetCode(string value)
-    {
-      code = value;
-      Run(code, false);
+      get => code;
+      set
+      {
+        code = value;
+        Run(code, false);
+      }
     }
 
     public Runtime(Application application, string baseDirectory)
@@ -81,8 +78,6 @@ namespace Atom2
       setWords.Add(new Name { Value = "runtime" }, this);
       setWords.Add(new Name { Value = "makeOperation" }, new Action(MakeOperation));
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Reflection");
-      Reference("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Linq.Expressions");
-      Reference("System.Numerics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", "System.Numerics");
     }
 
     public string GetCode(string codeOrFilename)
@@ -93,13 +88,13 @@ namespace Atom2
 
     private Exception Run(string codeOrPath, bool evaluate)
     {
-      bool oldRunning = running;
+      bool oldRunning = Running;
       try
       {
-        running = true;
-        isInEvaluationMode = evaluate;
+        Running = true;
+        evaluating = evaluate;
         CurrentRootItems = GetItems(GetTokens(GetCode(codeOrPath)));
-        if (isInEvaluationMode)
+        if (evaluating)
         {
           Stack.Clear();
           CallEnvironments.Clear();
@@ -115,7 +110,7 @@ namespace Atom2
       }
       finally
       {
-        running = oldRunning;
+        Running = oldRunning;
       }
     }
 
@@ -131,13 +126,6 @@ namespace Atom2
       Push(items.Count);
     }
 
-    private static string GetCall(Type type, string memberName, object[] arguments)
-    {
-      string typeName = type == null ? string.Empty : type.Name;
-      string argumentsString = arguments == null ? string.Empty : string.Join(", ", arguments);
-      return typeName + "." + memberName + "(" + argumentsString + ")";
-    }
-
     private static string GetToken(Characters characters, CharHashSet stopCharacters)
     {
       string result = string.Empty;
@@ -150,7 +138,7 @@ namespace Atom2
 
     public void Run()
     {
-      Task.Factory.StartNew(Run, GetCode());
+      Task.Factory.StartNew(Run, Code);
     }
 
     private Exception Run(object code)
@@ -189,10 +177,10 @@ namespace Atom2
 
     private void Break()
     {
-      paused = true;
+      Paused = true;
       Invoke(RaiseBreaking);
       semaphore.Wait();
-      paused = false;
+      Paused = false;
     }
 
     private void RaiseBreaking()
@@ -285,7 +273,7 @@ namespace Atom2
 
     private void Evaluate(object item)
     {
-      if (isInEvaluationMode)
+      if (evaluating)
       {
         Items items = item.ToItems();
         CallEnvironments.Push(new CallEnvironment { Items = items });
@@ -325,13 +313,13 @@ namespace Atom2
 
     private void HandleStepping()
     {
-      if (stepMode)
+      if (stepping)
       {
-        stepMode = false;
-        paused = true;
+        stepping = false;
+        Paused = true;
         Invoke(RaiseStepping);
         semaphore.Wait();
-        paused = false;
+        Paused = false;
       }
     }
 
@@ -496,10 +484,6 @@ namespace Atom2
       return result;
     }
 
-    /// <summary>
-    /// Hugo
-    /// </summary>
-    /// <param name="pragmaTokens"></param>
     [SuppressMessage("ReSharper", "PatternAlwaysOfType")]
     private void HandlePragma(Tokens pragmaTokens)
     {
@@ -538,7 +522,7 @@ namespace Atom2
 
     private void DoTerminating(Exception exception)
     {
-      running = false;
+      Running = false;
       Invoke(() => RaiseTerminating(exception));
     }
 
@@ -739,19 +723,13 @@ namespace Atom2
       semaphore.Release();
     }
 
-    public bool GetRunning()
-    {
-      return running;
-    }
+    public bool Running { get; private set; }
 
-    public bool GetPaused()
-    {
-      return paused;
-    }
+    public bool Paused { get; private set; }
 
     public void Step()
     {
-      stepMode = true;
+      stepping = true;
       semaphore.Release();
     }
   }

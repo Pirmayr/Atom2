@@ -1,4 +1,7 @@
-﻿(1 makeOperation) (makeUnaryOperation) set
+﻿reference "System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Linq.Expressions" pragma
+reference "System.Numerics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Numerics" pragma
+
+(1 makeOperation) (makeUnaryOperation) set
 (2 makeOperation) (makeBinaryOperation) set
 
 ExpressionType Increment makeUnaryOperation (increment) set

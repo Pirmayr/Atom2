@@ -1,4 +1,7 @@
-﻿((control) put Controls control 1 join Add) (addControl) set
+﻿reference "System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Windows.Forms" pragma
+reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" "System.Drawing" pragma
+
+((control) put Controls control 1 join Add) (addControl) set
 ((toolStripItem) put Items toolStripItem 1 join Add drop) (addToolStripItem) set
 
 ((code) put (sender arguments) (put) verbatim code split 2 add join lambda EventHandler createDelegate) (createEventHandler) set

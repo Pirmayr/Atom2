@@ -1,6 +1,6 @@
 ﻿#pragma warning disable 618
 
-namespace Atom2
+namespace Mira
 {
   using System.Collections.Generic;
 
