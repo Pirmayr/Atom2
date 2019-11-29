@@ -1,1 +1,1 @@
-# Atom2
+# Mira Programming Language
