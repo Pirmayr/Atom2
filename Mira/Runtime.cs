@@ -7,7 +7,6 @@ namespace Atom2
   using System.IO;
   using System.Linq;
   using System.Linq.Expressions;
-  using System.Numerics;
   using System.Reflection;
   using System.Runtime.CompilerServices;
   using System.Threading;
@@ -191,12 +190,12 @@ namespace Atom2
     private void Break()
     {
       paused = true;
-      Invoke(InvokeBreaking);
+      Invoke(RaiseBreaking);
       semaphore.Wait();
       paused = false;
     }
 
-    private void InvokeBreaking()
+    private void RaiseBreaking()
     {
       Breaking?.Invoke();
     }
@@ -247,66 +246,10 @@ namespace Atom2
       return (delegateType == typeof(void) ? Expression.Lambda(Expression.Block(statements), parameters) : Expression.Lambda(delegateType, Expression.Block(statements), parameters)).Compile();
     }
 
-    private Exception DoExecute()
+    private Exception DoExecute(Type type, string memberName, BindingFlags bindingFlags, object target, object[] arguments, bool hasReturnValue)
     {
-      string memberName = "(unknown)";
-      object[] arguments = null;
-      Type type = null;
       try
       {
-        memberName = (string) Pop();
-        int argumentsCount = (int) Pop();
-        arguments = Pop(argumentsCount).ToArray();
-        object typeOrTarget;
-        object typeOrTargetOrInstanceFlag = Pop();
-        if (typeOrTargetOrInstanceFlag is bool forceInstance)
-        {
-          typeOrTarget = Pop();
-        }
-        else
-        {
-          forceInstance = false;
-          typeOrTarget = typeOrTargetOrInstanceFlag;
-        }
-        bool isType = !forceInstance && typeOrTarget is Type;
-        type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
-        object target = isType ? null : typeOrTarget;
-        BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
-        bool hasReturnValue = false;
-        switch (memberName)
-        {
-          case NewMemberName:
-            memberName = string.Empty;
-            hasReturnValue = true;
-            bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;
-            break;
-          default:
-            bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
-            MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
-            if (member != null)
-            {
-              switch (member)
-              {
-                case MethodInfo methodInfo:
-                  hasReturnValue = methodInfo.ReturnType != typeof(void);
-                  bindingFlags |= BindingFlags.InvokeMethod;
-                  break;
-                case FieldInfo _:
-                  hasReturnValue = arguments.Length == 0;
-                  bindingFlags |= hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField;
-                  break;
-                case PropertyInfo _:
-                  hasReturnValue = arguments.Length == 0;
-                  bindingFlags |= hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty;
-                  break;
-                case EventInfo eventInfo:
-                  memberName = eventInfo.AddMethod.Name;
-                  bindingFlags |= BindingFlags.InvokeMethod;
-                  break;
-              }
-            }
-            break;
-        }
         object invokeResult = type.InvokeMember(memberName, bindingFlags, null, target, arguments);
         if (hasReturnValue)
         {
@@ -316,16 +259,16 @@ namespace Atom2
       }
       catch (Exception exception)
       {
-        return new Exception($"Cannot execute '{GetCall(type, memberName, arguments)}'", exception);
+        return exception;
       }
     }
 
-    private void InvokeTerminating(Exception exception)
+    private void RaiseTerminating(Exception exception)
     {
       Terminating?.Invoke(this, exception);
     }
 
-    private void DoOutput()
+    private void RaiseOutputting()
     {
       Outputting?.Invoke(this, Pop().ToString());
     }
@@ -349,7 +292,7 @@ namespace Atom2
         foreach (object currentItem in items)
         {
           CallEnvironments.Peek().CurrentItem = currentItem;
-          DoStepping();
+          HandleStepping();
           switch (TryGetWord(currentItem, out object word))
           {
             case WordKind.Set:
@@ -380,19 +323,19 @@ namespace Atom2
       }
     }
 
-    private void DoStepping()
+    private void HandleStepping()
     {
       if (stepMode)
       {
         stepMode = false;
         paused = true;
-        Invoke(InvokeStepping);
+        Invoke(RaiseStepping);
         semaphore.Wait();
         paused = false;
       }
     }
 
-    private void InvokeStepping()
+    private void RaiseStepping()
     {
       Stepping?.Invoke();
     }
@@ -413,17 +356,65 @@ namespace Atom2
     [SuppressMessage("ReSharper", "PatternAlwaysOfType")]
     private void Execute()
     {
-      object memberName = Pop();
+      string memberName = (string) Pop();
+      int argumentsCount = 0;
       if (Stack.Peek() is Items)
       {
         EvaluateAndSplit();
+        argumentsCount = (int) Pop();
+      }
+      object[] arguments = Pop(argumentsCount).ToArray();
+      object typeOrTarget;
+      object typeOrTargetOrInstanceFlag = Pop();
+      if (typeOrTargetOrInstanceFlag is bool forceInstance)
+      {
+        typeOrTarget = Pop();
       }
       else
       {
-        Push(0);
+        forceInstance = false;
+        typeOrTarget = typeOrTargetOrInstanceFlag;
       }
-      Push(memberName);
-      if (Invoke(DoExecute) is Exception exception)
+      bool isType = !forceInstance && typeOrTarget is Type;
+      Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
+      object target = isType ? null : typeOrTarget;
+      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
+      bool hasReturnValue = false;
+      switch (memberName)
+      {
+        case NewMemberName:
+          memberName = string.Empty;
+          hasReturnValue = true;
+          bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;
+          break;
+        default:
+          bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
+          MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
+          if (member != null)
+          {
+            switch (member)
+            {
+              case MethodInfo methodInfo:
+                hasReturnValue = methodInfo.ReturnType != typeof(void);
+                bindingFlags |= BindingFlags.InvokeMethod;
+                break;
+              case FieldInfo _:
+                hasReturnValue = arguments.Length == 0;
+                bindingFlags |= hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField;
+                break;
+              case PropertyInfo _:
+                hasReturnValue = arguments.Length == 0;
+                bindingFlags |= hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty;
+                break;
+              case EventInfo eventInfo:
+                memberName = eventInfo.AddMethod.Name;
+                bindingFlags |= BindingFlags.InvokeMethod;
+                break;
+            }
+          }
+          break;
+      }
+      if (Invoke(() => DoExecute(type, memberName, bindingFlags, target, arguments, hasReturnValue)) is Exception exception)
       {
         throw exception;
       }
@@ -548,7 +539,7 @@ namespace Atom2
     private void DoTerminating(Exception exception)
     {
       running = false;
-      Invoke(() => InvokeTerminating(exception));
+      Invoke(() => RaiseTerminating(exception));
     }
 
     [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
@@ -615,7 +606,7 @@ namespace Atom2
 
     private void Output()
     {
-      Invoke(DoOutput);
+      Invoke(RaiseOutputting);
     }
 
     private object Peek()
