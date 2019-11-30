@@ -71,6 +71,7 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Items.cs" />
     <Compile Include="Characters.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="System\System.txt" />
@@ -82,6 +83,7 @@
     <None Include="System\IO.txt" />
     <None Include="System\UI.txt" />
     <None Include="packages.config" />
+    <None Include="System\Core.txt" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

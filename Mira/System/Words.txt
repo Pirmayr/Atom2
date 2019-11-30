@@ -1,19 +1,4 @@
-﻿(runtime "Get" execute) (get) set
-(runtime "Evaluate" execute) (evaluate) set
-
-(runtime "While" execute) (while) set
-(runtime "If" execute) (if) set
-
-(runtime "Break" execute) (break) set
-(runtime "Output" execute) (output) set
-(runtime "Show" execute) (show) set
-(runtime "Trace" execute) (trace) set
-
-(runtime "CreateDelegate" execute) (createDelegate) set
-(runtime "MakeOperation" execute) (makeOperation) set
-
-
-((category brief) put set) (define) set
+﻿((category brief) put set) (define) set
 ((name brief body) put body name set) (word) set
 
 (verbatim) "pushes list-item on top of stack"

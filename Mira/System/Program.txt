@@ -79,7 +79,7 @@ Form new
     : "Dump Primes" empty (primesTest) addMenuItem
     : "Factorial Test" empty (factorialTest) addMenuItem
     : "Hello World" empty (outputTest) addMenuItem
-    : "Array Test" empty (arrayTest) addMenuItem
+    : "Array Test" empty break (arrayTest) addMenuItem
     : "Test" empty (test) addMenuItem
     addToolStripItem
   addControl

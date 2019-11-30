@@ -2,7 +2,6 @@ namespace Mira
 {
   using System;
   using System.Collections.Generic;
-  using System.Diagnostics.CodeAnalysis;
   using System.Globalization;
   using System.IO;
   using System.Linq;
@@ -66,11 +65,12 @@ namespace Mira
       this.baseDirectory = baseDirectory;
       blockBeginTokens = NewNameHashSet(LeftParenthesis);
       blockEndTokens = NewNameHashSet(RightParenthesis);
-      setWords.Add(new Name { Value = "runtime" }, this);
-      setWords.Add(new Name { Value = "execute" }, new Action(Execute));
-      setWords.Add(new Name { Value = "set" }, new Action(Set));
-      setWords.Add(new Name { Value = "put" }, new Action(Put));
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Reflection");
+      setWords.Add(new Name { Value = "break" }, new Action(Break));
+      setWords.Add(new Name { Value = "execute" }, new Action(Execute));
+      setWords.Add(new Name { Value = "put" }, new Action(Put));
+      setWords.Add(new Name { Value = "runtime" }, this);
+      setWords.Add(new Name { Value = "set" }, new Action(Set));
     }
 
     public void Continue(bool step)
@@ -152,7 +152,6 @@ namespace Mira
       return CreateDelegate(typeof(void), parameterTypes, returnType, delegateCode);
     }
 
-    [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
     private Delegate CreateDelegate(Type delegateType, IEnumerable<Type> parameterTypes, Type returnType, Items delegateCode)
     {
       if (delegateType != typeof(void))
@@ -263,7 +262,6 @@ namespace Mira
       Push(Stack.Count - stackLength);
     }
 
-    [SuppressMessage("ReSharper", "PatternAlwaysOfType")]
     private void Execute()
     {
       string memberName = (string) Pop();
@@ -412,7 +410,6 @@ namespace Mira
       return result;
     }
 
-    [SuppressMessage("ReSharper", "PatternAlwaysOfType")]
     private void HandlePragma(Tokens pragmaTokens)
     {
       string pragma = ((Name) pragmaTokens.Dequeue()).Value;
@@ -460,8 +457,6 @@ namespace Mira
       return application.Invoke(function);
     }
 
-    [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private void Join()
     {
       Push(new Items(Pop(Convert.ToInt32(Pop()))));
@@ -478,9 +473,6 @@ namespace Mira
       Push(Operation(Pop(), (int) targetTypeOrParametersCount));
     }
 
-    [SuppressMessage("ReSharper", "AssignNullToNotNullAttribute")]
-    [SuppressMessage("ReSharper", "CoVariantArrayConversion")]
-    [SuppressMessage("Style", "IDE0062:Make local function 'static'", Justification = "<Pending>")]
     private Action Operation(object targetTypeOrExpressionType, int parametersCount = 0)
     {
       CSharpArgumentInfo[] GetParametersAndArgumentInfos(int count, out ParameterExpression[] parameterExpressions)
@@ -534,12 +526,7 @@ namespace Mira
 
     private IEnumerable<object> Pop(int count)
     {
-      object[] result = new object[count];
-      for (int i = count - 1; 0 <= i; --i)
-      {
-        result[i] = Stack.Pop();
-      }
-      return result;
+      return new object[count].Select(_ => Pop()).Reverse();
     }
 
     private object Pop()
@@ -582,56 +569,47 @@ namespace Mira
 
     private void Reference(string assemblyName, params string[] requestedNamespaces)
     {
-      HashSet<string> names = new HashSet<string>();
-      foreach (Type currentType in Assembly.Load(assemblyName).GetTypes())
+      foreach (Type currentType in Assembly.Load(assemblyName).GetTypes().Where(currentType => requestedNamespaces.Any(currentNamespace => currentType.Namespace == currentNamespace)))
       {
-        if (requestedNamespaces.Any(currentNamespace => currentNamespace == currentType.Namespace))
+        setWords[new Name { Value = currentType.Name }] = currentType;
+        foreach (MemberInfo currentMember in currentType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
         {
-          setWords[new Name { Value = currentType.Name }] = currentType;
-          foreach (MemberInfo currentMember in currentType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+          bool accept = false;
+          switch (currentMember)
           {
-            bool accept = false;
-            switch (currentMember)
+            case MethodInfo methodInfo:
+              accept = !methodInfo.IsSpecialName;
+              break;
+            case FieldInfo fieldInfo:
+              accept = !fieldInfo.IsSpecialName;
+              break;
+            case PropertyInfo propertyInfo:
+              accept = !propertyInfo.IsSpecialName;
+              break;
+          }
+          if (accept)
+          {
+            Name currentName = new Name { Value = currentMember.Name };
+            if (!setWords.ContainsKey(currentName))
             {
-              case MethodInfo methodInfo:
-                accept = !methodInfo.IsSpecialName;
-                break;
-              case FieldInfo fieldInfo:
-                accept = !fieldInfo.IsSpecialName;
-                break;
-              case PropertyInfo propertyInfo:
-                accept = !propertyInfo.IsSpecialName;
-                break;
-            }
-            if (accept)
-            {
-              names.Add(currentMember.Name);
+              setWords.Add(currentName, new Items { currentMember.Name, executeName });
             }
           }
-        }
-      }
-      foreach (string currentName in names)
-      {
-        Name newName = new Name { Value = currentName };
-        if (!setWords.ContainsKey(newName))
-        {
-          setWords.Add(newName, new Items { currentName, executeName });
         }
       }
     }
 
     private Exception Run(string codeOrPath, bool evaluate)
     {
-      bool oldRunning = Running;
       try
       {
-        Running = true;
         evaluating = evaluate;
         CurrentRootItems = GetItems(GetTokens(GetCode(codeOrPath)));
         if (evaluating)
         {
           Stack.Clear();
           CallEnvironments.Clear();
+          Running = true;
           Evaluate(CurrentRootItems);
           DoTerminating(null);
         }
@@ -641,10 +619,6 @@ namespace Mira
       {
         DoTerminating(exception);
         return exception;
-      }
-      finally
-      {
-        Running = oldRunning;
       }
     }
 
@@ -661,8 +635,6 @@ namespace Mira
       Invoke(DoShow);
     }
 
-    [SuppressMessage("Code Quality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private void Split()
     {
       Items items = (Items) Pop();

@@ -1,4 +1,5 @@
-﻿loadFile Stack.txt pragma
+﻿loadFile Core.txt pragma
+loadFile Stack.txt pragma
 loadFile Words.txt pragma
 loadFile Statements.txt pragma
 loadFile Math.txt pragma

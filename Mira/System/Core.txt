@@ -1,0 +1,10 @@
+﻿(runtime "Evaluate" execute) (evaluate) set
+(runtime "Get" execute) (get) set
+(runtime "If" execute) (if) set
+(runtime "Output" execute) (output) set
+(runtime "Show" execute) (show) set
+(runtime "Trace" execute) (trace) set
+(runtime "While" execute) (while) set
+
+(runtime "CreateDelegate" execute) (createDelegate) set
+(runtime "MakeOperation" execute) (makeOperation) set

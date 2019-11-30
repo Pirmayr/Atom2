@@ -28,7 +28,7 @@
 
     public Editor(Application application, string baseDirectory, string codeFilename)
     {
-      // Menu:
+      // UI:
       Title = TitleText;
       WindowState = WindowState.Maximized;
       runCommand = new Command(OnRun);
@@ -52,13 +52,13 @@
       Button stepButton = new Button { Command = stepCommand, Text = StepText };
       stackListBox = new ListBox { Width = StandardDimension };
       callStackListBox = new ListBox { Width = StandardDimension };
+      callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
       codeTreeGridView = NewTreeGridView();
       outputTextArea = new TextArea { Height = StandardDimension };
       TableLayout buttonLayout = TableLayout.Horizontal(runButton, continueButton, stepButton, new Panel());
       TableRow codeTableRow = new TableRow(codeTreeGridView) { ScaleHeight = true };
       TableCell middleCell = new TableCell(new TableLayout(buttonLayout, codeTableRow, outputTextArea)) { ScaleWidth = true };
       Content = new TableRow(stackListBox, middleCell, callStackListBox);
-      callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
 
       // Other initializations:
       runtime = new Runtime(application, baseDirectory);
