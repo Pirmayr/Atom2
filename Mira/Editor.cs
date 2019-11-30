@@ -121,7 +121,7 @@
     private void OnContinue(object sender, EventArgs e)
     {
       callStackListBox.Items.Clear();
-      runtime.Continue();
+      runtime.Continue(false);
     }
 
     private void OnElapsed(object sender, EventArgs e)
@@ -150,7 +150,7 @@
     private void OnStep(object sender, EventArgs e)
     {
       callStackListBox.Items.Clear();
-      runtime.Step();
+      runtime.Continue(true);
     }
 
     private void OnTerminating(object sender, Exception exception)

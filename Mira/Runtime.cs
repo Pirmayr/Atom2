@@ -66,37 +66,22 @@ namespace Mira
       this.baseDirectory = baseDirectory;
       blockBeginTokens = NewNameHashSet(LeftParenthesis);
       blockEndTokens = NewNameHashSet(RightParenthesis);
-      setWords.Add(new Name { Value = "trace" }, new Action(Trace));
-      setWords.Add(new Name { Value = "output" }, new Action(Output));
-      setWords.Add(new Name { Value = "show" }, new Action(Show));
-      setWords.Add(new Name { Value = "break" }, new Action(Break));
-      setWords.Add(new Name { Value = "execute" }, new Action(Execute));
-      setWords.Add(new Name { Value = "put" }, new Action(Put));
-      setWords.Add(new Name { Value = "set" }, new Action(Set));
-      setWords.Add(new Name { Value = "get" }, new Action(Get));
-      setWords.Add(new Name { Value = "if" }, new Action(If));
-      setWords.Add(new Name { Value = "while" }, new Action(While));
-      setWords.Add(new Name { Value = "evaluate" }, new Action(Evaluate));
-      setWords.Add(new Name { Value = "createDelegate" }, new Action(CreateDelegate));
       setWords.Add(new Name { Value = "runtime" }, this);
-      setWords.Add(new Name { Value = "makeOperation" }, new Action(MakeOperation));
+      setWords.Add(new Name { Value = "execute" }, new Action(Execute));
+      setWords.Add(new Name { Value = "set" }, new Action(Set));
+      setWords.Add(new Name { Value = "put" }, new Action(Put));
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Reflection");
     }
 
-    public void Continue()
+    public void Continue(bool step)
     {
+      stepping = step;
       semaphore.Release();
     }
 
     public void Run()
     {
       Task.Factory.StartNew(() => Run(Code, true));
-    }
-
-    public void Step()
-    {
-      stepping = true;
-      semaphore.Release();
     }
 
     private static string GetToken(Characters characters, CharHashSet stopCharacters)
