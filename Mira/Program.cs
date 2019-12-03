@@ -1,4 +1,6 @@
-﻿namespace Mira
+﻿using Eto.Mac;
+
+namespace Mira
 {
   using System;
   using Eto.Forms;
@@ -10,6 +12,10 @@
     {
       try
       {
+        Console.WriteLine(Environment.Is64BitProcess);
+        Console.WriteLine(Environment.CommandLine);
+        Console.WriteLine(Environment.CurrentDirectory);
+        
         string baseDirectory = "/Users/pic/Projects/Mira/Mira/System";
         string codeFilename = "Program.txt";
         if (arguments.Length == 2)

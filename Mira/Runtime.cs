@@ -30,8 +30,6 @@ namespace Mira
     private const char Whitespace = char.MaxValue;
     private readonly Application application;
     private readonly string baseDirectory;
-    private readonly NameHashSet blockBeginTokens;
-    private readonly NameHashSet blockEndTokens;
     private readonly Name executeName = new Name { Value = "execute" };
     private readonly StringHashSet pragmas = new StringHashSet { LoadFilePragma, ReferencePragma };
     private readonly Words putWords = new Words();
@@ -63,8 +61,6 @@ namespace Mira
     {
       this.application = application;
       this.baseDirectory = baseDirectory;
-      blockBeginTokens = NewNameHashSet(LeftParenthesis);
-      blockEndTokens = NewNameHashSet(RightParenthesis);
       Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Reflection");
       setWords.Add(new Name { Value = "break" }, new Action(Break));
       setWords.Add(new Name { Value = "execute" }, new Action(Execute));
@@ -90,16 +86,6 @@ namespace Mira
       while (!stopCharacters.Contains(NextCharacter(characters)))
       {
         result += characters.Dequeue();
-      }
-      return result;
-    }
-
-    private static NameHashSet NewNameHashSet(params object[] arguments)
-    {
-      NameHashSet result = new NameHashSet();
-      foreach (object currentArgument in arguments)
-      {
-        result.Add(new Name { Value = currentArgument.ToString() });
       }
       return result;
     }
@@ -204,22 +190,17 @@ namespace Mira
       Invoke(() => RaiseTerminating(exception));
     }
 
-    private void DoTrace()
-    {
-      Outputting?.Invoke(this, Stack.Peek().ToInformation());
-    }
-
     private void Evaluate(object item)
     {
       if (evaluating)
       {
-        Items items = item.ToItems();
+        Items items = item as Items ?? new Items(item);
         CallEnvironments.Push(new CallEnvironment { Items = items });
         foreach (object currentItem in items)
         {
           CallEnvironments.Peek().CurrentItem = currentItem;
           HandleStepping();
-          switch (TryGetWord(currentItem, out object word))
+          switch (GetWordAndWordKind(currentItem, out object word))
           {
             case WordKind.Set:
               switch (word)
@@ -348,11 +329,11 @@ namespace Mira
       while (0 < tokens.Count)
       {
         object currentToken = tokens.Dequeue();
-        if (blockBeginTokens.Contains(currentToken))
+        if (currentToken.ToString() == LeftParenthesis.ToString())
         {
           result.Add(GetItems(tokens));
         }
-        else if (blockEndTokens.Contains(currentToken))
+        else if (currentToken.ToString() == RightParenthesis.ToString())
         {
           break;
         }
@@ -541,10 +522,7 @@ namespace Mira
 
     private void Put()
     {
-      foreach (Name currentItem in Enumerable.Reverse((Items) Pop()))
-      {
-        putWords[currentItem] = Pop();
-      }
+      Enumerable.Reverse((Items) Pop()).ToList().ForEach(currentItem => putWords[(Name) currentItem] = Pop());
     }
 
     private void RaiseBreaking()
@@ -624,10 +602,7 @@ namespace Mira
 
     private void Set()
     {
-      foreach (Name currentItem in Enumerable.Reverse((Items) Pop()))
-      {
-        setWords[currentItem] = Pop();
-      }
+      Enumerable.Reverse((Items) Pop()).ToList().ForEach(currentItem => setWords[(Name) currentItem] = Pop());
     }
 
     private void Show()
@@ -638,19 +613,11 @@ namespace Mira
     private void Split()
     {
       Items items = (Items) Pop();
-      foreach (object currentItem in items)
-      {
-        Push(currentItem);
-      }
+      items.ForEach(currentItem => Push(currentItem));
       Push(items.Count);
     }
 
-    private void Trace()
-    {
-      Invoke(DoTrace);
-    }
-
-    private WordKind TryGetWord(object item, out object word)
+    private WordKind GetWordAndWordKind(object item, out object word)
     {
       if (item is Name key)
       {

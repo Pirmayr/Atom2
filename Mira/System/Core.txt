@@ -3,7 +3,6 @@
 (runtime "If" execute) (if) set
 (runtime "Output" execute) (output) set
 (runtime "Show" execute) (show) set
-(runtime "Trace" execute) (trace) set
 (runtime "While" execute) (while) set
 
 (runtime "CreateDelegate" execute) (createDelegate) set

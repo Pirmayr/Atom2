@@ -4,9 +4,9 @@
   {
     public string Value { get; set; }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object instance)
     {
-      return obj is Name name && Value == name.Value;
+      return instance is Name name && Value == name.Value;
     }
 
     public override int GetHashCode()

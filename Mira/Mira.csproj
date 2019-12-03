@@ -25,6 +25,8 @@
     <PlatformTarget>x86</PlatformTarget>
     <NoWarn>CS0618</NoWarn>
     <LangVersion>latest</LangVersion>
+    <Prefer32bit>false</Prefer32bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <Optimize>true</Optimize>
@@ -35,6 +37,8 @@
     <PlatformTarget>x86</PlatformTarget>
     <NoWarn>CS0618</NoWarn>
     <LangVersion>latest</LangVersion>
+    <Prefer32bit>false</Prefer32bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Eto, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -68,7 +72,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Types.cs" />
     <Compile Include="CallEnvironment.cs" />
-    <Compile Include="Extensions.cs" />
     <Compile Include="Items.cs" />
     <Compile Include="Characters.cs" />
     <Compile Include="GlobalSuppressions.cs" />
