@@ -57,6 +57,12 @@ word
 )
 word
 
+"hugo" show
+
+15 ((a) put 3 a squareRoot toInt 2 range (a b modulo 0 notEqual) (b) all) evaluate show
+
+"egon" show
+
 Form new
 : (form) put
 : TextBox new
@@ -79,7 +85,7 @@ Form new
     : "Dump Primes" empty (primesTest) addMenuItem
     : "Factorial Test" empty (factorialTest) addMenuItem
     : "Hello World" empty (outputTest) addMenuItem
-    : "Array Test" empty break (arrayTest) addMenuItem
+    : "Array Test" empty (arrayTest) addMenuItem
     : "Test" empty (test) addMenuItem
     addToolStripItem
   addControl

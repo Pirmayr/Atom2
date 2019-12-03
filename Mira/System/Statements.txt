@@ -60,7 +60,7 @@
   (condition name) put empty GetEnumerator (enumerator) put
   true (result) put
   (
-    enumerator Current name put condition evaluate (result) put 
+    enumerator Current name put condition evaluate (result) put
   )
   (result enumerator MoveNext and) while
   result
