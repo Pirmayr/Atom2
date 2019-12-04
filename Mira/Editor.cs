@@ -209,7 +209,7 @@
       stackListBox.Items.Clear();
       foreach (object currentValue in runtime.Stack)
       {
-        stackListBox.Items.Add(currentValue.GetType().Name + " " + currentValue.ToString());
+        stackListBox.Items.Add(currentValue.GetType().Name + " " + currentValue);
       }
     }
 

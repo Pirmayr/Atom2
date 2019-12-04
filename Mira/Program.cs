@@ -1,10 +1,10 @@
-﻿using Eto.Mac;
-
-namespace Mira
+﻿namespace Mira
 {
   using System;
   using System.Collections;
-  using Eto.Forms;
+  using System.Windows.Forms;
+
+  using Application = Eto.Forms.Application;
 
   public static class Program
   {
@@ -13,16 +13,6 @@ namespace Mira
     {
       try
       {
-        SortedList list = new SortedList();
-
-        list.Add("a", "1");
-        list.Add("b", "2");
-
-        foreach (DictionaryEntry currentItem in list)
-        {
-          Console.WriteLine(currentItem);
-        }
-
         string baseDirectory = "/Users/pic/Projects/Mira/Mira/System";
         string codeFilename = "Program.txt";
         if (arguments.Length == 2)

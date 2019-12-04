@@ -19,15 +19,15 @@ word
 word
 
 ("Hello World!" output) (outputTest) set
-(1 show 10000 newArray (array) put (array (true i) SetValue) (i) 0 9999 1 for 2 show) (arrayTest) set
+(1 show 100000 newArray (array) put (array (true i) SetValue) (i) 0 99999 1 for 2 show) (arrayTest) set
 
 (test) "performs various tests"
 (
   3 4 power show
 
-  (show show) void (Int32 String) createDelegate (testDelegate) put
+  (show show) Void (Int32 String) createDelegate (testDelegate) put
 
-  testDelegate (1234 "hello") Invoke 
+  testDelegate (1234 "hello") Invoke
 
   Form new (form) put
 
@@ -56,6 +56,8 @@ word
   (1 2 3 5 6 7) splitHalve "hugo" swap prepend show show
 )
 word
+
+test
 
 Form new
 : (form) put

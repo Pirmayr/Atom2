@@ -15,6 +15,8 @@ namespace Mira
 
   using Microsoft.CSharp.RuntimeBinder;
 
+  using MonoMac.AVFoundation;
+
   using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 
   public sealed class Runtime
@@ -125,7 +127,20 @@ namespace Mira
         return;
       }
       EvaluateAndSplit();
-      Push(CreateDelegate(Pop((int) Pop()).Cast<Type>(), (Type) Pop(), (Items) Pop()));
+      // Push(CreateDelegate(Pop((int) Pop()).Cast<Type>(), (Type) Pop(), (Items) Pop()));
+
+      object count = Pop();
+      IEnumerable<object> types = Pop((int) count);
+      object type = Pop();
+      object items = Pop();
+
+      int actualCount = (int) count;
+      IEnumerable<Type> actualTypes = types.Cast<Type>();
+      Type actualType = (Type) type;
+      Items actualItems = (Items) items;
+
+
+      Push(CreateDelegate(types.Cast<Type>(), (Type) type, (Items) items));
     }
 
     private Delegate CreateDelegate(Type delegateType, Items delegateCode)
@@ -200,7 +215,23 @@ namespace Mira
         {
           CallEnvironments.Peek().CurrentItem = currentItem;
           HandleStepping();
-          switch (GetWordAndWordKind(currentItem, out object word))
+          object word = null;
+          WordKind wordKind = WordKind.None;
+          if (currentItem is Name key)
+          {
+            if (putWords.TryGetValue(key, out word))
+            {
+              wordKind = WordKind.Put;
+            }
+            else
+            {
+              if (setWords.TryGetValue(key, out word))
+              {
+                wordKind = WordKind.Set;
+              }
+            }
+          }
+          switch (wordKind)
           {
             case WordKind.Set:
               switch (word)
@@ -507,7 +538,13 @@ namespace Mira
 
     private IEnumerable<object> Pop(int count)
     {
-      return new object[count].Select(_ => Pop()).Reverse();
+      // return new object[count].Select(_ => Pop()).Reverse();
+      object[] result = new object[count];
+      for (int i = count - 1; 0 <= i; --i)
+      {
+        result[i] = Stack.Pop();
+      }
+      return result;
     }
 
     private object Pop()
@@ -522,7 +559,8 @@ namespace Mira
 
     private void Put()
     {
-      Enumerable.Reverse((Items) Pop()).ToList().ForEach(currentItem => putWords[(Name) currentItem] = Pop());
+      // Enumerable.Reverse((Items) Pop()).ToList().ForEach(currentItem => putWords[(Name) currentItem] = Pop());
+      ((Items) Pop()).AsEnumerable().Reverse().ToList().ForEach(currentItem => putWords[(Name) currentItem] = Pop());
     }
 
     private void RaiseBreaking()
@@ -615,23 +653,6 @@ namespace Mira
       Items items = (Items) Pop();
       items.ForEach(currentItem => Push(currentItem));
       Push(items.Count);
-    }
-
-    private WordKind GetWordAndWordKind(object item, out object word)
-    {
-      if (item is Name key)
-      {
-        if (putWords.TryGetValue(key, out word))
-        {
-          return WordKind.Put;
-        }
-        if (setWords.TryGetValue(key, out word))
-        {
-          return WordKind.Set;
-        }
-      }
-      word = null;
-      return WordKind.None;
     }
 
     private void While()

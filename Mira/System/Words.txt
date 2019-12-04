@@ -2,12 +2,8 @@
 (13 toCharacter) (carriageReturn) set
 (carriageReturn toString lineFeed toString add) (endOfLine) set
 
-SortedList new (documentation) set
-((name brief) put documentation name split drop toString brief 2 join Add) (addDocumentation) set
-
 ((documentation) get ("+b" output currentItem "Key" execute output "-b" output "    " output currentItem "Value" execute output endOfLine output) (currentItem) map) (help) set
 
-((name brief body) put name brief addDocumentation body name set) (word) set
 
 (verbatim) "pushes list-item on top of stack"
 (
