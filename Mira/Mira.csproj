@@ -40,6 +40,9 @@
     <Prefer32bit>false</Prefer32bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Eto, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Eto.Forms.2.5.0-rc.4\lib\netstandard1.0\Eto.dll</HintPath>

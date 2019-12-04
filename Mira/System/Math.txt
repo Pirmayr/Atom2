@@ -1,58 +1,6 @@
-﻿reference "System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Linq.Expressions" pragma
-reference "System.Numerics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Numerics" pragma
+﻿(toBigInteger) "number -> BigInteger" (BigInteger swap toString 1 join Parse) word
 
-(1 makeOperation) (makeUnaryOperation) set
-(2 makeOperation) (makeBinaryOperation) set
-
-ExpressionType Increment makeUnaryOperation (increment) set
-ExpressionType Decrement makeUnaryOperation (decrement) set
-
-ExpressionType Equal makeBinaryOperation (equal) set
-ExpressionType NotEqual makeBinaryOperation (notEqual) set
-ExpressionType LessThanOrEqual makeBinaryOperation (less-or-equal) set
-ExpressionType LessThan makeBinaryOperation (less) set
-ExpressionType GreaterThanOrEqual makeBinaryOperation (greater-or-equal) set
-ExpressionType GreaterThan makeBinaryOperation (greater) set
-
-ExpressionType And makeBinaryOperation (and) set
-ExpressionType Or makeBinaryOperation (or) set
-
-ExpressionType Add makeBinaryOperation (add) set
-ExpressionType Subtract makeBinaryOperation (subtract) set
-ExpressionType Multiply makeBinaryOperation (multiply) set
-ExpressionType Divide makeBinaryOperation (divide) set
-ExpressionType Modulo makeBinaryOperation (modulo) set
-
-ExpressionType Double makeOperation (toDouble) set
-ExpressionType Int32 makeOperation (toInt) set
-
-(BigInteger swap toString 1 join Parse) (newBigInteger) set
-
-(power)
-  "base exponent -> power"
-(
-  (a b) put
-  Math (a toDouble b toDouble) Pow
-)
-word
-
-(squareRoot)
-  "number -> squareroot"
-(
-  0.5 power
-)
-word
-
-(factorial)
-  "n -> n!"
-(
-  (n) put
-  1 newBigInteger
-  (
-    i multiply
-  )
-  (i) 1 n 1 for
-)
-word
-
-(3 swap 2 range ((a " " add output) (3 a squareRoot toInt 2 range (a b modulo 0 notEqual) (b) all) if) (a) map) (dumpPrimes) set
+(power) "base exponent -> power" ((a b) put Math (a toDouble b toDouble) Pow) word
+(squareRoot) "number -> squareroot" (0.5 power) word
+(factorial) "n -> n!" ((n) put 1 toBigInteger (i multiply) (i) 1 n 1 for) word
+(dumpPrimes) "upper-bound -> _" (3 swap 2 range ((a " " add output) (3 a squareRoot toInt 2 range (a b modulo 0 notEqual) (b) all) if) (a) map) word

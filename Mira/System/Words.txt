@@ -1,5 +1,13 @@
-﻿((category brief) put set) (define) set
-((name brief body) put body name set) (word) set
+﻿(10 toCharacter) (lineFeed) set
+(13 toCharacter) (carriageReturn) set
+(carriageReturn toString lineFeed toString add) (endOfLine) set
+
+SortedList new (documentation) set
+((name brief) put documentation name split drop toString brief 2 join Add) (addDocumentation) set
+
+((documentation) get ("+b" output currentItem "Key" execute output "-b" output "    " output currentItem "Value" execute output endOfLine output) (currentItem) map) (help) set
+
+((name brief body) put name brief addDocumentation body name set) (word) set
 
 (verbatim) "pushes list-item on top of stack"
 (
@@ -16,24 +24,6 @@ word
 (empty) "creates empty list"
 (
   0 join
-)
-word
-
-(split) "(list) -> items count"
-(
-  runtime () "Split" execute
-)
-word
-
-(evaluateAndSplit) "(list) -> (list) count"
-(
-  runtime () "EvaluateAndSplit" execute
-)
-word
-
-(join) "items count -> (list)"
-(
-  runtime () "Join" execute
 )
 word
 
@@ -80,11 +70,10 @@ word
 )
 word
 
-(empty Count) (count) "object" "gets the Count-property of an object" define
-(empty ToString) (toString) "object" "calls the ToString-function of an object" define
-("new" execute) (new) "object" "creates an instance of a class" define
-((length) put Array (Object length) CreateInstance) (newArray) "object" "creates an array" define
+(empty Count) (count) set
+((length) put Array (Object length) CreateInstance) (newArray) set
 
-(0 0 equal) (true) "math" "the true-value" define
-(0 0 notEqual) (false) "math" "the false-value" define
-((false) (true) rotate ifElse) (not) "math" "negates the truth-value on the top of stack" define
+(0 0 equal) (true) set
+(0 0 notEqual) (false) set
+((false) (true) rotate ifElse) (not) set
+

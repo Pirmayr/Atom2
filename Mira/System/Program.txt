@@ -19,7 +19,7 @@ word
 word
 
 ("Hello World!" output) (outputTest) set
-(1 show 100000 newArray (array) put (array (true i) SetValue) (i) 0 99999 1 for 2 show) (arrayTest) set
+(1 show 10000 newArray (array) put (array (true i) SetValue) (i) 0 9999 1 for 2 show) (arrayTest) set
 
 (test) "performs various tests"
 (
@@ -57,12 +57,6 @@ word
 )
 word
 
-"hugo" show
-
-15 ((a) put 3 a squareRoot toInt 2 range (a b modulo 0 notEqual) (b) all) evaluate show
-
-"egon" show
-
 Form new
 : (form) put
 : TextBox new
@@ -87,6 +81,7 @@ Form new
     : "Hello World" empty (outputTest) addMenuItem
     : "Array Test" empty (arrayTest) addMenuItem
     : "Test" empty (test) addMenuItem
+    : "Help" empty (help) addMenuItem
     addToolStripItem
   addControl
 ShowDialog .

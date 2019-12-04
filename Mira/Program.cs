@@ -3,6 +3,7 @@
 namespace Mira
 {
   using System;
+  using System.Collections;
   using Eto.Forms;
 
   public static class Program
@@ -12,10 +13,16 @@ namespace Mira
     {
       try
       {
-        Console.WriteLine(Environment.Is64BitProcess);
-        Console.WriteLine(Environment.CommandLine);
-        Console.WriteLine(Environment.CurrentDirectory);
-        
+        SortedList list = new SortedList();
+
+        list.Add("a", "1");
+        list.Add("b", "2");
+
+        foreach (DictionaryEntry currentItem in list)
+        {
+          Console.WriteLine(currentItem);
+        }
+
         string baseDirectory = "/Users/pic/Projects/Mira/Mira/System";
         string codeFilename = "Program.txt";
         if (arguments.Length == 2)

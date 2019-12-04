@@ -61,7 +61,7 @@ namespace Mira
     {
       this.application = application;
       this.baseDirectory = baseDirectory;
-      Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Reflection");
+      Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Collections", "System.Reflection");
       setWords.Add(new Name { Value = "break" }, new Action(Break));
       setWords.Add(new Name { Value = "execute" }, new Action(Execute));
       setWords.Add(new Name { Value = "put" }, new Action(Put));

@@ -18,12 +18,14 @@
     private readonly ListBox callStackListBox;
     private readonly TreeGridView codeTreeGridView;
     private readonly Command continueCommand;
-    private readonly TextArea outputTextArea;
+    private readonly RichTextArea outputTextArea;
     private readonly Command runCommand;
     private readonly Runtime runtime;
     private readonly ListBox stackListBox;
     private readonly Command stepCommand;
     private readonly UITimer timer = new UITimer();
+    private bool underline;
+    private bool bold;
     private bool firstElapsed = true;
 
     public Editor(Application application, string baseDirectory, string codeFilename)
@@ -54,11 +56,13 @@
       callStackListBox = new ListBox { Width = StandardDimension };
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
       codeTreeGridView = NewTreeGridView();
-      outputTextArea = new TextArea { Height = StandardDimension };
+      outputTextArea = new RichTextArea { Height = /*StandardDimension*/ 350 };
       TableLayout buttonLayout = TableLayout.Horizontal(runButton, continueButton, stepButton, new Panel());
       TableRow codeTableRow = new TableRow(codeTreeGridView) { ScaleHeight = true };
       TableCell middleCell = new TableCell(new TableLayout(buttonLayout, codeTableRow, outputTextArea)) { ScaleWidth = true };
       Content = new TableRow(stackListBox, middleCell, callStackListBox);
+
+      outputTextArea.SelectionUnderline = true;
 
       // Other initializations:
       runtime = new Runtime(application, baseDirectory);
@@ -139,7 +143,26 @@
 
     private void OnOutputting(object sender, string message)
     {
-      outputTextArea.Append(message);
+      switch (message)
+      {
+        case "+b":
+          bold = true;
+          break;
+        case "-b":
+          bold = false;
+          break;
+        case "+u":
+          underline = true;
+          break;
+        case "-u":
+          underline = false;
+          break;
+        default:
+          outputTextArea.SelectionBold = bold;
+          outputTextArea.SelectionUnderline = underline;
+          outputTextArea.Append(message);
+          break;
+      }
     }
 
     private void OnRun(object sender, EventArgs arguments)
@@ -186,7 +209,7 @@
       stackListBox.Items.Clear();
       foreach (object currentValue in runtime.Stack)
       {
-        stackListBox.Items.Add(currentValue.GetType().Name);
+        stackListBox.Items.Add(currentValue.GetType().Name + " " + currentValue.ToString());
       }
     }
 
