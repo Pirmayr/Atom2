@@ -1,13 +1,8 @@
-﻿using Eto;
-using Platform = Eto.Mac.Platform;
-
-namespace Mira
+﻿namespace Mira
 {
   using System;
-  using System.Collections;
-  using System.Windows.Forms;
 
-  using Application = Eto.Forms.Application;
+  using Eto.Forms;
 
   public static class Program
   {
@@ -16,13 +11,6 @@ namespace Mira
     {
       try
       {
-        Console.WriteLine(Environment.CurrentDirectory);
-        Console.WriteLine(Environment.CommandLine);
-
-        Type platformType = Type.GetType(Platforms.Mac);
-        Platform platform = (Platform) Activator.CreateInstance(platformType);
-        Platform.Initialize(platform);
-        
         string baseDirectory = "/Users/pic/Projects/Mira/Mira/System";
         string codeFilename = "Program.txt";
         if (arguments.Length == 2)
@@ -30,7 +18,7 @@ namespace Mira
           baseDirectory = arguments[0];
           codeFilename = arguments[1];
         }
-        Application application = new Application(platform);
+        Application application = new Application();
         application.Run(new Editor(application, baseDirectory, codeFilename));
       }
       catch (Exception exception)

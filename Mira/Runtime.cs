@@ -1,3 +1,8 @@
+// ReSharper disable UnusedMember.Local
+// ReSharper disable PossibleNullReferenceException
+// ReSharper disable MemberCanBeMadeStatic.Local
+// ReSharper disable AssignNullToNotNullAttribute
+// ReSharper disable CoVariantArrayConversion
 namespace Mira
 {
   using System;
