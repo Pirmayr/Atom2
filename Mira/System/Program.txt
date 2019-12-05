@@ -1,63 +1,48 @@
 loadFile System.txt pragma
 
-(mapTest) "show odd numbers below 10 using range-statement and map-statement"
-(
-  1 10  2 range (i " " add output) (i) map
-)
-word
-
-(primesTest) "dumps all odd primes below 1000"
-(
-  1000 dumpPrimes
-)
-word
-
-(factorialTest) "computes and shows the factorial of 1000"
-(
-  1000 factorial output
-)
-word
-
-("Hello World!" output) (outputTest) set
-(1 show 100000 newArray (array) put (array (true i) SetValue) (i) 0 99999 1 for 2 show) (arrayTest) set
-
 (test) "performs various tests"
 (
-  3 4 power show
+  80 factorial output "" writeLine
 
-  (show show) Void (Int32 String) createDelegate (testDelegate) put
+  50 dumpPrimes "" writeLine
 
-  testDelegate (1234 "hello") Invoke
+  1 10  2 range (i " " add output) (i) map "" writeLine
+
+  "Hello World!" writeLine
+
+  1 writeLine 1000 newArray (array) put (array (true i) SetValue) (i) 0 999 1 for 2 writeLine
+
+  3 4 power writeLine
+
+  (writeLine writeLine) Void (Int32 String) createDelegate (testDelegate) put testDelegate (1234 "hello") Invoke
 
   Form new (form) put
 
   47
   (
     (value 11 greater)
-      ("hi" show)
+      ("hi" writeLine)
     (value 47 equal)
-      ("ho" show)
+      ("ho" writeLine)
     (form Object isSubclassOf)
-      ("form" show)
+      ("form" writeLine)
   )
   select
 
   "hello"
   (
   1
-    (1 show)
+    (1 writeLine)
   "hello"
-    ("Hello World!" show)
+    ("Hello World!" writeLine)
   9
-    (9 show)
+    (9 writeLine)
   )
   switch
 
-  (1 2 3 5 6 7) splitHalve "hugo" swap prepend show show
+  (1 2 3 5 6 7) splitHalve "hugo" swap prepend writeLine writeLine
 )
 word
-
-test
 
 Form new
 : (form) put
@@ -77,11 +62,6 @@ Form new
     :  "Quit" (form) (form Close) addMenuItem
     addToolStripItem
   : ToolStripMenuItem ("Test") new
-    : "Map Test" empty (mapTest) addMenuItem
-    : "Dump Primes" empty (primesTest) addMenuItem
-    : "Factorial Test" empty (factorialTest) addMenuItem
-    : "Hello World" empty (outputTest) addMenuItem
-    : "Array Test" empty (arrayTest) addMenuItem
     : "Test" empty (test) addMenuItem
     : "Help" empty (help) addMenuItem
     addToolStripItem

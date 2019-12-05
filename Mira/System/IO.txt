@@ -1,2 +1,2 @@
-﻿(toString (text) set Console ((text) get) WriteLine) (writeLine) set
+﻿(toString output endOfLine output) (writeLine) set
 (toString (text) set MessageBox ((text) get) Show drop) (message) set 

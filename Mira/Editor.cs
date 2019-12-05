@@ -26,7 +26,6 @@
     private readonly UITimer timer = new UITimer();
     private bool underline;
     private bool bold;
-    private bool firstElapsed = true;
 
     public Editor(Application application, string baseDirectory, string codeFilename)
     {
@@ -71,9 +70,10 @@
       runtime.Stepping += UpdateUI;
       runtime.Terminating += OnTerminating;
       runtime.Code = codeFilename;
-      timer.Interval = 0.01;
+      timer.Interval = 0.25;
       timer.Elapsed += OnElapsed;
       timer.Start();
+      LoadComplete += OnLoadComplete;
     }
 
     private static TreeGridItemCollection GetCodeTree(IEnumerable<object> rootItems, object executingItem, ref TreeGridItem executingTreeGridViewItem)
@@ -128,17 +128,16 @@
       runtime.Continue(false);
     }
 
+    private void OnLoadComplete(object sender, EventArgs e)
+    {
+      UpdateUI();
+    }
+
     private void OnElapsed(object sender, EventArgs e)
     {
       runCommand.Enabled = !runtime.Running;
       continueCommand.Enabled = runtime.Paused;
       stepCommand.Enabled = runtime.Paused;
-      if (firstElapsed)
-      {
-        firstElapsed = false;
-        timer.Interval = 0.25;
-        UpdateUI();
-      }
     }
 
     private void OnOutputting(object sender, string message)

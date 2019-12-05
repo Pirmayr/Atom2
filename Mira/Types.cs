@@ -21,6 +21,15 @@
 
   public sealed class Stack : Stack<object>
   {
+    public IEnumerable<object> Pop(int count)
+    {
+      object[] result = new object[count];
+      for (int i = count - 1; 0 <= i; --i)
+      {
+        result[i] = Pop();
+      }
+      return result;
+    }
   }
 
   public sealed class Tokens : Queue<object>
