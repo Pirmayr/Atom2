@@ -52,12 +52,12 @@ Form new
   : (Color LightGreen) BackColor
   : (DockStyle Fill) Dock
   addControl
-: Button new 
+: Button new
   : ("Press") Text
   : (DockStyle Top) Dock
-  : (textBox) (textBox ("Hello World") AppendText) (Click) addEventHandler 
+  : (textBox) (textBox ("Hello World") AppendText) (Click) addEventHandler
   addControl
-: MenuStrip new 
+: MenuStrip new
   : ToolStripMenuItem ("File") new
     :  "Quit" (form) (form Close) addMenuItem
     addToolStripItem

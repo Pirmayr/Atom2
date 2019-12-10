@@ -3,12 +3,11 @@
 // ReSharper disable MemberCanBeMadeStatic.Local
 // ReSharper disable AssignNullToNotNullAttribute
 // ReSharper disable CoVariantArrayConversion
-
-using MonoMac.WebKit;
+// ReSharper disable ArrangeMethodOrOperatorBody
+// ReSharper disable ArrangeConstructorOrDestructorBody
 
 namespace Mira
 {
-
   using System;
   using System.Collections.Generic;
   using System.Globalization;
@@ -19,49 +18,22 @@ namespace Mira
   using System.Runtime.CompilerServices;
   using System.Threading;
   using System.Threading.Tasks;
+
   using Eto.Forms;
+
   using Microsoft.CSharp.RuntimeBinder;
+
   using Binder = Microsoft.CSharp.RuntimeBinder.Binder;
 
   public sealed class Mira
   {
-    public class ScopedDictionary<TK, TV>  where TV : class
+    public sealed class CallEnvironment
     {
-      private readonly Scopes scopes = new Scopes();
-
-      protected ScopedDictionary() => EnterScope();
-
-      public TV this[TK key]
-      {
-        get => TryGetScope(key)?[key] ?? default;
-        set => scopes.Peek()[key] = value;
-      }
-
-      public void Add(TK key, TV value) => scopes.Peek().Add(key, value);
-      public bool ContainsKey(TK key) => TryGetScope(key) != null;
-      public void EnterScope() => scopes.Push(new Scope());
-      public void LeaveScope() => scopes.Pop();
-      public Scope TryGetScope(TK key) => scopes.FirstOrDefault(currentScope => currentScope.ContainsKey(key));
-      public sealed class Scope : Dictionary<TK, TV> { }
-
-      private sealed class Scopes : Stack<Scope> { }
+      public object CurrentItem { get; set; }
+      public Items Items { get; set; }
     }
 
-    public enum WordKind
-    {
-      None,
-      Set,
-      Put
-    }
-
-    public sealed class Name
-    {
-      public string Value { get; set; }
-
-      public override bool Equals(object instance) => instance is Name name && Value == name.Value;
-      public override int GetHashCode() => Value != null ? Value.GetHashCode() : 0;
-      public override string ToString() => Value;
-    }
+    public sealed class CallEnvironmentStack : Stack<CallEnvironment> { }
 
     public sealed class Items : List<object>
     {
@@ -69,38 +41,72 @@ namespace Mira
       public Items(object instance) => Add(instance);
       public Items(IEnumerable<object> collection) : base(collection) { }
 
-      public override string ToString() => "(" + string.Join(" ", ToArray()) + ")";
+      public static Items operator +(Items a, object b)
+      {
+        a.Add(b);
+        return a;
+      }
 
-      public static Items operator +(Items a, object b) => ((Func<Items, object, Items>) ((a, b) => { a.Add(b); return a; }))(a, b);
-      public static Items operator +(object a, Items b) => ((Func<object, Items, Items>) ((a, b) => { b.Insert(0, a); return b; }))(a, b);
+      public static Items operator +(object a, Items b)
+      {
+        b.Insert(0, a);
+        return b;
+      }
+
+      public override string ToString() => "(" + string.Join(" ", ToArray()) + ")";
     }
 
-    public sealed class Characters : Queue<char>
+    public sealed class ObjectStack : Stack<object>
+    {
+      public IEnumerable<object> Pop(int count) => Enumerable.Repeat<object>(null, count).Select(_ => Pop()).Reverse().ToArray();
+    }
+
+    public class ScopedDictionary<TK, TV> where TV : class
+    {
+      public sealed class Scope : Dictionary<TK, TV> { }
+
+      private sealed class Scopes : Stack<Scope> { }
+
+      private readonly Scopes scopes = new Scopes();
+      protected ScopedDictionary() => EnterScope();
+      public void Add(TK key, TV value) => scopes.Peek().Add(key, value);
+      public bool ContainsKey(TK key) => TryGetScope(key) != null;
+      public void EnterScope() => scopes.Push(new Scope());
+      public void LeaveScope() => scopes.Pop();
+      public Scope TryGetScope(TK key) => scopes.FirstOrDefault(currentScope => currentScope.ContainsKey(key));
+      public TV this[TK key] { get => TryGetScope(key)?[key]; set => scopes.Peek()[key] = value; }
+    }
+
+    private sealed class Characters : Queue<char>
     {
       public Characters(IEnumerable<char> characters) : base(characters) { }
     }
 
-    public sealed class CallEnvironment
-    {
-      public object CurrentItem { get; set; }
+    private sealed class CharHashSet : HashSet<char> { }
 
-      public Items Items { get; set; }
+    private sealed class Name
+    {
+      public string Value { get; set; }
+      public override bool Equals(object instance) => instance is Name name && Value == name.Value;
+      public override int GetHashCode() => Value != null ? Value.GetHashCode() : 0;
+      public override string ToString() => Value;
     }
+
+    private sealed class StringHashSet : HashSet<string> { }
+
+    private sealed class Tokens : Queue<object> { }
+
+    private sealed class Words : ScopedDictionary<Name, object> { }
 
     public delegate void OutputtingEventHandler(object sender, string message);
 
     public delegate void TerminatingEventHandler(object sender, Exception exception);
 
-    public sealed class CharHashSet : HashSet<char> { }
-    public sealed class StringHashSet : HashSet<string> { }
-    public sealed class NameHashSet : HashSet<Name> { }
-    public sealed class Tokens : Queue<object> { }
-    public sealed class Words : ScopedDictionary<Name, object> { }
-    public sealed class CallEnvironmentStack : Stack<CallEnvironment> { }
-
-    public sealed class ObjectStack : Stack<object>
+    private enum WordKind
     {
-      public IEnumerable<object> Pop(int count) => Enumerable.Repeat<object>(null, count).Select(_ => Pop()).Reverse().ToArray();
+      None,
+      Set,
+      Put
     }
 
     private const char Eof = char.MinValue;
@@ -123,7 +129,6 @@ namespace Mira
     private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis };
     private string code;
     private bool stepping;
-
     public CallEnvironmentStack CallEnvironments { get; } = new CallEnvironmentStack();
 
     public string Code
@@ -254,12 +259,6 @@ namespace Mira
       }
     }
 
-    private void Terminate(Exception exception)
-    {
-      Running = false;
-      Invoke(() => Terminating?.Invoke(this, exception));
-    }
-
     private void Evaluate(object item)
     {
       if (Running)
@@ -292,28 +291,28 @@ namespace Mira
           }
           switch (wordKind)
           {
-            case WordKind.Set:
-              switch (word)
-              {
-                case Action actionValue:
-                  actionValue.Invoke();
-                  break;
-                case Items itemsValue:
-                  putWords.EnterScope();
-                  Evaluate(itemsValue);
-                  putWords.LeaveScope();
-                  break;
-                default:
-                  Evaluate(word);
-                  break;
-              }
+          case WordKind.Set:
+            switch (word)
+            {
+            case Action actionValue:
+              actionValue.Invoke();
               break;
-            case WordKind.Put:
-              Stack.Push(word);
+            case Items itemsValue:
+              putWords.EnterScope();
+              Evaluate(itemsValue);
+              putWords.LeaveScope();
               break;
             default:
-              Stack.Push(currentItem);
+              Evaluate(word);
               break;
+            }
+            break;
+          case WordKind.Put:
+            Stack.Push(word);
+            break;
+          default:
+            Stack.Push(currentItem);
+            break;
           }
         }
         CallEnvironments.Pop();
@@ -332,16 +331,16 @@ namespace Mira
 
     private void Execute()
     {
-      string memberName = (string) Stack.Pop();
-      int argumentsCount = 0;
+      var memberName = (string) Stack.Pop();
+      var argumentsCount = 0;
       if (Stack.Peek() is Items)
       {
         EvaluateAndSplit();
         argumentsCount = (int) Stack.Pop();
       }
-      object[] arguments = Stack.Pop(argumentsCount).ToArray();
+      var arguments = Stack.Pop(argumentsCount).ToArray();
       object typeOrTarget;
-      object typeOrTargetOrInstanceFlag = Stack.Pop();
+      var typeOrTargetOrInstanceFlag = Stack.Pop();
       if (typeOrTargetOrInstanceFlag is bool forceInstance)
       {
         typeOrTarget = Stack.Pop();
@@ -351,44 +350,44 @@ namespace Mira
         forceInstance = false;
         typeOrTarget = typeOrTargetOrInstanceFlag;
       }
-      bool isType = !forceInstance && typeOrTarget is Type;
-      Type type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
-      object target = isType ? null : typeOrTarget;
-      BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
-      bool hasReturnValue = false;
+      var isType = !forceInstance && typeOrTarget is Type;
+      var type = isType ? (Type) typeOrTarget : typeOrTarget.GetType();
+      var target = isType ? null : typeOrTarget;
+      var bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
+      var hasReturnValue = false;
       switch (memberName)
       {
-        case NewMemberName:
-          memberName = string.Empty;
-          hasReturnValue = true;
-          bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;
-          break;
-        default:
-          bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
-          MemberInfo member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
-          if (member != null)
+      case NewMemberName:
+        memberName = string.Empty;
+        hasReturnValue = true;
+        bindingFlags |= BindingFlags.Instance | BindingFlags.CreateInstance;
+        break;
+      default:
+        bindingFlags |= BindingFlags.Static | BindingFlags.Instance;
+        var member = type.GetMember(memberName, bindingFlags | BindingFlags.Static).FirstOrDefault();
+        if (member != null)
+        {
+          switch (member)
           {
-            switch (member)
-            {
-              case MethodInfo methodInfo:
-                hasReturnValue = methodInfo.ReturnType != typeof(void);
-                bindingFlags |= BindingFlags.InvokeMethod;
-                break;
-              case FieldInfo _:
-                hasReturnValue = arguments.Length == 0;
-                bindingFlags |= hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField;
-                break;
-              case PropertyInfo _:
-                hasReturnValue = arguments.Length == 0;
-                bindingFlags |= hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty;
-                break;
-              case EventInfo eventInfo:
-                memberName = eventInfo.AddMethod.Name;
-                bindingFlags |= BindingFlags.InvokeMethod;
-                break;
-            }
+          case MethodInfo methodInfo:
+            hasReturnValue = methodInfo.ReturnType != typeof(void);
+            bindingFlags |= BindingFlags.InvokeMethod;
+            break;
+          case FieldInfo _:
+            hasReturnValue = arguments.Length == 0;
+            bindingFlags |= hasReturnValue ? BindingFlags.GetField : BindingFlags.SetField;
+            break;
+          case PropertyInfo _:
+            hasReturnValue = arguments.Length == 0;
+            bindingFlags |= hasReturnValue ? BindingFlags.GetProperty : BindingFlags.SetProperty;
+            break;
+          case EventInfo eventInfo:
+            memberName = eventInfo.AddMethod.Name;
+            bindingFlags |= BindingFlags.InvokeMethod;
+            break;
           }
-          break;
+        }
+        break;
       }
       if (Invoke(() => DoExecute(type, memberName, bindingFlags, target, arguments, hasReturnValue)) is Exception exception)
       {
@@ -400,16 +399,16 @@ namespace Mira
 
     private string GetCode(string codeOrFilename)
     {
-      string path = baseDirectory + "/" + codeOrFilename;
+      var path = baseDirectory + "/" + codeOrFilename;
       return File.Exists(path) ? File.ReadAllText(path) : codeOrFilename;
     }
 
     private Items GetItems(Tokens tokens)
     {
-      Items result = new Items();
+      var result = new Items();
       while (0 < tokens.Count)
       {
-        object currentToken = tokens.Dequeue();
+        var currentToken = tokens.Dequeue();
         if (currentToken.ToString() == LeftParenthesis.ToString())
         {
           result.Add(GetItems(tokens));
@@ -428,45 +427,45 @@ namespace Mira
 
     private Tokens GetTokens(string input)
     {
-      Tokens result = new Tokens();
-      Tokens currentPragmaTokens = new Tokens();
-      Tokens currentTokens = result;
-      Characters characters = new Characters(input.ToCharArray());
-      for (char nextCharacter = NextCharacter(characters); nextCharacter != Eof; nextCharacter = NextCharacter(characters))
+      var result = new Tokens();
+      var currentPragmaTokens = new Tokens();
+      var currentTokens = result;
+      var characters = new Characters(input.ToCharArray());
+      for (var nextCharacter = NextCharacter(characters); nextCharacter != Eof; nextCharacter = NextCharacter(characters))
       {
         switch (nextCharacter)
         {
-          case Whitespace:
-            characters.Dequeue();
-            break;
-          case Quote:
-            characters.Dequeue();
-            currentTokens.Enqueue(GetToken(characters, stringStopCharacters));
-            characters.Dequeue();
-            break;
-          case LeftParenthesis:
-          case RightParenthesis:
-            characters.Dequeue();
-            currentTokens.Enqueue(ToObject(nextCharacter));
-            break;
-          default:
-            string currentToken = GetToken(characters, tokenStopCharacters);
-            if (pragmas.Contains(currentToken))
-            {
-              currentTokens = currentPragmaTokens;
-              currentTokens.Enqueue(ToObject(currentToken));
-            }
-            else if (currentToken == PragmaToken)
-            {
-              currentTokens = result;
-              HandlePragma(currentPragmaTokens);
-              currentPragmaTokens.Clear();
-            }
-            else
-            {
-              currentTokens.Enqueue(ToObject(currentToken));
-            }
-            break;
+        case Whitespace:
+          characters.Dequeue();
+          break;
+        case Quote:
+          characters.Dequeue();
+          currentTokens.Enqueue(GetToken(characters, stringStopCharacters));
+          characters.Dequeue();
+          break;
+        case LeftParenthesis:
+        case RightParenthesis:
+          characters.Dequeue();
+          currentTokens.Enqueue(ToObject(nextCharacter));
+          break;
+        default:
+          var currentToken = GetToken(characters, tokenStopCharacters);
+          if (pragmas.Contains(currentToken))
+          {
+            currentTokens = currentPragmaTokens;
+            currentTokens.Enqueue(ToObject(currentToken));
+          }
+          else if (currentToken == PragmaToken)
+          {
+            currentTokens = result;
+            HandlePragma(currentPragmaTokens);
+            currentPragmaTokens.Clear();
+          }
+          else
+          {
+            currentTokens.Enqueue(ToObject(currentToken));
+          }
+          break;
         }
       }
       return result;
@@ -474,34 +473,22 @@ namespace Mira
 
     private void HandlePragma(Tokens pragmaTokens)
     {
-      string pragma = ((Name) pragmaTokens.Dequeue()).Value;
+      var pragma = ((Name) pragmaTokens.Dequeue()).Value;
       switch (pragma)
       {
-        case LoadFilePragma:
-          Evaluate(GetItems(GetTokens(GetCode(((Name) pragmaTokens.Dequeue()).Value))));
-          break;
-        case ReferencePragma:
-          Reference((string) pragmaTokens.Dequeue(), (string) pragmaTokens.Dequeue());
-          break;
-      }
-    }
-
-    private void Step()
-    {
-      if (stepping)
-      {
-        stepping = false;
-        Paused = true;
-        Invoke(() => Stepping?.Invoke());
-        semaphore.Wait();
-        Paused = false;
+      case LoadFilePragma:
+        Evaluate(GetItems(GetTokens(GetCode(((Name) pragmaTokens.Dequeue()).Value))));
+        break;
+      case ReferencePragma:
+        Reference((string) pragmaTokens.Dequeue(), (string) pragmaTokens.Dequeue());
+        break;
       }
     }
 
     private void If()
     {
-      object condition = Stack.Pop();
-      object body = Stack.Pop();
+      var condition = Stack.Pop();
+      var body = Stack.Pop();
       Evaluate(condition);
       if ((dynamic) Stack.Pop())
       {
@@ -510,14 +497,12 @@ namespace Mira
     }
 
     private void Invoke(Action action) => application.Invoke(action);
-
     private T Invoke<T>(Func<T> function) => application.Invoke(function);
-
     private void Join() => Stack.Push(new Items(Stack.Pop(Convert.ToInt32(Stack.Pop()))));
 
     private void MakeOperation()
     {
-      object targetTypeOrParametersCount = Stack.Pop();
+      var targetTypeOrParametersCount = Stack.Pop();
       if (targetTypeOrParametersCount is Type targetType)
       {
         Stack.Push(Operation(targetType));
@@ -528,12 +513,12 @@ namespace Mira
 
     private Action Operation(object targetTypeOrExpressionType, int parametersCount = 0)
     {
-      static CSharpArgumentInfo[] GetParametersAndArgumentInfos(int count, out ParameterExpression[] parameterExpressions)
+      CSharpArgumentInfo[] GetParametersAndArgumentInfos(int count, out ParameterExpression[] parameterExpressions)
       {
-        CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
+        var argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
         parameterExpressions = new ParameterExpression[count];
-        CSharpArgumentInfo[] argumentInfos = new CSharpArgumentInfo[count];
-        for (int i = 0; i < count; ++i)
+        var argumentInfos = new CSharpArgumentInfo[count];
+        for (var i = 0; i < count; ++i)
         {
           parameterExpressions[i] = Expression.Parameter(typeof(object));
           argumentInfos[i] = argumentInfo;
@@ -552,48 +537,47 @@ namespace Mira
       else
       {
         targetType = typeof(object);
-        ExpressionType expressionType = (ExpressionType) targetTypeOrExpressionType;
+        var expressionType = (ExpressionType) targetTypeOrExpressionType;
         switch (parametersCount)
         {
-          case 1:
-            binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, typeof(object), GetParametersAndArgumentInfos(parametersCount, out parameters));
-            break;
-          case 2:
-            binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, typeof(object), GetParametersAndArgumentInfos(parametersCount, out parameters));
-            break;
+        case 1:
+          binder = Binder.UnaryOperation(CSharpBinderFlags.None, expressionType, typeof(object), GetParametersAndArgumentInfos(parametersCount, out parameters));
+          break;
+        case 2:
+          binder = Binder.BinaryOperation(CSharpBinderFlags.None, expressionType, typeof(object), GetParametersAndArgumentInfos(parametersCount, out parameters));
+          break;
         }
       }
-      Delegate function = Expression.Lambda(Expression.Dynamic(binder, targetType, parameters), parameters).Compile();
+      var function = Expression.Lambda(Expression.Dynamic(binder, targetType, parameters), parameters).Compile();
       return () => Stack.Push(function.DynamicInvoke(Stack.Pop(parametersCount).ToArray()));
     }
 
     private void Output() => Invoke(() => Outputting?.Invoke(this, Stack.Pop().ToString()));
-
     private void Put() => ((Items) Stack.Pop()).AsEnumerable().Reverse().ToList().ForEach(currentItem => putWords[(Name) currentItem] = Stack.Pop());
 
     private void Reference(string assemblyName, params string[] requestedNamespaces)
     {
-      foreach (Type currentType in Assembly.Load(assemblyName).GetTypes().Where(currentType => requestedNamespaces.Any(currentNamespace => currentType.Namespace == currentNamespace)))
+      foreach (var currentType in Assembly.Load(assemblyName).GetTypes().Where(currentType => requestedNamespaces.Any(currentNamespace => currentType.Namespace == currentNamespace)))
       {
         setWords[new Name { Value = currentType.Name }] = currentType;
-        foreach (MemberInfo currentMember in currentType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+        foreach (var currentMember in currentType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
         {
-          bool accept = false;
+          var accept = false;
           switch (currentMember)
           {
-            case MethodInfo methodInfo:
-              accept = !methodInfo.IsSpecialName;
-              break;
-            case FieldInfo fieldInfo:
-              accept = !fieldInfo.IsSpecialName;
-              break;
-            case PropertyInfo propertyInfo:
-              accept = !propertyInfo.IsSpecialName;
-              break;
+          case MethodInfo methodInfo:
+            accept = !methodInfo.IsSpecialName;
+            break;
+          case FieldInfo fieldInfo:
+            accept = !fieldInfo.IsSpecialName;
+            break;
+          case PropertyInfo propertyInfo:
+            accept = !propertyInfo.IsSpecialName;
+            break;
           }
           if (accept)
           {
-            Name currentName = new Name { Value = currentMember.Name };
+            var currentName = new Name { Value = currentMember.Name };
             if (!setWords.ContainsKey(currentName))
             {
               setWords.Add(currentName, new Items { currentMember.Name, executeName });
@@ -633,6 +617,24 @@ namespace Mira
       var items = (Items) Stack.Pop();
       items.ForEach(currentItem => Stack.Push(currentItem));
       Stack.Push(items.Count);
+    }
+
+    private void Step()
+    {
+      if (stepping)
+      {
+        stepping = false;
+        Paused = true;
+        Invoke(() => Stepping?.Invoke());
+        semaphore.Wait();
+        Paused = false;
+      }
+    }
+
+    private void Terminate(Exception exception)
+    {
+      Running = false;
+      Invoke(() => Terminating?.Invoke(this, exception));
     }
 
     private void While()
