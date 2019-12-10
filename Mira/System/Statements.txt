@@ -1,4 +1,12 @@
-﻿((ifBlock elseBlock condition) put (elseBlock) get (drop (ifBlock) get) (condition) get if evaluate) (ifElse) set
+﻿(
+  (ifBlock elseBlock condition) put
+  (elseBlock) get
+  (drop (ifBlock) get)
+  (condition) get
+  if
+  evaluate
+)
+(ifElse) set
 
 (
   (body key from to step) put
@@ -88,4 +96,13 @@
 )
 (select) set
 
-((arguments code) put arguments evaluateAndSplit join (evaluate) verbatim arguments (put) verbatim code split 4 add join) (lambda) set
+(
+  (arguments code) put
+  arguments evaluateAndSplit join
+  (evaluate) verbatim
+  arguments (put) verbatim
+  code split
+  4 add
+  join
+)
+(lambda) set

@@ -1,5 +1,4 @@
-﻿(toBigInteger) "number -> BigInteger" (BigInteger swap toString 1 join Parse) word
-
+﻿
 (power) "base exponent -> power" ((a b) put Math (a toDouble b toDouble) Pow) word
 (squareRoot) "number -> squareroot" (0.5 power) word
 (factorial) "n -> n!" ((n) put 1 toBigInteger (i multiply) (i) 1 n 1 for) word

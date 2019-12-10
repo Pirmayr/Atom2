@@ -22,3 +22,6 @@
 ((a) put) (delete-0) set 
 ((a b) put (b) get) (delete-1) set 
 ((a b c) put (b c) get) (delete-2) set 
+
+((a) put) (.) set
+((a) put (a a) get) (:) set

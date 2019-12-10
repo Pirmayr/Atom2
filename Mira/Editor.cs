@@ -20,7 +20,7 @@
     private readonly Command continueCommand;
     private readonly RichTextArea outputTextArea;
     private readonly Command runCommand;
-    private readonly Runtime runtime;
+    private readonly Mira runtime;
     private readonly ListBox stackListBox;
     private readonly Command stepCommand;
     private readonly UITimer timer = new UITimer();
@@ -64,7 +64,7 @@
       outputTextArea.SelectionUnderline = true;
 
       // Other initializations:
-      runtime = new Runtime(application, baseDirectory);
+      runtime = new Mira(application, baseDirectory);
       runtime.Breaking += UpdateUI;
       runtime.Outputting += OnOutputting;
       runtime.Stepping += UpdateUI;
@@ -81,7 +81,7 @@
       TreeGridItemCollection result = new TreeGridItemCollection();
       foreach (object currentItem in rootItems)
       {
-        TreeGridItem newTreeViewItem = currentItem is Items currentItems ? new TreeGridItem(GetCodeTree(currentItems, executingItem, ref executingTreeGridViewItem), "(Items)") : new TreeGridItem(currentItem.ToString(), currentItem.GetType().Name);
+        TreeGridItem newTreeViewItem = currentItem is Mira.Items currentItems ? new TreeGridItem(GetCodeTree(currentItems, executingItem, ref executingTreeGridViewItem), "(Items)") : new TreeGridItem(currentItem.ToString(), currentItem.GetType().Name);
         newTreeViewItem.Expanded = true;
         result.Add(newTreeViewItem);
         if (currentItem == executingItem)
@@ -117,7 +117,7 @@
       if (0 <= index && index < callStackListBox.Items.Count)
       {
         ListItem selectedItem = (ListItem) callStackListBox.Items[index];
-        CallEnvironment callEnvironment = (CallEnvironment) selectedItem.Tag;
+        Mira.CallEnvironment callEnvironment = (Mira.CallEnvironment) selectedItem.Tag;
         RebuildCodeTreeView(callEnvironment.Items, callEnvironment.CurrentItem);
       }
     }
@@ -184,10 +184,10 @@
       UpdateUI();
     }
 
-    private void RebuildCallStackListBox(CallEnvironments callEnvironments)
+    private void RebuildCallStackListBox(Mira.CallEnvironmentStack callEnvironments)
     {
       callStackListBox.Items.Clear();
-      foreach (CallEnvironment currentCallEnvironment in callEnvironments)
+      foreach (Mira.CallEnvironment currentCallEnvironment in callEnvironments)
       {
         ListItem newListItem = new ListItem();
         newListItem.Text = currentCallEnvironment.CurrentItem?.ToString() ?? "(null)";
@@ -196,7 +196,7 @@
       }
     }
 
-    private void RebuildCodeTreeView(Items items, object executingItem)
+    private void RebuildCodeTreeView(Mira.Items items, object executingItem)
     {
       TreeGridItem executingTreeGridItem = null;
       codeTreeGridView.DataStore = GetCodeTree(items, executingItem, ref executingTreeGridItem);
@@ -214,10 +214,10 @@
 
     private void UpdateUI()
     {
-      CallEnvironments callEnvironments = runtime.CallEnvironments;
+      Mira.CallEnvironmentStack callEnvironments = runtime.CallEnvironments;
       RebuildCallStackListBox(callEnvironments);
-      CallEnvironment topmostCallEnvironment = callEnvironments.Count == 0 ? null : callEnvironments.Peek();
-      Items topMostItems = topmostCallEnvironment == null ? runtime.CurrentRootItems : topmostCallEnvironment.Items;
+      Mira.CallEnvironment topmostCallEnvironment = callEnvironments.Count == 0 ? null : callEnvironments.Peek();
+      Mira.Items topMostItems = topmostCallEnvironment == null ? runtime.CurrentRootItems : topmostCallEnvironment.Items;
       object topMostCurrentItem = topmostCallEnvironment?.CurrentItem;
       RebuildCodeTreeView(topMostItems, topMostCurrentItem);
       RebuildStackListBox();

@@ -2,47 +2,49 @@
 reference "System.Numerics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Numerics" pragma
 
 (runtime "CreateDelegate" execute) (createDelegate) set
-(runtime "MakeOperation" execute) (makeOperation) set
-(1 makeOperation) (makeUnaryOperation) set
-(2 makeOperation) (makeBinaryOperation) set
-
 (runtime "Evaluate" execute) Void () createDelegate (evaluate) set
 (runtime "Get" execute) Void () createDelegate (get) set
 (runtime "If" execute) Void () createDelegate (if) set
 (runtime "Output" execute) Void () createDelegate (output) set
 (runtime "Show" execute) Void () createDelegate (show) set
 (runtime "While" execute) Void () createDelegate (while) set
-
 (runtime "Join" execute) Void () createDelegate (join) set
 (runtime "Split" execute) Void () createDelegate (split) set
 (runtime "EvaluateAndSplit" execute) Void () createDelegate (evaluateAndSplit) set
 
+(runtime "MakeOperation" execute) (makeOperation) set
+
+(1 makeOperation) (makeUnaryOperation) set
 ExpressionType Increment makeUnaryOperation (increment) set
 ExpressionType Decrement makeUnaryOperation (decrement) set
 
+(2 makeOperation) (makeBinaryOperation) set
 ExpressionType Equal makeBinaryOperation (equal) set
 ExpressionType NotEqual makeBinaryOperation (notEqual) set
 ExpressionType LessThanOrEqual makeBinaryOperation (less-or-equal) set
 ExpressionType LessThan makeBinaryOperation (less) set
 ExpressionType GreaterThanOrEqual makeBinaryOperation (greater-or-equal) set
 ExpressionType GreaterThan makeBinaryOperation (greater) set
-
 ExpressionType And makeBinaryOperation (and) set
 ExpressionType Or makeBinaryOperation (or) set
-
 ExpressionType Add makeBinaryOperation (add) set
 ExpressionType Subtract makeBinaryOperation (subtract) set
 ExpressionType Multiply makeBinaryOperation (multiply) set
 ExpressionType Divide makeBinaryOperation (divide) set
 ExpressionType Modulo makeBinaryOperation (modulo) set
 
-Double makeOperation (toDouble) set
-Int32 makeOperation (toInt) set
-Char makeOperation (toCharacter) set
+(0 0 equal) (true) set
+(0 0 notEqual) (false) set
+((false) (true) rotate ifElse) (not) set
 
-("new" execute) (new) set
+Double makeOperation (toDouble) set
+Char makeOperation (toCharacter) set
+Int32 makeOperation (toInt) set
+
+(BigInteger swap toString 1 join Parse) (toBigInteger) set
 (() ToString) (toString) set
 
+("new" execute) (new) set
+
 SortedList new (documentation) set
-((name brief) put documentation name split drop toString brief 2 join Add) (addDocumentation) set
 ((name brief body) put documentation name split (dummy) put ToString brief 2 join Add body name set) (word) set

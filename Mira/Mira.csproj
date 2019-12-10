@@ -63,17 +63,10 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Runtime.cs" />
+    <Compile Include="Mira.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ScopedDictionary.cs" />
-    <Compile Include="WordKind.cs" />
-    <Compile Include="Name.cs" />
     <Compile Include="Editor.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="Types.cs" />
-    <Compile Include="CallEnvironment.cs" />
-    <Compile Include="Items.cs" />
-    <Compile Include="Characters.cs" />
     <Compile Include="GlobalSuppressions.cs" />
   </ItemGroup>
   <ItemGroup>

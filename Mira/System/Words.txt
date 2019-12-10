@@ -4,71 +4,21 @@
 
 ((documentation) get ("+b" output currentItem "Key" execute output "-b" output "    " output currentItem "Value" execute output endOfLine output) (currentItem) map) (help) set
 
-(verbatim) "pushes list-item on top of stack"
-(
-  split drop
-)
-word
+(verbatim) "pushes list-item on top of stack" (split drop) word
 
-(prepend) "adds element to front of list"
-(
-  split 1 add join
-)
-word
+(prepend) "adds element to front of list" (split 1 add join) word
 
-(empty) "creates empty list"
-(
-  0 join
-)
-word
+(empty) "creates empty list" (0 join) word
 
-(splitHalve) "splits list into halves"
-(
-  split
-  (itemsCount) put
-  itemsCount 2 divide (itemsCount1) put
-  itemsCount itemsCount1 subtract (itemsCount2) put
-  itemsCount1 join (result1) put
-  itemsCount2 join
-  result1
-)
-word 
+(splitHalve) "splits list into halves" (split (itemsCount) put itemsCount 2 divide (rightCount) put itemsCount rightCount subtract (leftCount) put rightCount join (rightList) put leftCount join rightList) word 
 
-(:) "duplicates top of stack"
-(
-  duplicate
-)
-word
 
-(.) "drops top of stack"
-(
-  drop
-)
-word
+(getType) "gets type of object on top of stack" (true () GetType) word
 
-(getType) "gets type-object of object on top of stack"
-(
-  true () GetType
-)
-word
+(void) "pushes void-type" (Type ("System.Void") GetType) word
 
-(void) "pushes void-type"
-(
-  Type ("System.Void") GetType
-)
-word
-
-(isSubclassOf) "true, if type of object top of stack - 1 is subclass of type on top of stack, false otherwise"
-(
-  (object type) put
-  object getType true type 1 join IsSubclassOf
-)
-word
+(isSubclassOf) "checks, if object-type of top of stack - 1 is subclass of object-type on top of stack" ((object type) put object getType true type 1 join IsSubclassOf) word
 
 (empty Count) (count) set
 ((length) put Array (Object length) CreateInstance) (newArray) set
-
-(0 0 equal) (true) set
-(0 0 notEqual) (false) set
-((false) (true) rotate ifElse) (not) set
 
