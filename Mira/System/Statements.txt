@@ -57,7 +57,7 @@
   (from to step) put
   empty
   (
-    from add from step add (from) put
+    duplicate from 1 join Add from step add (from) put
   )
   (from to less-or-equal)
   while  

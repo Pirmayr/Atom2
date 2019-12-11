@@ -6,7 +6,7 @@ loadFile System.txt pragma
 
   50 dumpPrimes "" writeLine
 
-  1 10  2 range (i " " add output) (i) map "" writeLine
+  1 10  2 range (i output " " output) (i) map "" writeLine
 
   "Hello World!" writeLine
 

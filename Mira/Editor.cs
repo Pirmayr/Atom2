@@ -128,10 +128,7 @@
       runtime.Continue(false);
     }
 
-    private void OnLoadComplete(object sender, EventArgs e)
-    {
-      UpdateUI();
-    }
+    private void OnLoadComplete(object sender, EventArgs e) => UpdateUI();
 
     private void OnElapsed(object sender, EventArgs e)
     {
@@ -164,10 +161,7 @@
       }
     }
 
-    private void OnRun(object sender, EventArgs arguments)
-    {
-      runtime.Run();
-    }
+    private void OnRun(object sender, EventArgs arguments) => runtime.Run();
 
     private void OnStep(object sender, EventArgs e)
     {
