@@ -63,7 +63,7 @@ Form new
     addToolStripItem
   : ToolStripMenuItem ("Test") new
     : "Test" empty (test) addMenuItem
-    : "Help" empty (help) addMenuItem
+    : "Help" empty break (help) addMenuItem
     addToolStripItem
   addControl
 ShowDialog .

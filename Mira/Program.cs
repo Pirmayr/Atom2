@@ -3,6 +3,8 @@
   using System;
 
   using Eto.Forms;
+  using Eto.Mac.Forms.Controls;
+  using MonoMac.AppKit;
 
   public static class Program
   {
@@ -18,6 +20,18 @@
           baseDirectory = arguments[0];
           codeFilename = arguments[1];
         }
+
+        /*
+        Eto.Style.Add<ListBoxHandler>("ListNative", handler => {
+          handler.Scroll.BorderType = NSBorderType.NoBorder;
+          handler.Control.SelectionHighlightStyle = NSTableViewSelectionHighlightStyle.SourceList;
+        });
+        */
+
+        Eto.Style.Add<ListBoxHandler>("ListNative", handler => {
+          handler.Control.FocusRingType = NSFocusRingType.None;
+        });
+
         Application application = new Application();
         application.Run(new Editor(application, baseDirectory, codeFilename));
       }

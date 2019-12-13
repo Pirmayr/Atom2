@@ -4,11 +4,12 @@
   using System.Collections.Generic;
 
   using Eto.Forms;
+  using Eto.Mac.Forms.Controls;
+  using MonoMac.AppKit;
 
   public sealed class Editor : Form
   {
     private const string ContinueText = "Continue";
-    private const string FileText = "File";
     private const string HeaderTextCode = "Code";
     private const string HeaderTextType = "Type";
     private const string RunText = "Run";
@@ -29,48 +30,33 @@
 
     public Editor(Application application, string baseDirectory, string codeFilename)
     {
-      // UI:
-      Title = TitleText;
       WindowState = WindowState.Maximized;
+      Title = TitleText;
+      Menu = new MenuBar { IncludeSystemItems = MenuBarSystemItems.Quit };
       runCommand = new Command(OnRun);
-      runCommand.MenuText = RunText;
       continueCommand = new Command(OnContinue);
-      continueCommand.MenuText = ContinueText;
-      stepCommand = new Command(OnStep);
-      stepCommand.MenuText = StepText;
-      stepCommand.Shortcut = Keys.F10;
-      ButtonMenuItem fileMenuItem = new ButtonMenuItem();
-      fileMenuItem.Text = FileText;
-      fileMenuItem.Items.Add(runCommand);
-      fileMenuItem.Items.Add(continueCommand);
-      fileMenuItem.Items.Add(stepCommand);
-      MenuBar menuBar = new MenuBar();
-      menuBar.IncludeSystemItems = MenuBarSystemItems.Quit;
-      menuBar.Items.Add(fileMenuItem);
-      Menu = menuBar;
+      stepCommand = new Command(OnStep) { Shortcut = Keys.F10 };
       Button runButton = new Button { Command = runCommand, Text = RunText };
       Button continueButton = new Button { Command = continueCommand, Text = ContinueText };
       Button stepButton = new Button { Command = stepCommand, Text = StepText };
-      stackListBox = new ListBox { Width = StandardDimension };
-      callStackListBox = new ListBox { Width = StandardDimension };
+      stackListBox = new ListBox { Height = StandardDimension, Width = StandardDimension, Style = "ListNative" };
+      callStackListBox = new ListBox { Width = StandardDimension, Style = "ListNative" };
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
-      codeTreeGridView = NewTreeGridView();
-      outputTextArea = new RichTextArea { Height = /*StandardDimension*/ 350 };
-      TableLayout buttonLayout = TableLayout.Horizontal(runButton, continueButton, stepButton, new Panel());
-      TableRow codeTableRow = new TableRow(codeTreeGridView) { ScaleHeight = true };
-      TableCell middleCell = new TableCell(new TableLayout(buttonLayout, codeTableRow, outputTextArea)) { ScaleWidth = true };
-      Content = new TableRow(stackListBox, middleCell, callStackListBox);
-
-      outputTextArea.SelectionUnderline = true;
-
-      // Other initializations:
+      codeTreeGridView = new TreeGridView() { ShowHeader = false };
+      codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(0), Resizable = false, HeaderText = HeaderTextCode });
+      codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(1), Resizable = false, HeaderText = HeaderTextType });
+      outputTextArea = new RichTextArea { Height = StandardDimension };
+      TableLayout buttons = TableLayout.Horizontal(runButton, continueButton, stepButton, new Panel());
+      TableLayout codeControls = TableLayout.Horizontal(callStackListBox, new TableCell(codeTreeGridView, true), stackListBox);
+      TableLayout mainControls = new TableLayout(new TableRow(codeControls) { ScaleHeight = true }, outputTextArea);
+      Content = new TableLayout(buttons, mainControls);
       runtime = new Mira(application, baseDirectory);
       runtime.Breaking += UpdateUI;
       runtime.Outputting += OnOutputting;
       runtime.Stepping += UpdateUI;
       runtime.Terminating += OnTerminating;
       runtime.Code = codeFilename;
-      timer.Interval = 0.25;
+      timer.Interval = 0.33;
       timer.Elapsed += OnElapsed;
       timer.Start();
       LoadComplete += OnLoadComplete;
@@ -89,25 +75,6 @@
           executingTreeGridViewItem = newTreeViewItem;
         }
       }
-      return result;
-    }
-
-    private static TreeGridView NewTreeGridView()
-    {
-      TreeGridView result = new TreeGridView();
-      result.ShowHeader = false;
-      GridColumn codeGridColumn = new GridColumn();
-      codeGridColumn.Editable = false;
-      codeGridColumn.DataCell = new TextBoxCell(0);
-      codeGridColumn.Resizable = false;
-      codeGridColumn.HeaderText = HeaderTextCode;
-      result.Columns.Add(codeGridColumn);
-      GridColumn typeGridColumn = new GridColumn();
-      typeGridColumn.Editable = false;
-      typeGridColumn.DataCell = new TextBoxCell(1);
-      typeGridColumn.Resizable = false;
-      typeGridColumn.HeaderText = HeaderTextType;
-      result.Columns.Add(typeGridColumn);
       return result;
     }
 
