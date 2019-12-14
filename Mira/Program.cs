@@ -21,13 +21,6 @@
           codeFilename = arguments[1];
         }
 
-        /*
-        Eto.Style.Add<ListBoxHandler>("ListNative", handler => {
-          handler.Scroll.BorderType = NSBorderType.NoBorder;
-          handler.Control.SelectionHighlightStyle = NSTableViewSelectionHighlightStyle.SourceList;
-        });
-        */
-
         Eto.Style.Add<ListBoxHandler>("ListNative", handler => {
           handler.Control.FocusRingType = NSFocusRingType.None;
         });

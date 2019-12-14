@@ -1,7 +1,9 @@
 ﻿loadFile Stack.txt pragma
 loadFile Core.txt pragma
+loadFile Documentation.txt pragma
 loadFile Words.txt pragma
 loadFile Statements.txt pragma
 loadFile Math.txt pragma
 loadFile IO.txt pragma
 loadFile UI.txt pragma
+loadFile Tests.txt pragma

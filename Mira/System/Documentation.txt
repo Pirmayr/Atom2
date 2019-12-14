@@ -1,0 +1,22 @@
+﻿((documentation) get ("+b" output currentItem "Key" execute output "-b" output "    " output currentItem "Value" execute output endOfLine output) (currentItem) map) (help) set
+
+(() ToArray String carriageReturn rotate 2 join Join) (joinItems) set
+((template partName) put evaluateAndSplit join joinItems template "%" partName add "%" add rotate 2 join Replace) (expand) set
+
+("<p>" "%brief%" "</p>") (briefTemplate) set
+("<html>" "<body>" %document% "</body>" "</html>") (documentTemplate) set
+("<h1>" %name% "</h1>") (nameTemplate) set
+(<p> %in% "→" %out% </p>) (stackTemplate) set
+("%word%") (wordTemplate) set
+
+((briefTemplate) get joinItems "brief" expand) (briefNode) set
+((documentTemplate) get joinItems "document" expand) (documentNode) set
+((nameTemplate) get joinItems "name" expand) (nameNode) set
+
+(swap "in" expand) (inNode) set
+(swap "out" expand) (outNode) set
+((stackTemplate) get joinItems swap evaluate) (stackNode) set
+
+((wordTemplate) get joinItems "word" expand) (wordNode) set
+
+(((("split") nameNode ("Puts list-items and list-count on stack.") briefNode (("items") inNode ("{item} count") outNode) stackNode) wordNode) documentNode output) (testDocumentation) set

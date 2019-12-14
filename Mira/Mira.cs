@@ -130,6 +130,7 @@ namespace Mira
     private readonly CharHashSet tokenStopCharacters = new CharHashSet { Eof, Quote, Whitespace, LeftParenthesis, RightParenthesis };
     private string code;
     private bool stepping;
+    private Exception mostRecentExecutionException;
 
     public CallEnvironmentStack CallEnvironments { get; } = new CallEnvironmentStack();
 
@@ -152,7 +153,7 @@ namespace Mira
     {
       this.application = application;
       this.baseDirectory = baseDirectory;
-      Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Collections", "System.Reflection");
+      Reference("mscorlib, Version=4.0.0.0, Culture=neutral", "System", "System.Collections", "System.IO", "System.Reflection");
       setWords.Add(new Name { Value = "break" }, new Action(Break));
       setWords.Add(new Name { Value = "execute" }, new Action(Execute));
       setWords.Add(new Name { Value = "put" }, new Action(Put));
@@ -374,6 +375,7 @@ namespace Mira
       }
       if (Invoke(() => DoExecute(type, memberName, bindingFlags, target, arguments, hasReturnValue)) is Exception exception)
       {
+        mostRecentExecutionException = exception;
         throw exception;
       }
     }
@@ -533,7 +535,18 @@ namespace Mira
         }
       }
       Delegate function = Expression.Lambda(Expression.Dynamic(binder, targetType, parameters), parameters).Compile();
-      return () => Stack.Push(function.DynamicInvoke(Stack.Pop(parametersCount).ToArray()));
+      return () =>
+      {
+        try
+        {
+          Stack.Push(function.DynamicInvoke(Stack.Pop(parametersCount).ToArray()));
+        }
+        catch (Exception exception)
+        {
+          mostRecentExecutionException = exception;
+          throw exception;
+        }
+      };
     }
 
     private void Output() => Invoke(() => Outputting?.Invoke(this, Stack.Pop().ToString()));
@@ -579,10 +592,11 @@ namespace Mira
         CurrentRootItems = GetItems(GetTokens(GetCode(codeOrPath)));
         if (evaluate)
         {
+          mostRecentExecutionException = null;
           Stack.Clear();
           CallEnvironments.Clear();
           Evaluate(CurrentRootItems);
-          Terminate(null);
+          Terminate(mostRecentExecutionException);
         }
         return null;
       }

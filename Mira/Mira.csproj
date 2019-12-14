@@ -9,7 +9,6 @@
     <RootNamespace>Mira</RootNamespace>
     <AssemblyName>Mira</AssemblyName>
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
-    <ReleaseVersion>0.2</ReleaseVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -80,6 +79,9 @@
     <None Include="System\UI.txt" />
     <None Include="packages.config" />
     <None Include="System\Core.txt" />
+    <None Include="System\Test.html" />
+    <None Include="System\Documentation.txt" />
+    <None Include="System\Tests.txt" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

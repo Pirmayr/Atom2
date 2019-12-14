@@ -48,3 +48,7 @@ Int32 makeOperation (toInt) set
 
 SortedList new (documentation) set
 ((name brief body) put documentation name split (dummy) put ToString brief 2 join Add body name set) (word) set
+
+(toString (name) put (_) split (a) put true () GetType () new (newName) put newName (name) Value newName) (toName) set
+
+(evaluateAndSplit join) (evaluateItems) set

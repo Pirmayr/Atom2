@@ -2,7 +2,6 @@
 (13 toCharacter) (carriageReturn) set
 (carriageReturn toString lineFeed toString add) (endOfLine) set
 
-((documentation) get ("+b" output currentItem "Key" execute output "-b" output "    " output currentItem "Value" execute output endOfLine output) (currentItem) map) (help) set
 
 (verbatim) "pushes list-item on top of stack" (split drop) word
 

@@ -2,7 +2,7 @@
 {
   using System;
   using System.Collections.Generic;
-
+  using System.IO;
   using Eto.Forms;
   using Eto.Mac.Forms.Controls;
   using MonoMac.AppKit;
@@ -10,8 +10,6 @@
   public sealed class Editor : Form
   {
     private const string ContinueText = "Continue";
-    private const string HeaderTextCode = "Code";
-    private const string HeaderTextType = "Type";
     private const string RunText = "Run";
     private const int StandardDimension = 300;
     private const string StepText = "Step";
@@ -23,6 +21,7 @@
     private readonly Command runCommand;
     private readonly Mira runtime;
     private readonly ListBox stackListBox;
+    private readonly WebView webView;
     private readonly Command stepCommand;
     private readonly UITimer timer = new UITimer();
     private bool underline;
@@ -43,11 +42,12 @@
       callStackListBox = new ListBox { Width = StandardDimension, Style = "ListNative" };
       callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
       codeTreeGridView = new TreeGridView() { ShowHeader = false };
-      codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(0), Resizable = false, HeaderText = HeaderTextCode });
-      codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(1), Resizable = false, HeaderText = HeaderTextType });
+      codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(0), Resizable = false });
+      codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(1), Resizable = false });
       outputTextArea = new RichTextArea { Height = StandardDimension };
+      webView = new WebView();
       TableLayout buttons = TableLayout.Horizontal(runButton, continueButton, stepButton, new Panel());
-      TableLayout codeControls = TableLayout.Horizontal(callStackListBox, new TableCell(codeTreeGridView, true), stackListBox);
+      TableLayout codeControls = TableLayout.Horizontal(callStackListBox, new TableCell(TableLayout.HorizontalScaled(codeTreeGridView, webView), true), stackListBox);
       TableLayout mainControls = new TableLayout(new TableRow(codeControls) { ScaleHeight = true }, outputTextArea);
       Content = new TableLayout(buttons, mainControls);
       runtime = new Mira(application, baseDirectory);
@@ -60,6 +60,7 @@
       timer.Elapsed += OnElapsed;
       timer.Start();
       LoadComplete += OnLoadComplete;
+      webView.LoadHtml(File.ReadAllText(baseDirectory + "/Test.html"));
     }
 
     private static TreeGridItemCollection GetCodeTree(IEnumerable<object> rootItems, object executingItem, ref TreeGridItem executingTreeGridViewItem)
@@ -106,6 +107,7 @@
 
     private void OnOutputting(object sender, string message)
     {
+      /*
       switch (message)
       {
         case "+b":
@@ -126,6 +128,9 @@
           outputTextArea.Append(message);
           break;
       }
+      */
+
+      webView.LoadHtml(message);
     }
 
     private void OnRun(object sender, EventArgs arguments) => runtime.Run();
@@ -140,7 +145,13 @@
     {
       if (exception != null)
       {
-        outputTextArea.Append(exception.Message + Environment.NewLine);
+        string message = "";
+        while (exception != null)
+        {
+          message += exception.Message + Environment.NewLine;
+          exception = exception.InnerException;
+        }
+        outputTextArea.Append(message);
       }
       UpdateUI();
     }
