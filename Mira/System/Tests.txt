@@ -1,10 +1,10 @@
 ﻿(test) "performs various tests"
 (
-  80 factorial output "" writeLine
+  80 factorial write "" writeLine
 
   50 dumpPrimes "" writeLine
 
-  1 10  2 range (i output " " output) (i) map "" writeLine
+  1 10  2 range (i write " " write) (i) map "" writeLine
 
   "Hello World!" writeLine
 

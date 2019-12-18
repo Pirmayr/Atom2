@@ -1,5 +1,7 @@
 loadFile System.txt pragma
 
+(isSubclassOf splitHalve prepend verbatim getType newArray elementAtOrDefault) .
+
 Form new
 : (form) put
 : TextBox new
@@ -20,7 +22,6 @@ Form new
   : ToolStripMenuItem ("Test") new
     : "Test" empty (test) addMenuItem
     : "Help" empty (help) addMenuItem
-    : "Test Documentation" empty (testDocumentation) addMenuItem
     addToolStripItem
   addControl
 ShowDialog .

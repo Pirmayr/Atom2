@@ -2,4 +2,4 @@
 (power) "base exponent -> power" ((a b) put Math (a toDouble b toDouble) Pow) word
 (squareRoot) "number -> squareroot" (0.5 power) word
 (factorial) "n -> n!" ((n) put 1 toBigInteger (i multiply) (i) 1 n 1 for) word
-(dumpPrimes) "upper-bound -> _" (3 swap 2 range ((a output) (3 a squareRoot toInt 2 range (a b modulo 0 notEqual) (b) all) if) (a) map) word
+(dumpPrimes) "upper-bound -> _" (3 swap 2 range ((a write) (3 a squareRoot toInt 2 range (a b modulo 0 notEqual) (b) all) if) (a) map) word

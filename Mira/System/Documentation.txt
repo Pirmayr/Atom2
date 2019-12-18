@@ -1,22 +1,36 @@
-﻿((documentation) get ("+b" output currentItem "Key" execute output "-b" output "    " output currentItem "Value" execute output endOfLine output) (currentItem) map) (help) set
+﻿((documentation) get ("+b" write currentItem "Key" execute write "-b" write "    " write currentItem "Value" execute write endOfLine write) (currentItem) map) (help) set
 
 (() ToArray String carriageReturn rotate 2 join Join) (joinItems) set
 ((template partName) put evaluateAndSplit join joinItems template "%" partName add "%" add rotate 2 join Replace) (expand) set
 
-("<p>" "%brief%" "</p>") (briefTemplate) set
 ("<html>" "<body>" %document% "</body>" "</html>") (documentTemplate) set
-("<h1>" %name% "</h1>") (nameTemplate) set
-(<p> %in% "→" %out% </p>) (stackTemplate) set
-("%word%") (wordTemplate) set
+("<h1>" "%name%" "</h1>" "<p>" "%brief%" "</p>" "<p>" "%in%" "→" "%out%" "</p>" "<b>" "Remark" "</b>" "<p>" %remark% "</p>" "<b>" "Category" "</b>" "<p>" %category% "</p>") (wordTemplate) set
 
-((briefTemplate) get joinItems "brief" expand) (briefNode) set
 ((documentTemplate) get joinItems "document" expand) (documentNode) set
-((nameTemplate) get joinItems "name" expand) (nameNode) set
-
+((wordTemplate) get joinItems swap evaluate) (wordNode) set
+(swap "name" expand) (nameNode) set
+(swap "brief" expand) (briefNode) set
 (swap "in" expand) (inNode) set
 (swap "out" expand) (outNode) set
-((stackTemplate) get joinItems swap evaluate) (stackNode) set
+(swap "remark" expand) (remarkNode) set
+(swap "category" expand) (categoryNode) set
 
-((wordTemplate) get joinItems "word" expand) (wordNode) set
+((index nodeName) put index "-" elementAtOrDefault 1 join nodeName toName) (makeNode) set
 
-(((("split") nameNode ("Puts list-items and list-count on stack.") briefNode (("items") inNode ("{item} count") outNode) stackNode) wordNode) documentNode output) (testDocumentation) set
+(
+  (name) put
+  name "#" documentation name "?" sortedListAtOrDefault add add
+  splitParts (parts) put
+  parts 0 "nameNode" makeNode
+  parts 1 "briefNode" makeNode
+  parts 2 "inNode" makeNode
+  parts 3 "outNode" makeNode
+  parts 4 "categoryNode" makeNode
+  parts 5 "remarkNode" makeNode
+  12 join
+  "wordNode" toName 2 join
+  "documentNode" toName 2 join
+  evaluate
+  display
+)
+(showDocumentation) set

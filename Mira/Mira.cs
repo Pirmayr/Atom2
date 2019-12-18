@@ -49,6 +49,14 @@ namespace Mira
       public IEnumerable<object> Pop(int count) => Enumerable.Repeat<object>(null, count).Select(_ => Pop()).Reverse().ToArray();
     }
 
+    public class OutputtingEventArgs : EventArgs
+    {
+      public int Target { get; set; }
+
+      public string Message { get; set; }
+
+    }
+
     public class ScopedDictionary<TK, TV> where TV : class
     {
       public sealed class Scope : Dictionary<TK, TV> { }
@@ -71,7 +79,7 @@ namespace Mira
         {
           if (currentScope.TryGetValue(key, out value))
           {
-            return currentScope == scopes.Last() ? WordKind.Set : WordKind.Put;
+            return currentScope == scopes.Last() ? WordKind.Global : WordKind.Local;
           }
         }
         value = default;
@@ -86,7 +94,7 @@ namespace Mira
 
     private sealed class CharHashSet : HashSet<char> { }
 
-    private sealed class Name
+    public sealed class Name
     {
       public string Value { get; set; }
       public override bool Equals(object instance) => instance is Name name && Value == name.Value;
@@ -100,15 +108,15 @@ namespace Mira
 
     private sealed class Words : ScopedDictionary<Name, object> { }
 
-    public delegate void OutputtingEventHandler(object sender, string message);
+    public delegate void OutputtingEventHandler(object sender, OutputtingEventArgs arguments);
 
     public delegate void TerminatingEventHandler(object sender, Exception exception);
 
     public enum WordKind
     {
       None,
-      Set,
-      Put
+      Global,
+      Local
     }
 
     private const char Eof = char.MinValue;
@@ -262,9 +270,9 @@ namespace Mira
       }
     }
 
-    private void Evaluate(object item)
+    public void Evaluate(object item)
     {
-      if (Running)
+      try
       {
         Items items = item as Items ?? new Items(item);
         CallEnvironments.Push(new CallEnvironment { Items = items });
@@ -275,7 +283,7 @@ namespace Mira
           object word = null;
           switch (currentItem is Name key ? setWords.TryGetValue(key, out word) : WordKind.None)
           {
-            case WordKind.Set:
+            case WordKind.Global:
               switch (word)
               {
                 case Action actionValue:
@@ -291,7 +299,7 @@ namespace Mira
                   break;
               }
               break;
-            case WordKind.Put:
+            case WordKind.Local:
               Stack.Push(word);
               break;
             default:
@@ -300,6 +308,11 @@ namespace Mira
           }
         }
         CallEnvironments.Pop();
+      }
+      catch (Exception exception)
+      {
+        mostRecentExecutionException = exception;
+        throw exception;
       }
     }
 
@@ -549,7 +562,7 @@ namespace Mira
       };
     }
 
-    private void Output() => Invoke(() => Outputting?.Invoke(this, Stack.Pop().ToString()));
+    private void Output() => Invoke(() => Outputting?.Invoke(this, new OutputtingEventArgs { Target = (int) Stack.Pop(), Message = Stack.Pop().ToString() }));
     private void Put() => ((Items) Stack.Pop()).AsEnumerable().Reverse().ToList().ForEach(currentItem => setWords.Set((Name) currentItem, Stack.Pop(), true));
 
     private void Reference(string assemblyName, params string[] requestedNamespaces)
@@ -584,12 +597,12 @@ namespace Mira
       }
     }
 
-    private Exception Run(string codeOrPath, bool evaluate)
+    public Exception Run(string codeOrPath, bool evaluate)
     {
       try
       {
         Running = evaluate;
-        CurrentRootItems = GetItems(GetTokens(GetCode(codeOrPath)));
+        CurrentRootItems = GetItems(codeOrPath);
         if (evaluate)
         {
           mostRecentExecutionException = null;
@@ -606,6 +619,8 @@ namespace Mira
         return exception;
       }
     }
+
+    public Items GetItems(string codeOrPath) => GetItems(GetTokens(GetCode(codeOrPath)));
 
     private void Set() => ((Items) Stack.Pop()).AsEnumerable().Reverse().ToList().ForEach(currentItem => setWords.Set((Name) currentItem, Stack.Pop(), false));
     private void Show() => Invoke(() => MessageBox.Show(Stack.Pop().ToString()));
@@ -632,7 +647,12 @@ namespace Mira
     private void Terminate(Exception exception)
     {
       Running = false;
-      Invoke(() => Terminating?.Invoke(this, exception));
+      Exception innermostException = exception;
+      while (innermostException != null && innermostException.InnerException != null)
+      {
+        innermostException = innermostException.InnerException;
+      }
+      Invoke(() => Terminating?.Invoke(this, innermostException));
     }
 
     private void While()

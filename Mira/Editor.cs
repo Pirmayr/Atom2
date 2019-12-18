@@ -44,6 +44,7 @@
       codeTreeGridView = new TreeGridView() { ShowHeader = false };
       codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(0), Resizable = false });
       codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(1), Resizable = false });
+      codeTreeGridView.SelectedItemChanged += OnCodeTreeViewSelectedItemChanged;
       outputTextArea = new RichTextArea { Height = StandardDimension };
       webView = new WebView();
       TableLayout buttons = TableLayout.Horizontal(runButton, continueButton, stepButton, new Panel());
@@ -63,12 +64,21 @@
       webView.LoadHtml(File.ReadAllText(baseDirectory + "/Test.html"));
     }
 
+    private void OnCodeTreeViewSelectedItemChanged(object sender, EventArgs e)
+    {
+      if ((codeTreeGridView.SelectedItem as TreeGridItem)?.Tag is Mira.Name selectedName)
+      {
+        runtime.Evaluate(runtime.GetItems($"\"{selectedName.ToString()}\" showDocumentation"));
+      }
+    }
+
     private static TreeGridItemCollection GetCodeTree(IEnumerable<object> rootItems, object executingItem, ref TreeGridItem executingTreeGridViewItem)
     {
       TreeGridItemCollection result = new TreeGridItemCollection();
       foreach (object currentItem in rootItems)
       {
         TreeGridItem newTreeViewItem = currentItem is Mira.Items currentItems ? new TreeGridItem(GetCodeTree(currentItems, executingItem, ref executingTreeGridViewItem), "(Items)") : new TreeGridItem(currentItem.ToString(), currentItem.GetType().Name);
+        newTreeViewItem.Tag = currentItem;
         newTreeViewItem.Expanded = true;
         result.Add(newTreeViewItem);
         if (currentItem == executingItem)
@@ -105,32 +115,36 @@
       stepCommand.Enabled = runtime.Paused;
     }
 
-    private void OnOutputting(object sender, string message)
+    private void OnOutputting(object sender, Mira.OutputtingEventArgs arguments)
     {
-      /*
-      switch (message)
+      switch (arguments.Target)
       {
-        case "+b":
-          bold = true;
+        case 0:
+          switch (arguments.Message)
+          {
+            case "+b":
+              bold = true;
+              break;
+            case "-b":
+              bold = false;
+              break;
+            case "+u":
+              underline = true;
+              break;
+            case "-u":
+              underline = false;
+              break;
+            default:
+              outputTextArea.SelectionBold = bold;
+              outputTextArea.SelectionUnderline = underline;
+              outputTextArea.Append(arguments.Message);
+              break;
+          }
           break;
-        case "-b":
-          bold = false;
-          break;
-        case "+u":
-          underline = true;
-          break;
-        case "-u":
-          underline = false;
-          break;
-        default:
-          outputTextArea.SelectionBold = bold;
-          outputTextArea.SelectionUnderline = underline;
-          outputTextArea.Append(message);
+        case 1:
+          webView.LoadHtml(arguments.Message);
           break;
       }
-      */
-
-      webView.LoadHtml(message);
     }
 
     private void OnRun(object sender, EventArgs arguments) => runtime.Run();
