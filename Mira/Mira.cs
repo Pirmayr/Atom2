@@ -512,7 +512,7 @@ namespace Mira
 
     private Action Operation(object targetTypeOrExpressionType, int parametersCount = 0)
     {
-      static CSharpArgumentInfo[] GetParametersAndArgumentInfos(int count, out ParameterExpression[] parameterExpressions)
+      CSharpArgumentInfo[] GetParametersAndArgumentInfos(int count, out ParameterExpression[] parameterExpressions)
       {
         CSharpArgumentInfo argumentInfo = CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null);
         parameterExpressions = new ParameterExpression[count];
@@ -647,12 +647,7 @@ namespace Mira
     private void Terminate(Exception exception)
     {
       Running = false;
-      Exception innermostException = exception;
-      while (innermostException != null && innermostException.InnerException != null)
-      {
-        innermostException = innermostException.InnerException;
-      }
-      Invoke(() => Terminating?.Invoke(this, innermostException));
+      Invoke(() => Terminating?.Invoke(this, exception));
     }
 
     private void While()

@@ -61,7 +61,6 @@
       timer.Elapsed += OnElapsed;
       timer.Start();
       LoadComplete += OnLoadComplete;
-      webView.LoadHtml(File.ReadAllText(baseDirectory + "/Test.html"));
     }
 
     private void OnCodeTreeViewSelectedItemChanged(object sender, EventArgs e)
@@ -155,17 +154,21 @@
       runtime.Continue(true);
     }
 
+    public static Exception InnermostException(Exception exception)
+    {
+      Exception result = exception;
+      while (result?.InnerException != null)
+      {
+        result = result.InnerException;
+      }
+      return result;
+    }
+
     private void OnTerminating(object sender, Exception exception)
     {
       if (exception != null)
       {
-        string message = "";
-        while (exception != null)
-        {
-          message += exception.Message + Environment.NewLine;
-          exception = exception.InnerException;
-        }
-        outputTextArea.Append(message);
+        outputTextArea.Append(InnermostException(exception).Message);
       }
       UpdateUI();
     }

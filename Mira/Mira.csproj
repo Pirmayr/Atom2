@@ -71,17 +71,7 @@
   <ItemGroup>
     <None Include="System\System.txt" />
     <None Include="System\Program.txt" />
-    <None Include="System\Stack.txt" />
-    <None Include="System\Words.txt" />
-    <None Include="System\Statements.txt" />
-    <None Include="System\Math.txt" />
-    <None Include="System\IO.txt" />
-    <None Include="System\UI.txt" />
     <None Include="packages.config" />
-    <None Include="System\Core.txt" />
-    <None Include="System\Test.html" />
-    <None Include="System\Documentation.txt" />
-    <None Include="System\Tests.txt" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

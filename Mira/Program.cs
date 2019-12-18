@@ -30,7 +30,7 @@
       }
       catch (Exception exception)
       {
-        Console.Write(exception.Message);
+        Console.Write(Editor.InnermostException(exception).Message);
       }
     }
   }

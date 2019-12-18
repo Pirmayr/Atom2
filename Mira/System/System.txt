@@ -1,9 +1,351 @@
-﻿loadFile Stack.txt pragma
-loadFile Core.txt pragma
-loadFile Documentation.txt pragma
-loadFile Words.txt pragma
-loadFile Statements.txt pragma
-loadFile Math.txt pragma
-loadFile IO.txt pragma
-loadFile UI.txt pragma
-loadFile Tests.txt pragma
+﻿reference "System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Linq.Expressions" pragma
+reference "System.Numerics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Numerics" pragma
+reference "System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "System.Windows.Forms" pragma
+reference "System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" "System.Drawing" pragma
+
+((a) put) (drop) set 
+((a b) put) (drop-2) set
+((a b) put (b a) get) (swap) set 
+((a) put (a a) get) (duplicate) set 
+((a) put (a a a) get) (triplicate) set 
+((a b) put (a b a) get) (over) set 
+((a b c) put (b c a) get) (rotate) set 
+((a b) put (a a b) get) (duplicate-second) set 
+
+((a) put (a a) get) (get-0) set 
+((a b) put (a b a) get) (get-1) set 
+((a b c) put (a b c a) get) (get-2) set 
+((a b c d) put (a b c d a) get) (get-3) set 
+((a b c d e) put (a b c d e a) get) (get-4) set 
+((a b) put (b) get) (set-0) set 
+((a b c) put (c b) get) (set-1) set 
+((a b c d) put (d b c) get) (set-2) set 
+((a b c d e) put (e b c d) get) (set-3) set 
+((a b) put (b a) get) (insert-after-0) set 
+((a b c) put (c a b) get) (insert-after-1) set 
+((a b c d) put (d a b c) get) (insert-after-2) set 
+((a) put) (delete-0) set 
+((a b) put (b) get) (delete-1) set 
+((a b c) put (b c) get) (delete-2) set 
+
+((a) put) (.) set
+((a) put (a a) get) (:) set
+
+(runtime "CreateDelegate" execute) (createDelegate) set
+(runtime "Evaluate" execute) Void () createDelegate (evaluate) set
+(runtime "Get" execute) Void () createDelegate (get) set
+(runtime "If" execute) Void () createDelegate (if) set
+(runtime "Output" execute) Void () createDelegate (output) set
+(runtime "Show" execute) Void () createDelegate (show) set
+(runtime "While" execute) Void () createDelegate (while) set
+(runtime "Join" execute) Void () createDelegate (join) set
+(runtime "Split" execute) Void () createDelegate (split) set
+(runtime "EvaluateAndSplit" execute) Void () createDelegate (evaluateAndSplit) set
+
+(runtime "MakeOperation" execute) (makeOperation) set
+
+(1 makeOperation) (makeUnaryOperation) set
+ExpressionType Increment makeUnaryOperation (increment) set
+ExpressionType Decrement makeUnaryOperation (decrement) set
+
+(2 makeOperation) (makeBinaryOperation) set
+ExpressionType Equal makeBinaryOperation (equal) set
+ExpressionType NotEqual makeBinaryOperation (notEqual) set
+ExpressionType LessThanOrEqual makeBinaryOperation (less-or-equal) set
+ExpressionType LessThan makeBinaryOperation (less) set
+ExpressionType GreaterThanOrEqual makeBinaryOperation (greater-or-equal) set
+ExpressionType GreaterThan makeBinaryOperation (greater) set
+ExpressionType And makeBinaryOperation (and) set
+ExpressionType Or makeBinaryOperation (or) set
+ExpressionType Add makeBinaryOperation (add) set
+ExpressionType Subtract makeBinaryOperation (subtract) set
+ExpressionType Multiply makeBinaryOperation (multiply) set
+ExpressionType Divide makeBinaryOperation (divide) set
+ExpressionType Modulo makeBinaryOperation (modulo) set
+
+(0 0 equal) (true) set
+(0 0 notEqual) (false) set
+((false) (true) rotate ifElse) (not) set
+
+Double makeOperation (toDouble) set
+Char makeOperation (toCharacter) set
+Int32 makeOperation (toInt) set
+
+(BigInteger swap toString 1 join Parse) (toBigInteger) set
+(() ToString) (toString) set
+
+("new" execute) (new) set
+
+SortedList new (documentation) set
+((name brief body) put documentation name split (dummy) put ToString brief 2 join Add body name set) (word) set
+
+(toString (name) put (_) split (a) put true () GetType () new (newName) put newName (name) Value newName) (toName) set
+
+(evaluateAndSplit join) (evaluateItems) set
+
+((documentation) get ("+b" write currentItem "Key" execute write "-b" write "    " write currentItem "Value" execute write endOfLine write) (currentItem) map) (help) set
+
+(() ToArray String carriageReturn toString rotate 2 join Join) (joinItems) set
+((template partName) put evaluateAndSplit join joinItems template "%" partName add "%" add rotate 2 join Replace) (expand) set
+
+("<html>" "<body>" %document% "</body>" "</html>") (documentTemplate) set
+("<h1>" "%name%" "</h1>" "<p>" "%brief%" "</p>" "<p>" "%in%" "→" "%out%" "</p>" "<b>" "Remark" "</b>" "<p>" %remark% "</p>" "<b>" "Category" "</b>" "<p>" %category% "</p>") (wordTemplate) set
+
+((documentTemplate) get joinItems "document" expand) (documentNode) set
+((wordTemplate) get joinItems swap evaluate) (wordNode) set
+(swap "name" expand) (nameNode) set
+(swap "brief" expand) (briefNode) set
+(swap "in" expand) (inNode) set
+(swap "out" expand) (outNode) set
+(swap "remark" expand) (remarkNode) set
+(swap "category" expand) (categoryNode) set
+
+((index nodeName) put index "-" elementAtOrDefault 1 join nodeName toName) (makeNode) set
+
+(
+  (name) put
+  name "#" documentation name "?" sortedListAtOrDefault add add
+  splitParts (parts) put
+  parts 0 "nameNode" makeNode
+  parts 1 "briefNode" makeNode
+  parts 2 "inNode" makeNode
+  parts 3 "outNode" makeNode
+  parts 4 "categoryNode" makeNode
+  parts 5 "remarkNode" makeNode
+  12 join
+  "wordNode" toName 2 join
+  "documentNode" toName 2 join
+  evaluate
+  display
+)
+(showDocumentation) set
+
+(10 toCharacter) (lineFeed) set
+(13 toCharacter) (carriageReturn) set
+(35 toCharacter) (hash) set
+(44 toCharacter) (comma) set
+(47 toCharacter) (slash) set
+(124 toCharacter) (pipe) set
+
+(carriageReturn toString lineFeed toString add) (endOfLine) set
+
+(verbatim)
+  "Extracts item from list.#list#item#list#The list is expected to contain exactly one item."
+  (split drop)
+word
+
+(prepend)
+  "Adds value to front of list#value | list#list#list"
+  (split 1 add join)
+word
+
+(empty) "creates empty list" (0 join) word
+
+(splitHalve)
+  "Splits list into halves.#list#first halve | second halve#list#If the list contains an odd number of items n, the first halve receives (n + 1) / 2 items."
+  (split (itemsCount) put itemsCount 2 divide (rightCount) put itemsCount rightCount subtract (leftCount) put rightCount join (rightList) put leftCount join rightList)
+word 
+
+(getType)
+  "Gets type of object.#object#type#type"
+  (true () GetType)
+word
+
+(void) "pushes void-type" (Type ("System.Void") GetType) word
+
+(isSubclassOf)
+  "Checks, if type of an object is subtype of a type.#object | type#is subclass?#type"
+  ((object type) put object getType true type 1 join IsSubclassOf)
+word
+
+(empty Count) (count) set
+
+(newArray)
+  "Creates array#length#array#array"
+  ((length) put Array (Object length) CreateInstance)
+word
+
+(elementAtOrDefault)
+  "Gets element at index or default, if element doesn't exist.#array | index | default#element or default#array"
+  ((array index default) put (array (index) GetValue) (default) index array () Length less ifElse)
+word
+
+((sortedList key default) put sortedList (key) IndexOfKey (index) put (sortedList (index) GetByIndex) (default) 0 index less-or-equal ifElse) (sortedListAtOrDefault) set
+
+((hash) Split) (splitParts) set
+
+(
+  (ifBlock elseBlock condition) put
+  (elseBlock) get
+  (drop (ifBlock) get)
+  (condition) get
+  if
+  evaluate
+)
+(ifElse) set
+
+(
+  (body key from to step) put
+  (
+    (from) get (key) get set
+    (body) get evaluate
+    (from) get 1 add (from) put
+  )
+  ((from) get (to) get less-or-equal)
+  while  
+)
+(for) set
+
+(
+  (body name) put empty GetEnumerator (enumerator) put
+  (
+    enumerator Current name put body evaluate
+  )
+  (enumerator MoveNext) while
+)
+(map) set
+
+(
+  (body name1 name2) put empty GetEnumerator (enumerator) put
+  (
+    enumerator Current name1 put
+    enumerator MoveNext drop
+    enumerator Current name2 put
+    body evaluate
+  )
+  (enumerator MoveNext) while
+)
+(pairMap) set
+
+(
+  (value bodies) put
+  (bodies) get () GetEnumerator
+  (enumerator) put
+  (
+    (value) get (enumerator) get () Current evaluate
+  )
+  ((enumerator) get () MoveNext)
+  while
+)
+(apply) set
+
+(
+  (from to step) put
+  empty
+  (
+    duplicate from 1 join Add from step add (from) put
+  )
+  (from to less-or-equal)
+  while  
+)
+(range) set
+
+(
+  (condition name) put empty GetEnumerator (enumerator) put
+  true (result) put
+  (
+    enumerator Current name put condition evaluate (result) put
+  )
+  (result enumerator MoveNext and) while
+  result
+)
+(all) set
+
+(
+  (condition name) put empty GetEnumerator (enumerator) put
+  false (result) put
+  (
+    enumerator Current name put condition evaluate (result) put 
+  )
+  (result not enumerator MoveNext and) while
+  result
+)
+(any) set
+
+(
+  (value body) put body (case (selector toString value toString equal) if) (selector) (case) pairMap
+)
+(switch) set
+
+(
+  (value body) put body (case selector if) (selector) (case) pairMap
+)
+(select) set
+
+(
+  (arguments code) put
+  arguments evaluateAndSplit join
+  (evaluate) verbatim
+  arguments (put) verbatim
+  code split
+  4 add
+  join
+)
+(lambda) set
+
+(power) "base exponent -> power" ((a b) put Math (a toDouble b toDouble) Pow) word
+(squareRoot) "number -> squareroot" (0.5 power) word
+(factorial) "n -> n!" ((n) put 1 toBigInteger (i multiply) (i) 1 n 1 for) word
+(dumpPrimes) "upper-bound -> _" (3 swap 2 range ((a write) (3 a squareRoot toInt 2 range (a b modulo 0 notEqual) (b) all) if) (a) map) word
+
+(0 output) (write) set
+(1 output) (display) set
+(toString write endOfLine write) (writeLine) set
+(toString (text) set MessageBox ((text) get) Show drop) (message) set 
+
+((control) put Controls control 1 join Add) (addControl) set
+((toolStripItem) put Items toolStripItem 1 join Add drop) (addToolStripItem) set
+
+((code) put (sender arguments) (put) verbatim code split 2 add join lambda EventHandler createDelegate) (createEventHandler) set
+((event) put (createEventHandler) verbatim 3 join event verbatim evaluate) (addEventHandler) set
+((Click) addEventHandler) (addClickHandler) set
+
+((menuItem menuText context clickHandler) put menuItem DropDownItems (menuText) Add context clickHandler addClickHandler) (addMenuItem) set
+
+(ShowDialog drop) (showDialog) set
+
+(test) "performs various tests"
+(
+  80 factorial write "" writeLine
+
+  50 dumpPrimes "" writeLine
+
+  1 10  2 range (i write " " write) (i) map "" writeLine
+
+  "Hello World!" writeLine
+
+  1 writeLine 1000 newArray (array) put (array (true i) SetValue) (i) 0 999 1 for 2 writeLine
+
+  3 4 power writeLine
+
+  (writeLine writeLine) Void (Int32 String) createDelegate (testDelegate) put testDelegate (1234 "hello") Invoke
+
+  Form new (form) put
+
+  47
+  (
+    (value 11 greater)
+      ("hi" writeLine)
+    (value 47 equal)
+      ("ho" writeLine)
+  )
+  select
+
+  ("true") ("false") "abc" Object isSubclassOf ifElse writeLine
+
+  "hello"
+  (
+  1
+    (1 writeLine)
+  "hello"
+    ("Hello World!" writeLine)
+  9
+    (9 writeLine)
+  )
+  switch
+
+  (1 2 3 5 6 7) splitHalve writeLine writeLine
+
+  "hugo" ("a" "b" "c" "d") prepend writeLine
+)
+word
