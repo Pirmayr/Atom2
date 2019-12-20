@@ -3,6 +3,7 @@
   using System;
   using System.Collections.Generic;
   using System.IO;
+  using Eto.Drawing;
   using Eto.Forms;
   using Eto.Mac.Forms.Controls;
   using MonoMac.AppKit;
@@ -11,17 +12,19 @@
   {
     private const string ContinueText = "Continue";
     private const string RunText = "Run";
-    private const int StandardDimension = 300;
+    private const int StandardDimension = 250;
     private const string StepText = "Step";
     private const string TitleText = "Mira";
-    private readonly ListBox callStackListBox;
-    private readonly TreeGridView codeTreeGridView;
+    private readonly ListBox frameStack;
+    private readonly TreeGridView codeTree;
     private readonly Command continueCommand;
-    private readonly RichTextArea outputTextArea;
+    private readonly RichTextArea outputArea;
     private readonly Command runCommand;
     private readonly Mira runtime;
-    private readonly ListBox stackListBox;
-    private readonly WebView webView;
+    private readonly ListBox valueStack;
+    private readonly WebView documentationView;
+    private readonly RichTextArea programEdit;
+    private readonly RichTextArea systemEdit;
     private readonly Command stepCommand;
     private readonly UITimer timer = new UITimer();
     private bool underline;
@@ -38,19 +41,37 @@
       Button runButton = new Button { Command = runCommand, Text = RunText };
       Button continueButton = new Button { Command = continueCommand, Text = ContinueText };
       Button stepButton = new Button { Command = stepCommand, Text = StepText };
-      stackListBox = new ListBox { Height = StandardDimension, Width = StandardDimension, Style = "ListNative" };
-      callStackListBox = new ListBox { Width = StandardDimension, Style = "ListNative" };
-      callStackListBox.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
-      codeTreeGridView = new TreeGridView() { ShowHeader = false };
-      codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(0), Resizable = false });
-      codeTreeGridView.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(1), Resizable = false });
-      codeTreeGridView.SelectedItemChanged += OnCodeTreeViewSelectedItemChanged;
-      outputTextArea = new RichTextArea { Height = StandardDimension };
-      webView = new WebView();
+      systemEdit = new RichTextArea();
+      systemEdit.Text = File.ReadAllText(baseDirectory + "/System.txt");
+      programEdit = new RichTextArea();
+      programEdit.Text = File.ReadAllText(baseDirectory + "/Program.txt");
+      codeTree = new TreeGridView() { ShowHeader = false, Width = StandardDimension };
+      codeTree.Border = BorderType.Line;
+      codeTree.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(0), Resizable = false });
+      codeTree.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(1), Resizable = false });
+      codeTree.SelectedItemChanged += OnCodeTreeViewSelectedItemChanged;
+      frameStack = new ListBox { Style = "ListNative" };
+      frameStack.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
+      valueStack = new ListBox { Style = "ListNative" };
+      outputArea = new RichTextArea { Height = StandardDimension };
+      documentationView = new WebView();
+      Scrollable documentationwindow = new Scrollable();
+      documentationwindow.Content = documentationView;
       TableLayout buttons = TableLayout.Horizontal(runButton, continueButton, stepButton, new Panel());
-      TableLayout codeControls = TableLayout.Horizontal(callStackListBox, new TableCell(TableLayout.HorizontalScaled(codeTreeGridView, webView), true), stackListBox);
-      TableLayout mainControls = new TableLayout(new TableRow(codeControls) { ScaleHeight = true }, outputTextArea);
-      Content = new TableLayout(buttons, mainControls);
+      TableLayout edits = new TableLayout(systemEdit, programEdit);
+      edits.SetRowScale(0);
+      edits.SetRowScale(1);
+      TableLayout stacks = new TableLayout(frameStack, valueStack);
+      stacks.SetRowScale(0);
+      stacks.SetRowScale(1);
+      stacks.Width = StandardDimension;
+      TableLayout codeControls = TableLayout.Horizontal(codeTree, edits, stacks);
+      codeControls.SetColumnScale(1);
+      TableLayout outputControls = TableLayout.HorizontalScaled(outputArea, documentationwindow);
+      outputControls.Height = StandardDimension;
+      TableLayout mainControls = new TableLayout(buttons, codeControls, outputControls);
+      mainControls.SetRowScale(1);
+      Content = mainControls;
       runtime = new Mira(application, baseDirectory);
       runtime.Breaking += UpdateUI;
       runtime.Outputting += OnOutputting;
@@ -61,11 +82,12 @@
       timer.Elapsed += OnElapsed;
       timer.Start();
       LoadComplete += OnLoadComplete;
+
     }
 
     private void OnCodeTreeViewSelectedItemChanged(object sender, EventArgs e)
     {
-      if ((codeTreeGridView.SelectedItem as TreeGridItem)?.Tag is Mira.Name selectedName)
+      if ((codeTree.SelectedItem as TreeGridItem)?.Tag is Mira.Name selectedName)
       {
         runtime.Evaluate(runtime.GetItems($"\"{selectedName.ToString()}\" showDocumentation"));
       }
@@ -90,10 +112,10 @@
 
     private void OnCallStackListBoxSelectedIndexChanged(object sender, EventArgs e)
     {
-      int index = callStackListBox.SelectedIndex;
-      if (0 <= index && index < callStackListBox.Items.Count)
+      int index = frameStack.SelectedIndex;
+      if (0 <= index && index < frameStack.Items.Count)
       {
-        ListItem selectedItem = (ListItem) callStackListBox.Items[index];
+        ListItem selectedItem = (ListItem) frameStack.Items[index];
         Mira.CallEnvironment callEnvironment = (Mira.CallEnvironment) selectedItem.Tag;
         RebuildCodeTreeView(callEnvironment.Items, callEnvironment.CurrentItem);
       }
@@ -101,7 +123,7 @@
 
     private void OnContinue(object sender, EventArgs e)
     {
-      callStackListBox.Items.Clear();
+      frameStack.Items.Clear();
       runtime.Continue(false);
     }
 
@@ -134,14 +156,14 @@
               underline = false;
               break;
             default:
-              outputTextArea.SelectionBold = bold;
-              outputTextArea.SelectionUnderline = underline;
-              outputTextArea.Append(arguments.Message);
+              outputArea.SelectionBold = bold;
+              outputArea.SelectionUnderline = underline;
+              outputArea.Append(arguments.Message);
               break;
           }
           break;
         case 1:
-          webView.LoadHtml(arguments.Message);
+          documentationView.LoadHtml(arguments.Message);
           break;
       }
     }
@@ -150,7 +172,7 @@
 
     private void OnStep(object sender, EventArgs e)
     {
-      callStackListBox.Items.Clear();
+      frameStack.Items.Clear();
       runtime.Continue(true);
     }
 
@@ -168,36 +190,36 @@
     {
       if (exception != null)
       {
-        outputTextArea.Append(InnermostException(exception).Message);
+        outputArea.Append(InnermostException(exception).Message);
       }
       UpdateUI();
     }
 
     private void RebuildCallStackListBox(Mira.CallEnvironmentStack callEnvironments)
     {
-      callStackListBox.Items.Clear();
+      frameStack.Items.Clear();
       foreach (Mira.CallEnvironment currentCallEnvironment in callEnvironments)
       {
         ListItem newListItem = new ListItem();
         newListItem.Text = currentCallEnvironment.CurrentItem?.ToString() ?? "(null)";
         newListItem.Tag = currentCallEnvironment;
-        callStackListBox.Items.Add(newListItem);
+        frameStack.Items.Add(newListItem);
       }
     }
 
     private void RebuildCodeTreeView(Mira.Items items, object executingItem)
     {
       TreeGridItem executingTreeGridItem = null;
-      codeTreeGridView.DataStore = GetCodeTree(items, executingItem, ref executingTreeGridItem);
-      codeTreeGridView.SelectedItem = executingTreeGridItem;
+      codeTree.DataStore = GetCodeTree(items, executingItem, ref executingTreeGridItem);
+      codeTree.SelectedItem = executingTreeGridItem;
     }
 
     private void RebuildStackListBox()
     {
-      stackListBox.Items.Clear();
+      valueStack.Items.Clear();
       foreach (object currentValue in runtime.Stack)
       {
-        stackListBox.Items.Add(currentValue.GetType().Name + " " + currentValue);
+        valueStack.Items.Add(currentValue.GetType().Name + " " + currentValue);
       }
     }
 
