@@ -12,7 +12,8 @@
   {
     private const string ContinueText = "Continue";
     private const string RunText = "Run";
-    private const int StandardDimension = 250;
+    private const int StandardDimensionHeight = 200;
+    private const int StandardDimensionWidth = 300;
     private const string StepText = "Step";
     private const string TitleText = "Mira";
     private readonly ListBox frameStack;
@@ -29,9 +30,13 @@
     private readonly UITimer timer = new UITimer();
     private bool underline;
     private bool bold;
+    private readonly string systemPath;
+    private readonly string programPath;
 
     public Editor(Application application, string baseDirectory, string codeFilename)
     {
+      systemPath = baseDirectory + "/System.txt";
+      programPath = baseDirectory + "/Program.txt";
       WindowState = WindowState.Maximized;
       Title = TitleText;
       Menu = new MenuBar { IncludeSystemItems = MenuBarSystemItems.Quit };
@@ -41,11 +46,11 @@
       Button runButton = new Button { Command = runCommand, Text = RunText };
       Button continueButton = new Button { Command = continueCommand, Text = ContinueText };
       Button stepButton = new Button { Command = stepCommand, Text = StepText };
-      systemEdit = new RichTextArea();
-      systemEdit.Text = File.ReadAllText(baseDirectory + "/System.txt");
-      programEdit = new RichTextArea();
-      programEdit.Text = File.ReadAllText(baseDirectory + "/Program.txt");
-      codeTree = new TreeGridView() { ShowHeader = false, Width = StandardDimension };
+      systemEdit = new RichTextArea() { TextReplacements = TextReplacements.None };
+      systemEdit.Text = File.ReadAllText(systemPath);
+      programEdit = new RichTextArea() { TextReplacements = TextReplacements.None };
+      programEdit.Text = File.ReadAllText(programPath);
+      codeTree = new TreeGridView() { ShowHeader = false};
       codeTree.Border = BorderType.Line;
       codeTree.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(0), Resizable = false });
       codeTree.Columns.Add(new GridColumn { Editable = false, DataCell = new TextBoxCell(1), Resizable = false });
@@ -53,23 +58,29 @@
       frameStack = new ListBox { Style = "ListNative" };
       frameStack.SelectedIndexChanged += OnCallStackListBoxSelectedIndexChanged;
       valueStack = new ListBox { Style = "ListNative" };
-      outputArea = new RichTextArea { Height = StandardDimension };
+      outputArea = new RichTextArea();
       documentationView = new WebView();
       Scrollable documentationwindow = new Scrollable();
       documentationwindow.Content = documentationView;
       TableLayout buttons = TableLayout.Horizontal(runButton, continueButton, stepButton, new Panel());
-      TableLayout edits = new TableLayout(systemEdit, programEdit);
-      edits.SetRowScale(0);
-      edits.SetRowScale(1);
-      TableLayout stacks = new TableLayout(frameStack, valueStack);
+      DocumentPage systemPage = new DocumentPage(systemEdit) { Closable = false, Text = "System" };
+      DocumentPage programPage = new DocumentPage(programEdit) { Closable = false, Text = "Program" };
+      DocumentControl editsDocument = new DocumentControl() { AllowReordering = false };
+      editsDocument.Pages.Add(systemPage);
+      editsDocument.Pages.Add(programPage);
+      TableLayout outputControls = TableLayout.HorizontalScaled(outputArea, documentationwindow);
+      outputControls.Height = StandardDimensionHeight;
+      TableLayout codeOutputControls = new TableLayout(editsDocument, outputControls);
+      codeOutputControls.SetRowScale(0);
+      TableLayout stacks = new TableLayout(codeTree, frameStack, valueStack);
       stacks.SetRowScale(0);
       stacks.SetRowScale(1);
-      stacks.Width = StandardDimension;
-      TableLayout codeControls = TableLayout.Horizontal(codeTree, edits, stacks);
-      codeControls.SetColumnScale(1);
-      TableLayout outputControls = TableLayout.HorizontalScaled(outputArea, documentationwindow);
-      outputControls.Height = StandardDimension;
-      TableLayout mainControls = new TableLayout(buttons, codeControls, outputControls);
+      stacks.SetRowScale(2);
+      stacks.Width = StandardDimensionWidth;
+      TableLayout codeControls = TableLayout.Horizontal(codeOutputControls, stacks);
+      codeControls.SetColumnScale(0);
+      Content = codeControls;
+      TableLayout mainControls = new TableLayout(buttons, codeControls);
       mainControls.SetRowScale(1);
       Content = mainControls;
       runtime = new Mira(application, baseDirectory);
@@ -82,7 +93,6 @@
       timer.Elapsed += OnElapsed;
       timer.Start();
       LoadComplete += OnLoadComplete;
-
     }
 
     private void OnCodeTreeViewSelectedItemChanged(object sender, EventArgs e)
@@ -168,7 +178,14 @@
       }
     }
 
-    private void OnRun(object sender, EventArgs arguments) => runtime.Run();
+    private void OnRun(object sender, EventArgs arguments)
+    {
+      File.WriteAllText(systemPath, systemEdit.Text);
+      File.WriteAllText(programPath, programEdit.Text);
+      runtime.Code = Path.GetFileName(programPath);
+      UpdateUI();
+      runtime.Run();
+    }
 
     private void OnStep(object sender, EventArgs e)
     {
