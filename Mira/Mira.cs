@@ -6,7 +6,7 @@
 // ReSharper disable ArrangeMethodOrOperatorBody
 // ReSharper disable ArrangeConstructorOrDestructorBody
 
-namespace Mira
+namespace Mira // 2
 {
   using System;
   using System.Collections.Generic;

@@ -1,6 +1,6 @@
 loadFile System.txt pragma
 
-"4711" show
+"Hi there!" show
 
 (isSubclassOf splitHalve prepend verbatim getType newArray elementAtOrDefault) .
 
