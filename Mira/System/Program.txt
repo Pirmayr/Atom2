@@ -1,9 +1,5 @@
 loadFile System.txt pragma
 
-"Hi there!" show
-
-(isSubclassOf splitHalve prepend verbatim getType newArray elementAtOrDefault) .
-
 Form new
 : (form) put
 : TextBox new
